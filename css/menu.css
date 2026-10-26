@@ -1,0 +1,107 @@
+/* MTM-Coiffure logo menu. Ported from studio/References/logo-menu-embed.html (Webflow embed).
+   Requires window.gsap (loaded once per page before this file). */
+/* All geometry is a percentage of the VIEWPORT, because .lm-tri elements are
+     fixed and inset:0 — so clip-path percentages resolve against the viewport
+     directly. Values come from the logo SVG normalised against its shape
+     bounding box (x 106->293 w=187, y 86->313 h=227); see the design spec. */
+  .lm-root{position:fixed;inset:0;z-index:9998;visibility:hidden;pointer-events:none}
+  /* No background on the root: the diagonal band between the two hypotenuses is
+     where the live page must show through. */
+  .lm-root.lm-open{visibility:visible;pointer-events:auto}
+
+  /* The frost sits UNDER every opaque part (z-index:0, and the FIRST child of
+     .lm-root in markup order), filling the whole viewport, so the blur shows
+     through exactly where the mark is open: the diagonal slit AND the two
+     horizontal gaps between each bar and its triangle. Three bands, one
+     layer. It needs pointer-events:auto so the menu keeps intercepting
+     clicks over those open bands instead of leaking them to the page below. */
+  .lm-frost{position:fixed;inset:0;z-index:0;pointer-events:auto;
+    -webkit-backdrop-filter:blur(3px) saturate(1.12) brightness(1.03);
+    backdrop-filter:blur(3px) saturate(1.12) brightness(1.03);
+    background:rgba(232,211,184,.10)}
+
+  /* Fully opaque brand sand, identical to the bars — no backdrop-filter on the
+     fill itself: behind an opaque background it would render nothing. The
+     shadow lives on the WRAPPER (.lm-tri / .lm-tri-up / .lm-tri-lo) rather
+     than here, because a shadow on the same element as a clip-path is
+     clipped away with it (verified empirically). The wrapper stays
+     fixed+inset:0 so this inner element's own fixed positioning still
+     resolves to the viewport, and it is pointer-events:none so hit-testing
+     falls through to .lm-tri-shape (below) over the transparent parts of the
+     wrapper's box. */
+  .lm-tri{position:fixed;inset:0;z-index:1;background:none;pointer-events:none;
+    filter:drop-shadow(0 17px 34px rgba(48,34,18,.32)) drop-shadow(0 3px 7px rgba(48,34,18,.21))}
+  .lm-tri-shape{position:fixed;inset:0;background-color:rgb(232,211,184);pointer-events:auto}
+  /* Upper: right angle at TOP-LEFT — flat top edge, vertical left edge. */
+  .lm-tri-up > .lm-tri-shape{clip-path:polygon(0.53% 16.74%, 99.47% 16.74%, 0.53% 70.48%)}
+  /* Lower: right angle at BOTTOM-RIGHT — a 180 deg rotation of the upper. */
+  .lm-tri-lo > .lm-tri-shape{clip-path:polygon(99.47% 83.26%, 0.53% 83.26%, 99.47% 29.07%)}
+
+  /* Bars are NOT full width, and their insets are on opposite ends — the same
+     rotational symmetry as the triangles. 1.07% is ~15px at 1440. */
+  .lm-bar{position:fixed;height:10.57vh;background:#e8d3b8;z-index:1;
+    box-shadow:0 11px 26px rgba(48,34,18,.28), 0 2px 5px rgba(48,34,18,.18)}
+  .lm-bar-top{top:0;left:0;right:1.07vw;transform-origin:left center}
+  .lm-bar-bot{bottom:0;left:1.07vw;right:0;transform-origin:right center}
+  /* will-change promotes each of these to its own full-viewport compositor
+     layer (~4 x w*h*4 bytes, ~21MB at 1440x900). Scope it to the open state:
+     while closed the overlay is visibility:hidden and never animates, so the
+     memory would be held for nothing — and this page also runs a pinned
+     ScrollTrigger card tornado that wants the same budget. The class is added
+     before tl.play(0) and removed in onReverseComplete, i.e. it is present for
+     exactly the interval the transforms run, so this is not per-frame churn. */
+  .lm-root.lm-open .lm-tri,
+  .lm-root.lm-open .lm-bar{will-change:transform}
+
+  /* Content is a CHILD of the clipped shape (.lm-tri-shape, one level deeper
+     than the animated .lm-tri-up/.lm-tri-lo wrapper), so the clip still
+     guarantees nothing can ever spill past the hypotenuse. fitText() then
+     shrinks anything that would have been silently clipped. availableWidth()
+     and fitText() key off el.closest('.lm-tri-up')/('.lm-tri-lo'), which
+     still resolves correctly through the extra nesting level. */
+  .lm-links,.lm-locs{position:absolute;font-family:var(--font, Geom),sans-serif;text-transform:uppercase;color:#000}
+  /* Upper triangle: flat top at 16.74%, vertical left edge — so anchor top-left.
+     Top pad and inter-link rhythm are deliberately tight: link 4 (the longest
+     label, "Termin buchen") sits at the bottom of the stack, where the wedge
+     is narrowest, and fitText() cannot make its EFFECTIVE size any bigger
+     than the width actually available there — see the fitText() comment.
+     Compacting links 1-3's vertical footprint is what buys link 4 a wider
+     wedge to render into; it is not a cosmetic choice. Measured effect at
+     375x812: link 4's effective size goes from ~11px (illegible) to ~20px. */
+  .lm-links{top:calc(16.74vh + 1vh);left:calc(0.53vw + 5vw);text-align:left}
+  /* width:max-content — without it, a display:block child with no own width
+     stretches to fill its shrink-to-fit parent (which is itself sized to the
+     WIDEST sibling), so getBoundingClientRect().width returns the widest
+     link's width for every link instead of each link's own text width. That
+     silently defeats fitText(): every element would compute its scale from
+     an identical, wrong raw width instead of its own. */
+  /* position:relative so ::before (the hover wipe) can anchor to it. No
+     `transform` in this transition list, and none in the hover rule below:
+     fitText() owns .lm-link's transform via gsap.set(el,{scale:...}) and
+     reads getBoundingClientRect() immediately after resetting it — a CSS
+     transition on transform would still be animating at that moment and
+     corrupt the measured fit ratio (this happened for real at 375px). GSAP
+     also writes an inline transform, which a stylesheet :hover{transform}
+     rule could never win against anyway. */
+  .lm-link{position:relative;display:block;width:max-content;color:#000;text-decoration:none;font-weight:400;
+           line-height:1.0;margin-bottom:.12em;white-space:nowrap;
+           transition:letter-spacing .32s cubic-bezier(.22,1,.36,1),
+                      font-weight .2s linear, color .28s ease, opacity .28s ease}
+  /* Diagonal wipe: a wedge enters at the hypotenuse angle, echoing the mark
+     itself. The only hover treatment shipped (of four explored options). */
+  .lm-link::before{content:'';position:absolute;pointer-events:none;
+           left:-.4em;right:-.4em;top:-.08em;bottom:-.08em;background:#000;z-index:-1;
+           clip-path:polygon(6% 0, 6% 0, 0 100%, 0 100%);
+           transition:clip-path .44s cubic-bezier(.22,1,.36,1)}
+  .lm-link:hover::before,
+  .lm-link:focus-visible::before{clip-path:polygon(6% 0, 100% 0, 94% 100%, 0 100%)}
+  .lm-link:hover,
+  .lm-link:focus-visible{color:rgb(232,211,184)}
+  @media (prefers-reduced-motion: reduce){
+    .lm-link, .lm-link::before{transition-duration:.01ms !important}
+  }
+  /* Lower triangle: flat bottom at 83.26%, vertical right edge — so anchor bottom-right. */
+  .lm-locs{bottom:calc(16.74vh + 4vh);right:calc(0.53vw + 5vw);text-align:right}
+  .lm-loc{margin-top:1.6em}
+  .lm-loc-name{display:block;width:max-content;margin-left:auto;font-weight:400;line-height:1.15;white-space:nowrap;color:#000}
+  .lm-loc-line{display:block;width:max-content;margin-left:auto;font-weight:300;opacity:.66;line-height:1.5;white-space:nowrap;color:#000}

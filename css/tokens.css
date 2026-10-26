@@ -1,0 +1,24 @@
+/* Design tokens, taken from the Figma file "MTM-Coiffure" (Desktop - 1, node 64:2)
+   and the Webflow spec (docs/superpowers/specs/2026-08-18-mtm-logo-menu-design.md). */
+:root {
+  /* colour */
+  --sand: #a5732d;            /* hero block, gradient origin, card shadow tint */
+  --sand-light: #e8d3b8;      /* Webflow .buttn_primary — used by the logo menu */
+  --ink: #000;
+  --paper: #fff;
+  --placeholder: #d9d9d9;     /* social media cards */
+
+  /* type — Geom (Google Fonts), weights 300 / 400 */
+  --font: 'Geom', system-ui, sans-serif;
+  --fs-display: clamp(40px, 5.9vw, 85px);   /* 85px at 1440 */
+  --fs-title: clamp(36px, 3.61vw, 52px);    /* 52px at 1440 */
+  --fs-lead: clamp(24px, 2.22vw, 32px);     /* 32px at 1440 */
+  --fs-body: clamp(16px, 1.39vw, 20px);     /* 20px at 1440 */
+
+  /* layout */
+  --pad: 20px;
+  --gap: 10px;
+  --radius: 5px;
+  --measure: 778px;            /* body copy column under display headings */
+  --shadow-card: 0 4px 50px 3px rgba(165, 115, 45, .1);
+}

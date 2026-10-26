@@ -1,0 +1,15 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="1440" height="628" viewBox="0 0 1440 628" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Decorative Curve" clip-path="url(#clip0_0_27)">
+<rect width="1440" height="628" fill="url(#paint0_radial_0_27)"/>
+<ellipse id="Ellipse 3" cx="720" rx="720" ry="286" fill="white"/>
+</g>
+<defs>
+<radialGradient id="paint0_radial_0_27" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(720 5.31732e-06) rotate(90) scale(440.742 1010.62)">
+<stop stop-color="#A5732D"/>
+<stop offset="0.948695"/>
+</radialGradient>
+<clipPath id="clip0_0_27">
+<rect width="1440" height="628" fill="white"/>
+</clipPath>
+</defs>
+</svg>

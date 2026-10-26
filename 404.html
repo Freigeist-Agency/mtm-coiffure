@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seite nicht gefunden – MTM Coiffure</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geom:wght@300;400&display=swap">
+<!-- GitHub Pages serves this file at whatever path was requested, so relative
+     asset paths can't be trusted here. Styles are inline; the home link is
+     computed (project sites live under /<repo>/, custom domains at /). -->
+<style>
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#000;color:#fff;
+       font-family:'Geom',system-ui,sans-serif;font-weight:300;text-align:center;padding:20px}
+  h1{font-weight:300;font-size:clamp(40px,5.9vw,85px);margin:0 0 20px}
+  a{color:#fff}
+</style>
+</head>
+<body>
+<main>
+  <h1>Seite nicht gefunden.</h1>
+  <p><a id="home" href="/">Zur Startseite</a></p>
+</main>
+<script>
+  (function(){
+    var seg = location.pathname.split('/')[1];
+    if (/\.github\.io$/.test(location.hostname) && seg) document.getElementById('home').href = '/' + seg + '/';
+  })();
+</script>
+</body>
+</html>
