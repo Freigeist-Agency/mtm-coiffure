@@ -2,7 +2,7 @@
    the 450px frame (76:222) drives the mobile layout. */
 
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+html { scroll-behavior: smooth; scroll-padding-top: var(--nav-h); -webkit-text-size-adjust: 100%; } /* in-page anchors clear the sticky nav */
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body {
   margin: 0;
@@ -167,7 +167,6 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 }
 .location-info .btn img { width: min(17.38cqw, 186px); height: auto; aspect-ratio: 186 / 39; }
 .location-img { width: 100%; aspect-ratio: 930 / 523; object-fit: cover; object-position: 50% 50%; }
-.locations__media .location-img { height: auto; aspect-ratio: 16 / 9; }
 
 .curve { display: block; width: 100%; height: clamp(200px, 43.6vw, 628px); transform: rotate(180deg); margin: -1px 0 -2px; }
 

@@ -143,13 +143,40 @@ async function stickyRun(width, height, { reducedMotion = false, short = false }
       }
     }
 
-    // handoff: row 1's items leave with row 1, row 2's items belong to row 2
+    // handoff sweep: scroll through the whole handoff range in ~8px steps and read both rows' items at every step
     const infos0 = await rowsInfo(page);
+    const y0 = Math.max(0, Math.round(infos0[1].top - height - 50)), y1 = Math.round(infos0[0].bottom);
+    const sweep = await page.evaluate(([y0, y1]) => {
+      const rows = [...document.querySelectorAll('.location-info')];
+      const out = [];
+      for (let y = y0; y <= y1; y += 8) {
+        scrollTo({ top: y, behavior: 'instant' });
+        const g = r => rows[r].querySelector.bind(rows[r]);
+        const R = e => e.getBoundingClientRect();
+        out.push({
+          y, nueLabelTop: R(g(0)('h3')).top, nueBtnTop: R(g(0)('.btn')).top, nueBtnBottom: R(g(0)('.btn')).bottom,
+          walLabelTop: R(g(1)('h3')).top, walBtnTop: R(g(1)('.btn')).top, rowBottom: R(rows[0]).bottom,
+        });
+      }
+      return out;
+    }, [y0, y1]);
+    assert(sweep.length > 40, `${tag} handoff sweep: enough steps (${sweep.length})`);
+    if (!mobile) {
+      const worst = Math.min(...sweep.map(x => x.walLabelTop - x.nueBtnBottom));
+      assert(worst >= 0, `${tag} handoff sweep: Waldbröl label never overlaps the Nümbrecht button (min gap ${worst.toFixed(1)}px)`);
+      const stuck = sweep.filter(x => Math.abs(x.nueBtnBottom - botLine) <= 2).length;
+      assert(stuck >= 3, `${tag} handoff sweep: the Nümbrecht button was actually stuck (>= 3 steps, a free-moving button crosses the line in at most 1) at ${botLine} during the sweep (${stuck} steps)`);
+      const left = sweep.filter(x => x.nueBtnBottom < botLine - 2).length;
+      assert(left > 0, `${tag} handoff sweep: the Nümbrecht button then left with its row (${left} steps)`);
+    } else {
+      const barH = 0.09 * height, lo = navH - 2, hi = navH + barH;
+      const both = sweep.filter(x => x.nueLabelTop >= lo && x.nueLabelTop < hi && x.walLabelTop >= lo && x.walLabelTop < hi);
+      assert(both.length === 0, `${tag} handoff sweep: never both bars in the nav band at once (${both.length} steps)`);
+      const nueStuck = sweep.filter(x => Math.abs(x.nueLabelTop - navH) <= 2).length, walStuck = sweep.filter(x => Math.abs(x.walLabelTop - navH) <= 2).length;
+      assert(nueStuck >= 3 && walStuck >= 3, `${tag} handoff sweep: each bar was stuck under the nav at some step (${nueStuck}, ${walStuck})`);
+    }
     const hy = Math.round(infos0[1].top - 0.45 * height);
     await goTo(page, hy, false, width, height);
-    const [r1, r2] = await rowsInfo(page);
-    assert(r1.label.bottom <= r1.top - r1.y + r1.img.h + 1 + 0 && r1.btn.bottom <= (r1.bottom - r1.y) + 1, `${tag} handoff: Nümbrecht label and button stay inside row 1`);
-    assert(r2.label.top >= (r2.top - r2.y) - 1, `${tag} handoff: Waldbröl label does not leave its own row`);
     if (!reducedMotion && !short) await shot(page, `${width}-handoff.png`);
 
     const sw = await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
@@ -163,6 +190,47 @@ await stickyRun(1440, 520, { short: true });
 await stickyRun(375, 812);
 await stickyRun(1440, 900, { reducedMotion: true });
 await stickyRun(375, 812, { reducedMotion: true });
+
+// ---- in-page anchors clear the sticky nav
+for (const width of [1440, 375]) {
+  const height = width === 1440 ? 900 : 812;
+  const probe = page => page.evaluate(() => ({
+    h: document.querySelector('#loc-h').getBoundingClientRect().top,
+    nav: document.querySelector('.site-header').getBoundingClientRect().bottom, y: scrollY,
+  }));
+  const loaded = page => page.waitForFunction(() => document.documentElement.classList.contains('is-loaded'), null, { timeout: 9000 });
+  // (a) deep link, with the loader (its applyHash must respect scroll-padding too)
+  {
+    const { page, close } = await openPage({ width, height, path: 'index.html#standorte', skipLoader: false });
+    try {
+      await loaded(page);
+      await page.waitForTimeout(500);
+      const r = await probe(page);
+      assert(r.y > 100 && r.h >= r.nav - 0.5, `@${width} index.html#standorte: #loc-h top ${r.h.toFixed(1)} >= nav bottom ${r.nav} (scrollY ${Math.round(r.y)})`);
+    } finally { await close(); }
+  }
+  // (b) deep link without the loader (?skiploader: plain browser fragment navigation)
+  {
+    const { page, close } = await openPage({ width, height, path: '404.html' });
+    try {
+      await page.goto(page.url().replace('404.html', 'index.html') + '#standorte', { waitUntil: 'load' });
+      await page.waitForTimeout(800);
+      const r = await probe(page);
+      assert(r.y > 100 && r.h >= r.nav - 0.5, `@${width} skiploader#standorte: #loc-h top ${r.h.toFixed(1)} >= nav bottom ${r.nav} (scrollY ${Math.round(r.y)})`);
+    } finally { await close(); }
+  }
+  // (c) clicking a generic Termin Buchen link on the already loaded page (in-page smooth scroll)
+  {
+    const { page, close } = await openPage({ width, height, skipLoader: false });
+    try {
+      await loaded(page);
+      await page.locator('header.site-header a.btn[aria-label="Termin buchen"]').first().click();
+      await settle(page); await page.waitForTimeout(400); await settle(page);
+      const r = await probe(page);
+      assert(r.y > 100 && r.h >= r.nav - 0.5, `@${width} click Termin buchen: #loc-h top ${r.h.toFixed(1)} >= nav bottom ${r.nav} (scrollY ${Math.round(r.y)})`);
+    } finally { await close(); }
+  }
+}
 
 // ---- index booking links
 {
