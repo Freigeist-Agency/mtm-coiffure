@@ -64,44 +64,60 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .hero-title span { display: block; font-size: var(--fs-title); line-height: 1; }
 .hero-arabic { justify-self: end; width: 107.5px; height: auto; mix-blend-mode: multiply; } /* SVG ships with an off-white ground */
 
-/* ---------- Introduction ---------- */
+/* ---------- Introduction (Figma 73:60: card 352.5x321 at x=20, 85px text 688 wide ending at x=1420) ---------- */
 .intro {
   display: flex; justify-content: space-between; align-items: flex-start; gap: 40px;
-  padding: 123px var(--pad) 170px;
+  padding: 123px var(--pad) 167px;
 }
 .review-card {
-  flex: 0 0 352.5px; height: 321px; border: 1px solid var(--ink);
+  flex: 0 0 24.48vw; max-width: 352.5px; height: 321px; border: 1px solid var(--ink);
   display: grid; place-items: center; font-size: var(--fs-body);
 }
-.intro-text { max-width: 640px; margin-right: 48px; font-size: var(--fs-display); line-height: 1.25; }
+.intro-text { flex: 0 1 47.78vw; max-width: 688px; padding-right: 3.5vw; /* Geom wraps "vierten" onto its own line in Figma */ font-size: var(--fs-display); line-height: 1.25; }
 
-/* ---------- Services ring ---------- */
+/* ---------- Services (Figma 73:3: 788x788 orbit centred in a 1440x1000 section; the 8 photos keep their Figma tilt) ---------- */
 .services {
-  --r: clamp(215px, 22.8vw, 328px);    /* ring radius: 328px at 1440 */
-  --tile: clamp(80px, 9.13vw, 131.4px); /* tile size: 131px at 1440 */
   position: relative; overflow: hidden;
-  min-height: calc(2 * var(--r) + var(--tile) + 340px);
   display: grid; place-items: center;
-  padding: 120px var(--pad);
+  padding: 12.43vw 0 2.29vw;   /* 179px above and 33px below the orbit at 1440 */
 }
-.ring { position: absolute; left: 50%; top: 50%; width: 0; height: 0; list-style: none; margin: 0; padding: 0; }
-.ring li {
-  position: absolute; width: var(--tile); height: var(--tile);
-  left: calc(var(--tile) / -2); top: calc(var(--tile) / -2);
-  transform: rotate(var(--a)) translateY(calc(-1 * var(--r)));
+.orbit {
+  grid-area: 1 / 1; position: relative; list-style: none; margin: 0; padding: 0;
+  width: 54.72vw; aspect-ratio: 1;
 }
-.ring img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius); }
-.services-copy { position: relative; text-align: center; max-width: 460px; display: grid; gap: 28px; justify-items: center; }
+.orbit__item {
+  --tilt: 0deg;
+  --x: 50%; --y: 50%;
+  position: absolute; left: var(--x); top: var(--y);
+  width: 16.68%; aspect-ratio: 1;           /* 131.4 of 788 */
+  margin: -8.34% 0 0 -8.34%;                /* centre the item on (--x, --y) */
+  transform: rotate(var(--tilt));
+}
+.orbit__item img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius); }
+.orbit__item--tl { --x: 20.08%; --y: 20.09%; --tilt: -45deg; }
+.orbit__item--t  { --x: 50%;    --y: 8.34%;  --tilt: 0deg; }
+.orbit__item--tr { --x: 79.92%; --y: 20.09%; --tilt: 45deg; }
+.orbit__item--l  { --x: 8.34%;  --y: 50%;    --tilt: -90deg; }
+.orbit__item--r  { --x: 91.66%; --y: 50%;    --tilt: 90deg; }
+.orbit__item--bl { --x: 20.08%; --y: 79.92%; --tilt: -135deg; }
+.orbit__item--b  { --x: 50%;    --y: 91.66%; --tilt: 180deg; }
+.orbit__item--br { --x: 79.92%; --y: 79.92%; --tilt: 135deg; }
+.services-copy {
+  grid-area: 1 / 1; position: relative; text-align: center;
+  width: 36.5vw; max-width: 460px; display: grid; gap: 29px; justify-items: center;
+}
 .services-copy h2 { font-size: var(--fs-lead); line-height: 1.25; }
-.services-copy p { max-width: 424px; }
+.services-copy p { max-width: 424px; line-height: 1.25; }
 
-/* ---------- About ---------- */
+/* ---------- About (Figma 73:48: black radial under a white ellipse; team photos follow as a carousel) ---------- */
 .about {
   position: relative; overflow: hidden; color: var(--paper);
-  background: radial-gradient(70.2% 70.2% at 50% 0,
-    #a5732d 0%, #7c5622 19.9%, #533a17 39.8%, #3e2b11 49.8%,
-    #291d0b 59.7%, #150e06 69.7%, #0a0703 74.6%, #000 79.6%);
-  padding: calc(19.86vw + 200px) 135px 89px;
+  background:
+    radial-gradient(70.2% 70.2% at 50% 0,
+      #a5732d 0%, #7c5622 19.9%, #533a17 39.8%, #3e2b11 49.8%,
+      #291d0b 59.7%, #150e06 69.7%, #0a0703 74.6%, #000 79.6%) top / 100% 57.9vw no-repeat,
+    var(--ink);                              /* gradient sized to the 834px Figma frame, solid black below */
+  padding: calc(19.86vw + 200px) 0 0;
   text-align: center;
 }
 .about::before { /* white ellipse 1440x572 centred on the section's top edge */
@@ -109,15 +125,22 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   background: var(--paper); border-radius: 50%;
 }
 .about > * { position: relative; }
-.about-copy { display: grid; gap: 23px; justify-items: center; }
+.about-copy { display: grid; gap: 23px; justify-items: center; padding-inline: 135px; }
+.about-copy h2 { line-height: 1.25; }
+.br-m { display: none; }
+.about-copy p { line-height: 1.25; padding-bottom: 28px; }  /* Figma text box is 103px for 3 lines */
 
-.gallery {
-  background: var(--ink);
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap);
-  padding: 88px var(--pad) 120px;
+/* Team photos: 3 x 460 squares at 1440 (Figma 73:61). Without JS this is a plain horizontal scroll-snap row. */
+.gallery { padding: 5.88vw 0 120px; }
+.carousel {
+  display: flex; gap: var(--gap);
+  padding-inline: var(--pad); scroll-padding-inline: var(--pad);
+  overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.35) transparent;
 }
-.gallery img { width: 100%; aspect-ratio: 1; object-fit: cover; }
-.gallery img:last-child { border-radius: var(--radius); }
+.carousel__item { flex: 0 0 31.94vw; scroll-snap-align: start; }
+.carousel__item img { width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius); }
 
 /* ---------- Locations ---------- */
 .locations { background: var(--ink); color: var(--paper); padding: 40px var(--pad) 120px; }
@@ -203,7 +226,13 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 
 /* ---------- Tablet ---------- */
 @media (max-width: 1024px) {
-  .about { padding-inline: 40px; }
+  .about-copy { padding-inline: 40px; }
+}
+/* Text keeps its 16/24px floor, so below ~1100px the ring is drawn larger than its 1440 proportion to leave room for the copy */
+@media (min-width: 768px) and (max-width: 1100px) {
+  .services { padding: 6vw 0; }
+  .orbit { width: 78vw; }
+  .services-copy { width: 46vw; }
 }
 
 /* ---------- Mobile (Figma frame 76:222, 450px) ---------- */
@@ -217,24 +246,43 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   .hero-media { min-height: 667px; }
   .hero-intro {
     grid-area: 1 / 1; align-self: end;
-    display: flex; flex-direction: column; align-items: center; gap: 14px;
-    padding: 0 var(--pad) 110px; text-align: center; min-height: 0;
+    display: flex; flex-direction: column; align-items: center; gap: 25px;
+    padding: 0 var(--pad) 133px; text-align: center; min-height: 0;
   }
   .hero-arabic { order: 1; justify-self: auto; width: 160px; }
   .hero-title { order: 2; }
-  .hero-hello { order: 3; margin-top: 16px; }
-  .hero-cta { margin-bottom: 64px; }
+  .hero-hello { order: 3; }
+  .hero-cta { margin-bottom: 69px; }
 
-  .intro { flex-direction: column; align-items: stretch; padding-top: 30px; gap: 70px; }
-  .review-card { flex-basis: auto; height: auto; aspect-ratio: 410 / 321; }
+  .intro { flex-direction: column; align-items: stretch; padding: 50px var(--pad) 50px; gap: 61px; }
+  .review-card { flex-basis: auto; max-width: none; height: auto; aspect-ratio: 410 / 321; }
+  .intro-text { flex: none; max-width: none; padding-right: 0; }
 
-  .about { padding: calc(19.86vw + 90px) var(--pad) 60px; }
-  .gallery {
-    grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 78%;
-    overflow-x: auto; scroll-snap-type: x mandatory; padding: 40px var(--pad) 80px;
-    scrollbar-width: none;
-  }
-  .gallery img { scroll-snap-align: center; }
+  /* Services (frame 76:248, 450 wide): three photos above the copy, three below, the side two are dropped.
+     Positions are the Figma centres as % of the width; vertical offsets in vw (450px = 100vw). */
+  .services { padding: 51vw 0 60.8vw; }
+  .orbit { grid-area: auto; position: absolute; inset: 0; width: auto; aspect-ratio: auto; }
+  .orbit__item { width: 29.2%; margin: -14.6% 0 0 -14.6%; }
+  .orbit__item--l, .orbit__item--r { display: none; }
+  .orbit__item--tr { --x: 9.06%;  --y: 24.44vw; --tilt: 30deg; }   /* Figma mirrors the pair on mobile */
+  .orbit__item--t  { --x: 50%;    --y: 14.6vw; }
+  .orbit__item--tl { --x: 90.94%; --y: 24.44vw; --tilt: -30deg; }
+  .orbit__item--bl { --x: 7.1%;   --y: calc(100% - 31.7vw); }
+  .orbit__item--b  { --x: 50%;    --y: calc(100% - 15.42vw); }
+  .orbit__item--br { --x: 92.9%;  --y: calc(100% - 31.7vw); }
+  .services-copy { width: auto; max-width: none; padding-inline: 13px; }
+  .services-copy p { max-width: 424px; }
+
+  /* About (frame 76:261): ellipse 450x286, copy boxes 170/155 tall in Figma */
+  .about { padding: 50.5vw 0 0; }
+  .about::before { top: -31.78vw; height: 63.56vw; }
+  .about-copy { padding-inline: var(--pad); }
+  .about-copy h2 { padding-bottom: 40px; }
+  .br-m { display: inline; }
+  .about-copy p { padding-bottom: 30px; }
+  .gallery { padding: 41px 0 131px; }
+  .carousel { scrollbar-width: none; scroll-padding-inline: 4.9vw; padding-inline: 4.9vw; gap: 1.78vw; }
+  .carousel__item { flex-basis: 73.1vw; scroll-snap-align: center; }
 
   .locations > h2 { margin-bottom: 60px; }
   .location { grid-template-columns: 1fr; margin-bottom: 60px; }

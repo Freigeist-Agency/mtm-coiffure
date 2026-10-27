@@ -42,15 +42,15 @@
   </section>
 
   <section class="services" id="leistungen" aria-labelledby="services-h">
-    <ul class="ring" aria-hidden="true">
-      <li style="--a:0deg"><img src="assets/dsc00365.jpg" alt="" loading="lazy" style="object-position:50% 31%"></li>
-      <li style="--a:45deg"><img src="assets/dsc09962.jpg" alt="" loading="lazy" style="object-position:50% 64%"></li>
-      <li style="--a:90deg"><img src="assets/dsc09808.jpg" alt="" loading="lazy" style="object-position:50% 50%"></li>
-      <li style="--a:135deg"><img src="assets/dsc09310.jpg" alt="" loading="lazy" style="object-position:50% 50%"></li>
-      <li style="--a:180deg"><img src="assets/dsc00425.jpg" alt="" loading="lazy" style="object-position:50% 71%"></li>
-      <li style="--a:225deg"><img src="assets/dsc09341.jpg" alt="" loading="lazy" style="object-position:50% 60%"></li>
-      <li style="--a:270deg"><img src="assets/dsc00126.jpg" alt="" loading="lazy" style="object-position:50% 50%"></li>
-      <li style="--a:315deg"><img src="assets/dsc09804.jpg" alt="" loading="lazy" style="object-position:50% 28%"></li>
+    <ul class="orbit" aria-label="Eindrücke aus dem Salon">
+      <li class="orbit__item orbit__item--tl"><img src="assets/dsc09804.jpg" alt="Friseur trimmt die Haare hinter dem Ohr" width="1200" height="1800" loading="lazy" style="object-position:50% 28%"></li>
+      <li class="orbit__item orbit__item--t"><img src="assets/dsc00365.jpg" alt="Frisch geschnittener Fade von hinten" width="1200" height="1800" loading="lazy" style="object-position:50% 31%"></li>
+      <li class="orbit__item orbit__item--tr"><img src="assets/dsc09962.jpg" alt="Friseur im Salon bei der Arbeit" width="1200" height="1800" loading="lazy" style="object-position:50% 64%"></li>
+      <li class="orbit__item orbit__item--l"><img src="assets/dsc00126.jpg" alt="Friseur arbeitet am Spiegel" width="1200" height="1800" loading="lazy" style="object-position:50% 50%"></li>
+      <li class="orbit__item orbit__item--r"><img src="assets/dsc09808.jpg" alt="Schere am Nacken beim Konturenschnitt" width="1200" height="1800" loading="lazy" style="object-position:50% 50%"></li>
+      <li class="orbit__item orbit__item--bl"><img src="assets/dsc09341.jpg" alt="Zwei Friseure und ein Kunde im Salon" width="1200" height="1800" loading="lazy" style="object-position:50% 60%"></li>
+      <li class="orbit__item orbit__item--b"><img src="assets/dsc00425.jpg" alt="Friseur lächelt beim Haareschneiden" width="1200" height="1800" loading="lazy" style="object-position:50% 71%"></li>
+      <li class="orbit__item orbit__item--br"><img src="assets/dsc09310.jpg" alt="Friseur schneidet Haare im hellen Salon" width="1200" height="1800" loading="lazy" style="object-position:50% 50%"></li>
     </ul>
     <div class="services-copy">
       <h2 id="services-h">Die besten Haarschnitte<br>im Oberbergischen.</h2>
@@ -61,15 +61,22 @@
 
   <section class="about" id="ueber-uns" aria-labelledby="about-h">
     <div class="about-copy">
-      <h2 class="display" id="about-h">Wir sind MTM Coiffure.</h2>
+      <h2 class="display" id="about-h">Wir sind <br class="br-m">MTM Coiffure.</h2>
       <p class="measure">Wir haben unsere Leidenschaft für das Friseurhandwerk auf unsere Reise aus Syrien nach Deutschland mitgenommen und dürfen sie jetzt mit dir in einem unserer Familienmeisterbetrieben mit dir teilen.</p>
       <a class="btn" href="#standorte" aria-label="Termin buchen"><img src="assets/btn-about.svg" alt="" width="184" height="39"></a>
     </div>
-  </section>
-  <section class="gallery" aria-label="Galerie">
-    <img src="assets/dsc00642.jpg" alt="Das Team von MTM Coiffure" loading="lazy" style="object-position:50% 43%">
-    <img src="assets/dsc09979.jpg" alt="Friseur mit Schere" loading="lazy">
-    <img src="assets/dsc00594.jpg" alt="Friseurmeister mit Schere" loading="lazy">
+    <div class="gallery">
+      <div class="carousel" data-carousel="team" role="region" aria-roledescription="Karussell" aria-label="Das Team von MTM Coiffure" tabindex="0">
+        <div class="carousel__item"><img src="assets/dsc00642-1x1.jpg" alt="Drei Mitarbeiter von MTM Coiffure im Salon" width="920" height="920" loading="lazy"></div>
+        <div class="carousel__item"><img src="assets/dsc09979-1x1.jpg" alt="Friseur hält lächelnd eine Schere in die Kamera" width="920" height="920" loading="lazy"></div>
+        <div class="carousel__item"><img src="assets/dsc00594-1x1.jpg" alt="Friseurmeister mit Schere vor dem Spiegel" width="920" height="920" loading="lazy"></div>
+        <div class="carousel__item"><img src="assets/dsc00155-1x1.jpg" alt="Hände mit Kamm und Schere beim Locken schneiden" width="920" height="920" loading="lazy"></div>
+        <div class="carousel__item"><img src="assets/dsc00651-1x1.jpg" alt="Das Team von MTM Coiffure im Salon" width="920" height="920" loading="lazy"></div>
+        <div class="carousel__item"><img src="assets/dsc00483-1x1.jpg" alt="Friseurmeister im beigen Anzug mit verschränkten Armen" width="920" height="920" loading="lazy"></div>
+        <div class="carousel__item"><img src="assets/dsc00512-1x1.jpg" alt="Lächelnder Friseur im schwarzen Hemd mit verschränkten Armen" width="920" height="920" loading="lazy"></div>
+        <div class="carousel__item"><img src="assets/dsc00236-1x1.jpg" alt="Werkzeug und Scheren am Frisierplatz" width="920" height="920" loading="lazy"></div>
+      </div>
+    </div>
   </section>
 
   <section class="locations" id="standorte" aria-labelledby="loc-h">
