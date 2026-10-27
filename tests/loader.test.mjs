@@ -15,8 +15,9 @@ const readNum = page => page.evaluate(() => {
 async function begin(opts = {}) {
   const h = await openPage({ ...opts, path: 'impressum.html', skipLoader: true });
   const base = h.page.url().replace(/impressum\.html.*$/, '');
+  if (opts.before) await opts.before(h.page);
   await h.page.goto(base + 'index.html' + (opts.hash || ''), { waitUntil: 'commit' });
-  await h.page.waitForFunction(() => performance.getEntriesByName('mtm-loader-start').length > 0, null, { polling: 5 });
+  if (!opts.noMark) await h.page.waitForFunction(() => performance.getEntriesByName('mtm-loader-start').length > 0, null, { polling: 5 });
   return h;
 }
 const waitMs = (page, ms) => page.waitForFunction(m => performance.now() - performance.getEntriesByName('mtm-loader-start')[0].startTime >= m, ms, { polling: 5 });
@@ -56,14 +57,37 @@ const waitMs = (page, ms) => page.waitForFunction(m => performance.now() - perfo
     cls: document.documentElement.className,
     ready: window.mtmReady instanceof Promise,
     overflow: getComputedStyle(document.documentElement).overflowY,
+    inert: document.querySelectorAll('[inert]').length,
     at: performance.now() - performance.getEntriesByName('mtm-loader-start')[0].startTime,
   }));
   assert(done.gone, '.loader is removed from the DOM when finished');
   assert(/\bis-loaded\b/.test(done.cls) && !/\bis-loading\b/.test(done.cls), `html has is-loaded and not is-loading (${done.cls})`);
   assert(done.ready, 'window.mtmReady is a Promise');
   assert(done.overflow !== 'hidden', 'scroll is unlocked after the loader');
+  assert(done.inert === 0, `inert is removed from the page after the loader (${done.inert} left)`);
   assert(done.at < 5000, `finished by 5000ms on the loader clock (${done.at.toFixed(0)}ms)`);
   assert(errors.length === 0, `no page errors ${JSON.stringify(errors)}`);
+  await close();
+}
+
+// ---- the counter roll ----------------------------------------------------
+{
+  const { page, close } = await begin({ width: 1440 });
+  const seen = await page.evaluate(() => new Promise(res => {
+    const t0 = performance.now();
+    let coexist = false, translated = false;
+    (function tick() {
+      const spans = [...document.querySelectorAll('.loader__num')];
+      if (spans.length >= 2) coexist = true;
+      for (const sp of spans) {
+        const m = getComputedStyle(sp).transform;
+        const ty = m && m !== 'none' ? parseFloat(m.replace(/^matrix\(|\)$/g, '').split(',')[5]) : 0;
+        if (Math.abs(ty) > 0.5) translated = true;
+      }
+      if (performance.now() - t0 < 450) requestAnimationFrame(tick); else res({ coexist, translated });
+    })();
+  }));
+  assert(seen.coexist || seen.translated, `counterRolls: in the first ~450ms two spans coexist or one is translated (${JSON.stringify(seen)})`);
   await close();
 }
 
@@ -87,9 +111,49 @@ const waitMs = (page, ms) => page.waitForFunction(m => performance.now() - perfo
     }));
     await sleep(200);
   }
+  // the page behind the cover must not be reachable by Tab either: every focusable outside .loader is inert
+  const behind = await page.evaluate(() => {
+    if (!document.querySelector('.loader')) return null;
+    const sel = 'a[href],button,input,select,textarea,summary,[tabindex]:not([tabindex="-1"])';
+    return [...document.querySelectorAll(sel)].filter(e => !e.closest('.loader') && !e.closest('[inert]') && getComputedStyle(e).visibility !== 'hidden').length;  // visibility:hidden (the closed menu overlay) is already out of the tab order
+  });
+  assert(behind === 0, `while loading, focusable elements outside .loader that are not inert: ${behind} (want 0)`);
+  const gutter = await page.evaluate(() => getComputedStyle(document.documentElement).scrollbarGutter);
+  assert(/stable/.test(gutter), `scrollbar-gutter is stable while the loader locks scroll (${gutter})`);
   const live = probe.filter(p => !p.gone);
   assert(live.length > 0 && live.every(p => !p.inside), 'document.activeElement is never inside .loader while it runs');
   assert(live.every(p => p.focusables === 0 && p.hidden === 'true'), 'the loader has no focusable descendants and is aria-hidden');
+  await close();
+}
+
+// ---- malformed hash must not strand mtmReady -------------------------------
+{
+  const { page, close } = await begin({ width: 1440, hash: '#%E0%A4%A' });
+  await page.waitForFunction(() => document.documentElement.classList.contains('is-loaded'), null, { timeout: 7000 });
+  const r = await page.evaluate(() => Promise.race([
+    window.mtmReady.then(() => 'resolved'),
+    new Promise(res => setTimeout(() => res('pending'), 1000)),
+  ]));
+  assert(r === 'resolved', `malformedHashResolves: mtmReady resolves for #%E0%A4%A (${r})`);
+  await close();
+}
+
+// ---- mtmReady exists from the head, and resolves even if loader.js never loads ---
+{
+  const { page, close } = await begin({
+    width: 1440, noMark: true,
+    before: p => p.route('**/js/loader.js', r => r.abort()),
+  });
+  const early = await page.evaluate(() => window.mtmReady instanceof Promise);
+  assert(early, 'mtmReady is defined by the inline head script (loader.js blocked)');
+  const t0 = Date.now();
+  await page.waitForFunction(() => document.documentElement.classList.contains('is-loaded'), null, { timeout: 9000 });
+  const r = await page.evaluate(() => Promise.race([
+    window.mtmReady.then(() => 'resolved'),
+    new Promise(res => setTimeout(() => res('pending'), 500)),
+  ]));
+  const inert = await page.evaluate(() => document.querySelectorAll('[inert]').length);
+  assert(r === 'resolved' && inert === 0, `head fallback resolves mtmReady and clears inert with loader.js missing (${r}, inert ${inert}, ${Date.now() - t0}ms)`);
   await close();
 }
 
@@ -154,20 +218,54 @@ for (const width of [1440, 375]) {
   await close();
 }
 
-// ---- hard timeout (assets hang forever, so window.load never fires) -----
+// ---- assets hang forever: the reveal does not wait for window.load -------
 {
-  const { page, close } = await openPage({ width: 1440 });
-  await page.route('**/assets/**', () => { /* never answered */ });
+  const { page, close } = await begin({
+    width: 1440,
+    before: p => p.route('**/assets/**', () => { /* never answered */ }),
+  });
   const t0 = Date.now();
-  await page.goto(page.url().replace(/\?skiploader/, ''), { waitUntil: 'commit' });
-  await sleep(4500);
-  const still = await page.evaluate(() => !!document.querySelector('.loader'));
-  assert(still, 'hardTimeoutClears: with hung assets the loader is still up at 4.5s (gate on load is real)');
-  await page.waitForFunction(() => document.documentElement.classList.contains('is-loaded'), null, { timeout: 2500, polling: 50 });
+  const reveal = await page.evaluate(() => new Promise(res => {
+    const start = performance.getEntriesByName('mtm-loader-start')[0].startTime;
+    (function tick() {
+      const d = document.querySelector('.loader__dome');
+      if (!d || d.getBoundingClientRect().top < -2) return res(performance.now() - start);
+      if (performance.now() - start > 7000) return res(-1);
+      requestAnimationFrame(tick);
+    })();
+  }));
+  assert(reveal > 0 && reveal <= 3500, `revealStartsWithHungAssets: reveal starts within 3.5s of the loader mark (${reveal.toFixed(0)}ms)`);
+  await page.waitForFunction(() => document.documentElement.classList.contains('is-loaded'), null, { timeout: 4000, polling: 50 });
   const el = Date.now() - t0;
-  assert(el <= 6500, `hardTimeoutClears: is-loaded by 6500ms (${el}ms)`);
+  assert(el <= 6500, `hardTimeoutClears: is-loaded by 6500ms with assets blocked (${el}ms)`);
   const ready = await page.evaluate(async () => { await window.mtmReady; return !document.querySelector('.loader'); });
   assert(ready, 'hardTimeoutClears: mtmReady resolved and loader removed');
+  await close();
+}
+
+// ---- hard stop while the timeline is still running: 0.3s fade, then finish ----
+{
+  const { page, close } = await begin({ width: 1440 });
+  await page.evaluate(() => { window.gsap.globalTimeline.pause(); });   // freeze the timeline, as a stalled main thread would
+  const r = await page.evaluate(() => new Promise(res => {
+    const start = 0;   // the 6s hard stop is measured from navigation start, so this test uses performance.now() directly
+    let partial = false, opaqueAt5s = null;
+    (function tick() {
+      const t = performance.now() - start;
+      const l = document.querySelector('.loader');
+      if (l) {
+        const o = parseFloat(getComputedStyle(l).opacity);
+        if (t > 5500 && t < 5900) opaqueAt5s = o;
+        if (o > 0.03 && o < 0.97) partial = true;
+      }
+      if (document.documentElement.classList.contains('is-loaded')) return res({ partial, opaqueAt5s, doneAt: t });
+      if (t > 9000) return res({ partial, opaqueAt5s, doneAt: -1 });
+      requestAnimationFrame(tick);
+    })();
+  }));
+  assert(r.opaqueAt5s === 1, `hardStopFades: still fully opaque at ~5.7s (${r.opaqueAt5s})`);
+  assert(r.partial, 'hardStopFades: opacity is seen part-way (a fade, not a cut)');
+  assert(r.doneAt > 5900 && r.doneAt <= 6600, `hardStopFades: is-loaded 0.3s after the 6s stop, on the navigation clock (${r.doneAt.toFixed(0)}ms)`);
   await close();
 }
 

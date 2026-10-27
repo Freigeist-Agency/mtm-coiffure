@@ -16,6 +16,9 @@ html.js.is-loading .loader {
   --panel-ry: 19.9vw;
   --count-size: 13.9vw;
 }
+/* While scroll is locked the gutter stays reserved, so when the lock lifts the scrollbar takes its place and the page
+   does not shift. It is scoped to the lock on purpose: a classic scrollbar then fills the same width afterwards. */
+html.js.is-loading { scrollbar-gutter: stable; background: #000; } /* the reserved gutter shows black beside the cover */
 html.js.is-loading, html.js.is-loading body { overflow: hidden; }  /* scroll is locked only while it runs */
 
 /* black sheet. It is taller than the viewport by its curved edge, so at rest the edge sits below the fold;

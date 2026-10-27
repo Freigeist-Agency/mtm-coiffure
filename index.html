@@ -7,13 +7,19 @@
 <meta name="description" content="Familienfriseurbetrieb in vierter Generation. Herren- und Damenschnitte in Nümbrecht und Waldbröl.">
 <script>
   /* js + is-loading are set before first paint so the loader shows with no flash; without JS neither exists and the page is plain.
-     6.2s is a safety net in case js/loader.js never runs; js/loader.js has its own hard stop at 6s. */
-  (function (h) {
+     mtmReady lives here so it exists even while js/loader.js waits behind a slow CDN; loader.js picks up window.mtmResolve.
+     6.6s is the safety net in case js/loader.js never runs (it has its own 6s hard stop plus a 0.3s fade). */
+  (function (h, w) {
     h.classList.add('js');
-    if (/[?&]skiploader\b/.test(location.search) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    h.classList.add('is-loading');
-    setTimeout(function () { if (h.classList.contains('is-loading')) { h.classList.remove('is-loading'); h.classList.add('is-loaded'); } }, 6200);
-  })(document.documentElement);
+    w.mtmReady = new Promise(function (r) { w.mtmResolve = r; });
+    var skip = /[?&]skiploader\b/.test(location.search) || matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!skip) h.classList.add('is-loading');
+    setTimeout(function () {
+      if (h.classList.contains('is-loading')) { h.classList.remove('is-loading'); h.classList.add('is-loaded'); }
+      Array.prototype.forEach.call(document.querySelectorAll('header, main, footer'), function (e) { e.removeAttribute('inert'); });
+      w.mtmResolve();
+    }, 6600);
+  })(document.documentElement, window);
 </script>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -174,6 +180,12 @@
     </div>
   </div>
 </footer>
+<script>
+  /* keep Tab out of the page while the cover is up; js/loader.js lifts it */
+  if (document.documentElement.classList.contains('is-loading')) {
+    Array.prototype.forEach.call(document.querySelectorAll('header, main, footer'), function (e) { e.setAttribute('inert', ''); });
+  }
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="js/loader.js"></script>

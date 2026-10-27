@@ -5,33 +5,49 @@
 (function () {
   'use strict';
   var html = document.documentElement;
-  var resolveReady;
-  window.mtmReady = new Promise(function (r) { resolveReady = r; });
+  // the inline head script owns the promise (so it exists before this file arrives); fall back to our own
+  var resolveReady = window.mtmResolve;
+  if (!window.mtmReady || !resolveReady) window.mtmReady = new Promise(function (r) { resolveReady = r; });
   try { performance.mark('mtm-loader-start'); } catch (e) {}
 
   var loader = document.querySelector('.loader');
   var playing = html.classList.contains('is-loading') && loader && window.gsap;
   var done = false, hardTimer = 0, run = null;
   var HARD_MS = 6000;   // measured from navigation start, so a slow CDN can not stretch it
+  var FADE_MS = 300;    // hard stop while still running: fade the cover out instead of cutting to the page
 
   function applyHash() {
-    var id = location.hash && decodeURIComponent(location.hash.slice(1));
-    var el = id && document.getElementById(id);
+    var raw = location.hash.slice(1), id = raw;
+    if (!raw) return;
+    try { id = decodeURIComponent(raw); } catch (e) { /* malformed escape: use the text as written */ }
+    var el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
   }
 
+  // runs once on every path; mtmReady resolves in the finally whatever else throws
   function finish() {
     if (done) return;
     done = true;
-    clearTimeout(hardTimer);
-    if (run) run.kill();
-    if (window.gsap && loader) window.gsap.killTweensOf(loader.querySelectorAll('*'));
-    if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
-    html.classList.remove('is-loading');
-    html.classList.add('is-loaded');
-    if (window.ScrollTrigger) window.ScrollTrigger.refresh();
-    applyHash();
-    resolveReady();
+    try {
+      clearTimeout(hardTimer);
+      if (run) run.kill();
+      if (window.gsap && loader) window.gsap.killTweensOf(loader.querySelectorAll('*'));
+      if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+      html.classList.remove('is-loading');
+      html.classList.add('is-loaded');
+      Array.prototype.forEach.call(document.querySelectorAll('[inert]'), function (e) { e.removeAttribute('inert'); });
+    } catch (e) { /* fall through to resolve */ }
+    try { if (window.ScrollTrigger) window.ScrollTrigger.refresh(); } catch (e) {}
+    try { applyHash(); } catch (e) {}
+    finally { resolveReady(); }
+  }
+
+  // CSS transition, not a tween: it still plays when GSAP's ticker is stalled
+  function fadeOutThenFinish() {
+    if (done) return;
+    loader.style.transition = 'opacity ' + FADE_MS + 'ms ease-in-out';
+    loader.style.opacity = '0';
+    setTimeout(finish, FADE_MS + 20);
   }
 
   if (!playing) { finish(); return; }   // ?skiploader, reduced motion, no GSAP: straight to the end
@@ -82,11 +98,16 @@
   }
 
   var counter = { v: 0 };
-  var pageLoaded = document.readyState === 'complete'
-    ? Promise.resolve()
-    : new Promise(function (r) { window.addEventListener('load', r, { once: true }); });
+  // The reveal does not wait for window.load (the hung-asset case). It waits for the webfont, but never longer than
+  // the 1s that follows the count reaching 100 (0.15s hold + up to 0.85s here, timed from the end of the count).
+  function fontsReady() {
+    return Promise.race([
+      document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve(),
+      new Promise(function (r) { setTimeout(r, 850); })
+    ]);
+  }
 
-  hardTimer = setTimeout(finish, Math.max(0, HARD_MS - performance.now()));
+  hardTimer = setTimeout(fadeOutThenFinish, Math.max(0, HARD_MS - performance.now()));
 
   run = gsap.timeline({ defaults: { ease: 'sine.inOut' } });
   run.to(counter, {
@@ -95,10 +116,10 @@
     onComplete: function () { show(100); }
   });
   run.addLabel('hold', '+=0.15');
-  // the reveal waits for the page (up to the hard timeout), then plays: dome up, black panel up
+  // the reveal waits for the webfont (capped), then plays: dome up, black panel up
   run.call(function () {
     run.pause();
-    pageLoaded.then(function () { if (!done) run.play(); });
+    fontsReady().then(function () { if (!done) run.play(); });
   }, null, 'hold');
   run.to(count, { yPercent: -40, opacity: 0, duration: 0.35 }, 'hold')
      .to(dome, { yPercent: -100, duration: 0.6 }, 'hold')
