@@ -1,17 +1,20 @@
-/* Design tokens, taken from the Figma file "MTM-Coiffure" (Desktop - 1, node 64:2)
-   and the Webflow spec (docs/superpowers/specs/2026-08-18-mtm-logo-menu-design.md). */
+/* Design tokens from the Figma file "MTM-Coiffure (Copy)" (YyEL9DKmSpeoCDZfqbfjTp):
+   desktop frame 64:2 (1440) and mobile frame 76:222 (450). Values were read from the
+   node specs; --sand-light comes from the Webflow spec
+   (docs/superpowers/specs/2026-08-18-mtm-logo-menu-design.md) and is used by the logo menu. */
 :root {
   /* colour */
-  --sand: #a5732d;            /* hero block, gradient origin, card shadow tint */
-  --sand-light: #e8d3b8;      /* Webflow .buttn_primary — used by the logo menu */
+  --sand: #a5732d;            /* gradient origin (about/footer radial), button border end, card shadow tint */
+  --sand-light: #e8d3b8;      /* Webflow .buttn_primary, used by the logo menu (not in Figma) */
   --ink: #000;
   --paper: #fff;
-  --placeholder: #d9d9d9;     /* social media cards */
+  --placeholder: #d9d9d9;     /* social media cards, video block */
+  --fade-black: linear-gradient(to bottom, #000 23%, rgba(0, 0, 0, 0) 100%); /* location photo scrim */
 
-  /* type — Geom (Google Fonts), weights 300 / 400 */
+  /* type: Geom (Google Fonts), weights 300 / 400. Figma uses 20 / 32 / 52 (mobile) / 85 (desktop). */
   --font: 'Geom', system-ui, sans-serif;
   --fs-display: clamp(40px, 5.9vw, 85px);   /* 85px at 1440 */
-  --fs-title: clamp(36px, 3.61vw, 52px);    /* 52px at 1440 */
+  --fs-title: clamp(36px, 3.61vw, 52px);    /* legacy (hero title, wordmark); not used in the Figma specs */
   --fs-lead: clamp(24px, 2.22vw, 32px);     /* 32px at 1440 */
   --fs-body: clamp(16px, 1.39vw, 20px);     /* 20px at 1440 */
 
@@ -20,5 +23,16 @@
   --gap: 10px;
   --radius: 5px;
   --measure: 778px;            /* body copy column under display headings */
+  --nav-h: 49px;               /* Nav frame 96:142 (50px on the mobile frame 96:154) */
   --shadow-card: 0 4px 50px 3px rgba(165, 115, 45, .1);
+}
+
+/* Mobile frame 76:222 sets 20px body, 32px lead and 52px display at 450px wide. */
+@media (max-width: 767px) {
+  :root {
+    --fs-display: clamp(40px, 11.56vw, 52px);  /* 52px at 450 */
+    --fs-lead: clamp(24px, 7.11vw, 32px);      /* 32px at 450 */
+    --fs-body: clamp(16px, 4.44vw, 20px);      /* 20px at 450 */
+    --nav-h: 50px;
+  }
 }

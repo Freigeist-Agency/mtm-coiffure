@@ -148,17 +148,40 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .news-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 470px)); gap: var(--gap); justify-content: center; }
 .news-card { background: var(--paper); border-radius: var(--radius); box-shadow: var(--shadow-card); padding: 81px 20px; text-align: left; }
 
-/* ---------- Footer (not in Figma) ---------- */
-.site-footer { background: var(--ink); color: var(--paper); padding: 80px var(--pad) 24px; }
-.footer-top { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; padding-bottom: 60px; border-bottom: .5px solid rgba(255,255,255,.25); }
-.footer-brand { display: grid; gap: 20px; align-content: start; }
-.footer-brand .wordmark { font-size: var(--fs-title); line-height: 1; }
-.footer-col h3 { font-size: var(--fs-body); font-weight: 400; margin-bottom: 12px; }
-.footer-col p, .footer-col li { font-size: 16px; line-height: 1.6; opacity: .8; }
+/* ---------- Footer (Figma 103:14, 1440x891: logo + button on white, black dome over a sand radial, 3 columns, legal strip) ---------- */
+.site-footer { background: var(--paper); color: var(--paper); overflow: hidden; }
+.footer-top { display: grid; place-items: center; padding-top: 7vw; } /* logo 375x224 at y=101 */
+.footer-logo { display: block; width: clamp(200px, 26vw, 375px); }
+.footer-logo img { width: 100%; height: auto; aspect-ratio: 708 / 422; }
+.footer-body {
+  position: relative; isolation: isolate; min-height: 38.67vw; /* 557px at 1440 */
+  padding: 3.1vw var(--pad) 0;
+  background: radial-gradient(ellipse 100% 100% at 50% 100%, var(--sand) 0%, var(--paper) 96%);
+}
+.footer-body::before { /* black dome: ellipse 1440x572 from y=130 of the 557px block */
+  content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 9vw; height: 39.72vw;
+  background: var(--ink); border-radius: 50%;
+}
+.footer-body::after { /* black rect 1440x137 closes the bottom of the block */
+  content: ""; position: absolute; z-index: -1; left: 0; right: 0; bottom: 0; height: 9.5vw; background: var(--ink);
+}
+.footer-cta { display: block; width: max-content; margin-inline: auto; }
+.footer-cols {
+  display: grid; grid-template-columns: repeat(3, 24.35vw); /* 351px pitch, first column at x=342 */
+  margin: calc(11.8vw - 39px) 0 0 calc(23.72vw - var(--pad)); /* columns start at y=549 of 891 */
+}
+.footer-col h3 { font-size: var(--fs-body); font-weight: 400; margin-bottom: 14px; }
+.footer-col p, .footer-col li { font-size: clamp(14px, 1.11vw, 16px); line-height: 1.45; opacity: .8; }
 .footer-col ul { list-style: none; margin: 0; padding: 0; }
 .footer-col a { text-decoration: none; }
 .footer-col a:hover { text-decoration: underline; text-underline-offset: 4px; }
-.footer-bottom { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; padding-top: 20px; font-size: 14px; opacity: .7; }
+.footer-fred { width: 47px; height: 53px; margin-top: 14px; }
+.footer-bottom {
+  position: absolute; left: 2.08vw; right: 2.08vw; bottom: 0.7vw;
+  display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+  padding-top: 14px; border-top: .5px solid rgba(255,255,255,.25);
+  font-size: 14px; opacity: .7;
+}
 .footer-bottom nav { display: flex; gap: 20px; }
 
 /* ---------- Location + legal pages ---------- */
@@ -181,12 +204,14 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 /* ---------- Tablet ---------- */
 @media (max-width: 1024px) {
   .about { padding-inline: 40px; }
-  .footer-top { grid-template-columns: 1fr 1fr; }
 }
 
 /* ---------- Mobile (Figma frame 76:222, 450px) ---------- */
 @media (max-width: 767px) {
-  .site-nav .nav-link, .site-nav .btn { display: none; }
+  .site-header { padding-left: 11px; padding-right: 13px; }
+  .site-nav { gap: 12px; }
+  .site-nav .nav-link { display: none; }
+  .site-nav .btn img { width: clamp(140px, 40.9vw, 184px); height: auto; }
 
   .hero { grid-template-rows: auto; }
   .hero-media { min-height: 667px; }
@@ -223,7 +248,13 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   .news-cards { grid-template-columns: 1fr; }
   .news-card { padding-block: 60px; }
 
-  .footer-top { grid-template-columns: 1fr; gap: 32px; }
+  .footer-body { min-height: 0; padding-bottom: 80px; }
+  .footer-body::before { top: 20vw; }
+  .footer-body::after { top: 40vw; height: auto; } /* below the dome's midline everything is black */
+  .footer-cta { margin-top: 4vw; }
+  .footer-cols { grid-template-columns: 1fr; gap: 28px; width: auto; margin: 22vw 0 0; padding-inline: 4.5vw; }
+  .footer-col p, .footer-col li { font-size: 16px; }
+  .footer-bottom { bottom: 14px; left: var(--pad); right: var(--pad); }
   .loc-detail { grid-template-columns: 1fr; }
   .team { grid-template-columns: repeat(2, 1fr); }
 }
