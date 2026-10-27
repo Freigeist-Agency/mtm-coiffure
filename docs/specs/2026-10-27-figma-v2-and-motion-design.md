@@ -86,7 +86,7 @@ Ignore everything else on the canvas (icon studies, loose photos, button exports
 
 ## Decided by the user
 
-Carousel clickable · loader every page load · ignore skewed copies · crop extra team photos to
+Carousel clickable · loader on every home-page load only · ignore skewed copies · crop extra team photos to
 1:1 · social cards stay placeholders · Nümbrecht label + button sticky · cards+video stack with
 opacity depth, video placeholder · orbit follows scroll · loader reading (counter rolls, dome up,
 black panel curves up) correct · update the whole site · built by Claude + Claude subagents,
