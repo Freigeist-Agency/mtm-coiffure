@@ -32,8 +32,8 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .site-header {
   position: sticky; z-index: 50; top: 0;
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  min-height: clamp(48px, 3.4vw, 49px);
-  padding: 5px var(--pad) 5px 1.25vw;
+  height: var(--nav-h);   /* border-box: includes the 1px bottom border */
+  padding: 0 var(--pad) 0 1.25vw;
   background: var(--paper);
   border-bottom: 1px solid var(--ink);
 }

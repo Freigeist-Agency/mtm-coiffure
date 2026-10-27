@@ -31,7 +31,7 @@ for (const width of WIDTHS) {
         logo: (i => i ? { loaded: i.naturalWidth > 0, w: i.getBoundingClientRect().width } : null)(
           document.querySelector('header.site-header .brand img')),
         footerBody: !!document.querySelector('footer .footer-body'),
-        cols: [...document.querySelectorAll('footer .footer-cols > *')].map(c => Math.round(c.getBoundingClientRect().left)),
+        cols: [...document.querySelectorAll('footer .footer-cols > *')].map(c => { const b = c.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; }),
       }));
       assert(r.sw <= r.iw, `${tag}: no horizontal overflow (${r.sw} <= ${r.iw})`);
       assert(errors.length === 0, `${tag}: no page/console errors ${errors.join(' | ')}`);
@@ -41,15 +41,19 @@ for (const width of WIDTHS) {
         `${tag}: footer lists both salons`);
       assert(r.headerPos === 'sticky', `${tag}: header is sticky (${r.headerPos})`);
       const wantH = width <= 767 ? 50 : 49;
-      assert(r.navH === wantH && Math.abs(r.headerH - wantH) <= 2,
+      assert(r.navH === wantH && Math.abs(r.headerH - wantH) <= 1,
         `${tag}: header height ~${wantH}px, --nav-h=${r.navH}, rendered ${r.headerH}`);
       assert(r.logo !== null && r.logo.loaded && r.logo.w > 40, `${tag}: .brand logo present and loaded ${JSON.stringify(r.logo)}`);
       assert(r.footerBody, `${tag}: footer has .footer-body`);
       assert(r.cols.length === 3, `${tag}: .footer-cols has 3 children (${r.cols.length})`);
-      if (r.cols.length === 3) {
-        const distinct = new Set(r.cols).size;
-        if (width >= 768) assert(distinct === 3, `${tag}: footer columns side by side (x=${r.cols})`);
-        else assert(distinct === 1, `${tag}: footer columns stacked (x=${r.cols})`);
+      const C = r.cols, n = C.length === 3;
+      const near = (a, b2, tol) => Math.abs(a - b2) <= tol;
+      if (width >= 768) {
+        assert(n && C.every(c => near(c.t, C[0].t, 2)) && C[1].l >= C[0].r && C[2].l >= C[1].r,
+          `${tag}: footer columns in a row, same top, no overlap ${JSON.stringify(C)}`);
+      } else {
+        assert(n && C.every(c => near(c.l, C[0].l, 2)) && C[1].t >= C[0].b && C[2].t >= C[1].b,
+          `${tag}: footer columns stacked, same x, no overlap ${JSON.stringify(C)}`);
       }
       if (p === 'index.html') {
         const order = await page.evaluate((sels) => {
