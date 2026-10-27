@@ -146,21 +146,26 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 /* ---------- Locations (Figma 73:74: title right-aligned, label + button column at x=20, two 16:9 photos 1147x645 from x=273) ---------- */
 .locations { background: var(--ink); color: var(--paper); padding: 20px var(--pad); container-type: inline-size; } /* cqw below = the 1400px content box */
 .locations > h2 { text-align: right; margin-bottom: 221px; }
-.locations__main { display: grid; grid-template-columns: 17.38cqw minmax(0, 1fr); gap: var(--gap); }
-/* The aside sticks under the nav while the two photos scroll past: it is a grid item that does not stretch
-   (align-self: start) so it is shorter than the row, and no ancestor may be a scroll container
-   (overflow hidden/auto/scroll would silently kill sticky; clip is fine). */
-.locations__aside {
-  position: sticky; top: calc(var(--nav-h) + 2vh); align-self: start;
-  display: flex; flex-direction: column; gap: 6vh;
+/* One row per salon: [label + button cell | 16:9 photo]. DOM order is label, photo, button; grid placement puts the label and
+   the button in the first column and the photo in the second. Both are sticky inside the row (the grid area is as tall as the
+   photo): the label pins from the top, the button from the bottom, so they sit on the photo's top and bottom edges at rest and
+   stay in view while that photo scrolls. When the row leaves, they leave with it and the next salon takes over.
+   No ancestor may be a scroll container (overflow hidden/auto/scroll would silently kill sticky; clip is fine). */
+.locations__main { display: grid; gap: var(--gap); }
+.location-info { display: grid; grid-template-columns: 17.38cqw minmax(0, 1fr); column-gap: var(--gap); }
+.location-info h3 {
+  grid-column: 1; grid-row: 1; align-self: start; justify-self: start;
+  position: sticky; top: calc(var(--nav-h) + 2vh);
+  font-size: var(--fs-body); font-weight: 400;
 }
-.location-info { display: flex; flex-direction: column; align-items: flex-start; gap: 2.5vh; }
-.location-info .btn { max-width: 100%; }
-.location-info .btn img { width: min(17.38cqw, 186px); height: auto; aspect-ratio: 186 / 39; }
-.location-info h3 { font-size: var(--fs-body); font-weight: 400; }
 .location-info h3 a { text-decoration: none; }
 .location-info h3 a:hover { text-decoration: underline; text-underline-offset: 4px; }
-.locations__media { display: grid; gap: var(--gap); }
+.location-info .location-img { grid-column: 2; grid-row: 1; height: auto; aspect-ratio: 16 / 9; }
+.location-info .btn {
+  grid-column: 1; grid-row: 1; align-self: end; justify-self: start; max-width: 100%;
+  position: sticky; bottom: 2vh;
+}
+.location-info .btn img { width: min(17.38cqw, 186px); height: auto; aspect-ratio: 186 / 39; }
 .location-img { width: 100%; aspect-ratio: 930 / 523; object-fit: cover; object-position: 50% 50%; }
 .locations__media .location-img { height: auto; aspect-ratio: 16 / 9; }
 
@@ -306,20 +311,20 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   /* Locations (frame 76:279): label, 16:9 photo bleeding off the right edge, button, per salon */
   .locations { padding-bottom: 123px; overflow: clip; } /* clip, not hidden: hidden would make .locations a scroll container and kill the sticky bar */
   .locations > h2 { text-align: left; margin-bottom: 46px; font-size: 18.9vw; line-height: 1.25; } /* the mobile frame keeps the 85px title */
-  .locations__main { display: flex; flex-direction: column; gap: 0; }
-  /* The salon switcher is a slim full-width bar pinned directly under the nav while the photos scroll beneath it
-     (deliberate departure from the frame's label / photo / button interleave). Two blocks side by side: label over button. */
-  .locations__aside {
-    top: var(--nav-h); z-index: 5; align-self: stretch; /* desktop sets start; here the bar must span the width */
-    display: grid; grid-template-columns: 1fr 1fr; gap: var(--pad);
-    margin-inline: calc(-1 * var(--pad)); padding: 1.6vh var(--pad) 1.8vh;
-    background: var(--ink);
+  .locations__main { gap: var(--gap); }
+  /* Each salon gets its own slim bar (label left, button right) pinned directly under the nav while that salon's photo
+     scrolls beneath it; the next salon's bar takes over as the row ends. The label and button are two sticky items that
+     span both grid rows (the bar row and the photo row) so they can travel; each has an ink background so the photo never
+     shows between them. Full-bleed via the negative margin; 9vh tall = 73px at 375x812 (limit 22vh). */
+  .location-info { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: 9vh auto; column-gap: 0; margin-inline: calc(-1 * var(--pad)); }
+  .location-info h3, .location-info .btn {
+    grid-row: 1 / span 2; align-self: start; height: 9vh; z-index: 5;
+    display: flex; align-items: center; background: var(--ink); border-radius: 0; /* square: a rounded corner would let the photo show */
   }
-  .location-info { gap: 1vh; }
-  .location-info h3 { font-size: var(--fs-body); }
+  .location-info h3 { grid-column: 1; justify-self: stretch; padding-left: var(--pad); font-size: var(--fs-body); top: var(--nav-h); }
+  .location-info .btn { grid-column: 2; justify-self: end; padding-right: var(--pad); bottom: auto; top: var(--nav-h); }
   .location-info .btn img { width: min(40vw, 186px); }
-  .locations__media { display: flex; flex-direction: column; gap: var(--gap); margin-top: var(--gap); }
-  .locations__media .location-img { width: 117vw; max-width: none; -webkit-mask-image: linear-gradient(to right, #000 68%, transparent); mask-image: linear-gradient(to right, #000 68%, transparent); }
+  .location-info .location-img { grid-column: 1 / -1; grid-row: 2; width: 117vw; max-width: none; margin-left: var(--pad); -webkit-mask-image: linear-gradient(to right, #000 68%, transparent); mask-image: linear-gradient(to right, #000 68%, transparent); }
   .curve { height: 74.1vw; }
 
   /* Social (frame 76:297) */

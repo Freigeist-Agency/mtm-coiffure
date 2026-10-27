@@ -107,7 +107,7 @@ for (const width of WIDTHS) {
       const team = q('.about .carousel[data-carousel="team"]')[0];
       const teamImgs = team ? q('.carousel__item:not([data-clone]) > img', team) : [];
       const social = q('.social .carousel[data-carousel="social"]')[0];
-      const aside = q('.locations .locations__aside')[0], media = q('.locations .locations__media')[0];
+      const rows = q('.locations .location-info');
       const stack = q('.news .stack')[0];
       const layers = stack ? q('.stack__layer', stack) : [];
       const imgs = q('.hero img, .intro img, .services img, .about img');
@@ -122,9 +122,9 @@ for (const width of WIDTHS) {
         teamAttrs: teamImgs.every(i => i.getAttribute('width') && i.getAttribute('height')),
         itemsInTeam: team ? q('.carousel__item:not([data-clone])', team).length : 0,
         social: !!social, socialItems: social ? q('.carousel__item:not([data-clone])', social).length : 0,
-        aside: !!aside, media: !!media,
-        asideBeforeMedia: !!(aside && media && (aside.compareDocumentPosition(media) & Node.DOCUMENT_POSITION_FOLLOWING)),
-        mediaImgs: media ? q('img', media).map(i => { const b = i.getBoundingClientRect(); return b.width / b.height; }) : [],
+        rows: rows.length,
+        rowOrder: rows.every(r => [...r.children].map(c => c.tagName + (c.classList.contains('btn') ? '.btn' : '')).join() === 'H3,IMG,A.btn'),
+        mediaImgs: rows.flatMap(r => q('.location-img', r)).map(i => { const b = i.getBoundingClientRect(); return b.width / b.height; }),
         stack: !!stack, layers: layers.length,
         videoLayer: layers.some(l => q('[aria-label="Video folgt"]', l).length || l.getAttribute('aria-label') === 'Video folgt'),
         imgAttrs: imgs.every(i => i.hasAttribute('width') && i.hasAttribute('height') && i.hasAttribute('alt')),
@@ -158,8 +158,8 @@ for (const width of WIDTHS) {
     }
     // Part B hooks (not built yet: expected to fail until part B)
     assert(h.social && h.socialItems === 4, `${tag}: .social carousel[data-carousel=social] has 4 .carousel__item (${h.socialItems})`);
-    assert(h.aside && h.media && h.asideBeforeMedia, `${tag}: .locations__aside precedes .locations__media`);
-    assert(h.mediaImgs.length === 2 && h.mediaImgs.every(r => Math.abs(r - 16 / 9) <= 0.03), `${tag}: locations media has two 16:9 images ${JSON.stringify(h.mediaImgs.map(r => +r.toFixed(2)))}`);
+    assert(h.rows === 2 && h.rowOrder, `${tag}: locations has 2 .location-info rows, each h3 -> img -> a.btn in DOM order (${h.rows})`);
+    assert(h.mediaImgs.length === 2 && h.mediaImgs.every(r => Math.abs(r - 16 / 9) <= 0.03), `${tag}: locations rows have two 16:9 images ${JSON.stringify(h.mediaImgs.map(r => +r.toFixed(2)))}`);
     assert(h.stack && h.layers === 3 && h.videoLayer, `${tag}: .news .stack has 3 .stack__layer, one aria-label="Video folgt" (${h.layers})`);
     assert(h.sw <= h.iw, `${tag}: no horizontal overflow (${h.sw} <= ${h.iw})`);
   } finally { await close(); }
