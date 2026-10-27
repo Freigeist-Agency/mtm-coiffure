@@ -262,13 +262,180 @@ for (const width of [1440, 375]) {
         await page.keyboard.press('ArrowLeft'); await sleep(800);
         const i2 = (await snap(page, name)).index;
         assert(i2 === mod(i0 - 1, n), `${tag}: ArrowLeft twice -> index -1 from the start (${i2})`);
-        // Tab never lands on a clone
-        const tabbable = await page.evaluate(s => [...document.querySelectorAll(s + ' [data-clone], ' + s + ' [data-clone] *')]
-          .some(e => e.tabIndex >= 0 && !e.closest('[inert]')), sel(name));
-        assert(!tabbable, `${tag}: no clone is reachable by Tab`);
         // the public api drives the same machine
         const api = await page.evaluate(s => { const a = document.querySelector(s).__carousel; a.goTo(3); return a.index(); }, sel(name));
         assert(api === 3, `${tag}: goTo(3) updates index() at once (${api})`);
+      } finally { await close(); }
+    }
+
+
+    if (want('tab')) {
+      const { page, close } = await openPage({ width });
+      try {
+        await page.waitForSelector(`${sel(name)}.is-enhanced`, { timeout: 5000 }).catch(() => {});
+        await reveal(page, name);
+        // Give every original card a focusable child, then resize by 1px so the clones are rebuilt from them:
+        // clones now hold buttons, and only `inert` keeps Tab out of them.
+        await page.evaluate(s => {
+          document.querySelectorAll(s + ' .carousel__item:not([data-clone])').forEach((el, i) => {
+            const b = document.createElement('button'); b.type = 'button'; b.className = 'probe-btn'; b.textContent = 'probe ' + i; el.appendChild(b);
+          });
+        }, sel(name));
+        await page.setViewportSize({ width: width + 1, height: 900 });
+        await sleep(400);
+        const info = await page.evaluate(s => {
+          const clones = [...document.querySelectorAll(s + ' [data-clone]')];
+          return { clones: clones.length, inert: clones.every(e => e.hasAttribute('inert')),
+            cloneButtons: clones.reduce((a, e) => a + e.querySelectorAll('button').length, 0) };
+        }, sel(name));
+        assert(info.clones === 0 || info.inert, `${tag}: every clone carries inert (${info.clones} clones)`);
+        await page.evaluate(() => { document.activeElement && document.activeElement.blur(); window.scrollTo(0, 0); });
+        let inClone = 0, probeHits = 0, presses = 0;
+        for (let i = 0; i < 160; i++) {
+          await page.keyboard.press('Tab'); presses++;
+          const r = await page.evaluate(() => {
+            const a = document.activeElement;
+            return { body: a === document.body, inClone: !!(a && a.closest('[data-clone]')), probe: !!(a && a.classList.contains('probe-btn')) };
+          });
+          if (r.inClone) inClone++;
+          if (r.probe) probeHits++;
+          if (r.body && i > 3) break;
+        }
+        assert(inClone === 0, `${tag}: Tab through the page ${presses}x never enters a clone (${inClone} times)`);
+        assert(probeHits >= (await page.evaluate(s => document.querySelectorAll(s + ' .carousel__item:not([data-clone]) .probe-btn').length, sel(name))),
+          `${tag}: the loop did reach the originals' buttons (${probeHits}), so it can see a clone if one were reachable`);
+        if (name === 'social') assert(info.cloneButtons >= 4, `${tag}: clones really hold buttons for this check (${info.cloneButtons})`);
+      } finally { await close(); }
+    }
+
+    if (want('live')) {
+      const { page, close } = await openPage({ width });
+      try {
+        await page.waitForSelector(`${sel(name)}.is-enhanced`, { timeout: 5000 }).catch(() => {});
+        await reveal(page, name);
+        const word = name === 'team' ? 'Bild' : 'Beitrag';
+        const read = () => page.evaluate(s => {
+          const root = document.querySelector(s), l = root.querySelector('[aria-live]');
+          if (!l) return null;
+          const r = l.getBoundingClientRect();
+          return { text: l.textContent.trim(), live: l.getAttribute('aria-live'), w: r.width, h: r.height, n: root.querySelectorAll('[aria-live]').length };
+        }, sel(name));
+        const l0 = await read();
+        assert(l0 && l0.live === 'polite' && l0.n === 1, `${tag}: one aria-live="polite" region per carousel`);
+        assert(l0 && l0.w <= 1 && l0.h <= 1, `${tag}: the live region is visually hidden (${l0 && l0.w}x${l0 && l0.h})`);
+        const n = (await snap(page, name)).n;
+        await page.evaluate(s => document.querySelector(s).__carousel.next(), sel(name));
+        await sleep(300);
+        const mid = await read();
+        await sleep(600);
+        const l1 = await read();
+        assert(l1 && l1.text === `${word} 2 von ${n}`, `${tag}: after next() the region says "${word} 2 von ${n}" (got "${l1 && l1.text}")`);
+        assert(mid && mid.text === (l0 && l0.text), `${tag}: the announcement comes on move complete, not mid-move ("${mid && mid.text}")`);
+        await page.evaluate(s => document.querySelector(s).__carousel.prev(), sel(name)); await sleep(800);
+        await page.evaluate(s => document.querySelector(s).__carousel.prev(), sel(name)); await sleep(800);
+        const l2 = await read();
+        assert(l2 && l2.text === `${word} ${n} von ${n}`, `${tag}: wrapping backwards announces "${word} ${n} von ${n}" (got "${l2 && l2.text}")`);
+      } finally { await close(); }
+    }
+
+    if (want('nolayout')) {
+      const { page, close } = await openPage({ width });
+      try {
+        await page.waitForSelector(`${sel(name)}.is-enhanced`, { timeout: 5000 }).catch(() => {});
+        await reveal(page, name);
+        await page.evaluate(() => {
+          const d = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetLeft');
+          window.__offsetLeftReads = 0;
+          Object.defineProperty(HTMLElement.prototype, 'offsetLeft', { configurable: true, get() { window.__offsetLeftReads++; return d.get.call(this); } });
+        });
+        await page.evaluate(s => document.querySelector(s).__carousel.next(), sel(name));
+        await sleep(900);
+        const reads = await page.evaluate(() => window.__offsetLeftReads);
+        assert(reads === 0, `${tag}: a whole move reads offsetLeft 0 times (render is a pure write pass; got ${reads})`);
+        const st = await snap(page, name), c = centred(st);
+        assert(c.idx === st.index && Math.abs(c.cx - st.mid) <= st.rw * 0.02, `${tag}: the cached offsets still centre the card`);
+      } finally { await close(); }
+    }
+
+    if (want('swipe') && width === 375) {
+      const { page, close } = await openPage({ width });
+      try {
+        await page.waitForSelector(`${sel(name)}.is-enhanced`, { timeout: 5000 }).catch(() => {});
+        await reveal(page, name);
+        const cdp = await page.context().newCDPSession(page);
+        await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 });
+        const ta = await page.evaluate(s => getComputedStyle(document.querySelector(s)).touchAction, sel(name));
+        assert(ta === 'pan-y', `${tag}: root has touch-action: pan-y (${ta})`);
+        const touch = async (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y, id: 1 }] });
+        const drag = async (x0, y0, x1, y1, steps, gap) => {
+          await touch('touchStart', x0, y0);
+          for (let i = 1; i <= steps; i++) { await touch('touchMove', x0 + (x1 - x0) * i / steps, y0 + (y1 - y0) * i / steps); if (gap) await sleep(gap); }
+          await touch('touchEnd');
+        };
+        const geo = async () => page.evaluate(s => { const r = document.querySelector(s).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, top: r.top }; }, sel(name));
+        let g = await geo(), i0 = (await snap(page, name)).index; const n = (await snap(page, name)).n;
+
+        await drag(g.x + 80, g.y, g.x - 80, g.y, 8, 16);      // 160px left swipe
+        await sleep(800);
+        let st = await snap(page, name);
+        assert(st.index === mod(i0 + 1, n), `${tag}: left swipe -> index +1, not more (${i0} -> ${st.index})`);
+        let c = centred(st);
+        assert(c.idx === st.index && Math.abs(c.cx - st.mid) <= st.rw * 0.02, `${tag}: the swiped-to card settles centred`);
+
+        i0 = st.index;
+        await drag(g.x - 80, g.y, g.x + 80, g.y, 8, 16);      // right swipe
+        await sleep(800);
+        st = await snap(page, name);
+        assert(st.index === mod(i0 - 1, n), `${tag}: right swipe -> index -1 (${i0} -> ${st.index})`);
+
+        // a short slow drag below the threshold springs back
+        i0 = st.index;
+        await drag(g.x + 6, g.y, g.x - 6, g.y, 6, 30);
+        await sleep(800);
+        st = await snap(page, name); c = centred(st);
+        assert(st.index === i0 && Math.abs(c.cx - st.mid) <= st.rw * 0.02, `${tag}: a 12px slow drag does not move (index ${st.index})`);
+
+        // a quick flick shorter than the distance threshold still counts
+        await drag(g.x + 10, g.y, g.x - 14, g.y, 3, 4);
+        await sleep(800);
+        st = await snap(page, name);
+        assert(st.index === mod(i0 + 1, n), `${tag}: a fast 24px flick moves one card (${i0} -> ${st.index})`);
+
+        // the cards follow the finger during the drag
+        i0 = st.index;
+        const before = centred(await snap(page, name)).cx;
+        await touch('touchStart', g.x, g.y);
+        for (let i = 1; i <= 5; i++) { await touch('touchMove', g.x - 12 * i, g.y); await sleep(16); }
+        const during = (await snap(page, name)).items.find(it => it.idx === i0 && Math.abs(it.cx - before) < st.rw / 2);
+        assert(during && before - during.cx > 30, `${tag}: the track follows the finger (moved ${during && (before - during.cx).toFixed(0)}px at 60px of drag)`);
+        await touch('touchEnd');
+        await sleep(800);
+        assert((await snap(page, name)).index === mod(i0 + 1, n), `${tag}: releasing past the threshold lands on the next card`);
+
+        // a mostly vertical drag scrolls the page and moves nothing
+        await page.evaluate(() => window.scrollTo(0, 0));
+        const top = await page.evaluate(s => document.querySelector(s).getBoundingClientRect().top + scrollY, sel(name));
+        await page.evaluate(t => window.scrollTo(0, Math.max(0, t - 250)), top);
+        await sleep(100);
+        g = await geo(); i0 = (await snap(page, name)).index;
+        const y0 = await page.evaluate(() => scrollY);
+        await drag(g.x + 4, g.y + 120, g.x - 6, g.y - 100, 10, 16);
+        await sleep(700);
+        const y1 = await page.evaluate(() => scrollY);
+        st = await snap(page, name);
+        assert(st.index === i0, `${tag}: a vertical drag does not move the carousel (${i0} -> ${st.index})`);
+        assert(y1 - y0 > 40, `${tag}: and the page scrolled (scrollY ${y0} -> ${y1})`);
+        c = centred(st);
+        assert(Math.abs(c.cx - st.mid) <= st.rw * 0.02, `${tag}: the carousel is still centred after the vertical drag`);
+
+        // a tap on a neighbour is still a click on that card
+        await page.evaluate(s => document.querySelector(s).scrollIntoView({ block: 'center', behavior: 'instant' }), sel(name));
+        await sleep(100);
+        i0 = (await snap(page, name)).index;
+        const t = await target(page, name, +1);
+        await touch('touchStart', t.x, t.y); await sleep(40); await touch('touchEnd');
+        await sleep(800);
+        assert((await snap(page, name)).index === mod(i0 + 1, n), `${tag}: a tap on the right neighbour moves to it (${i0} -> ${(await snap(page, name)).index})`);
       } finally { await close(); }
     }
 
