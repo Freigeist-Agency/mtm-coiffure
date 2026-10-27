@@ -28,21 +28,19 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .btn:hover { transform: translateY(-2px); }
 .btn:focus-visible, a:focus-visible { outline: 2px solid var(--sand); outline-offset: 3px; }
 
-/* ---------- Site header (not in Figma; frosted bar after the Webflow .container-2) ---------- */
+/* ---------- Site header (Figma Nav 96:142: white 1440x49 bar, logo left, "Standorte." + button right) ---------- */
 .site-header {
-  position: fixed; z-index: 50; top: 12px; left: var(--pad); right: var(--pad);
+  position: sticky; z-index: 50; top: 0;
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  padding: 8px 12px 8px 16px;
-  border-radius: var(--radius);
-  border: .25px solid rgba(82, 74, 64, .15);
-  background: radial-gradient(120% 200% at 0 0, rgba(255,255,255,.55), rgba(255,255,255,.25));
-  box-shadow: inset 0 0 15px rgba(255,255,255,.68);
-  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  min-height: clamp(48px, 3.4vw, 49px);
+  padding: 5px var(--pad) 5px 1.25vw;
+  background: var(--paper);
+  border-bottom: 1px solid var(--ink);
 }
-.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-size: 18px; font-weight: 400; }
-.brand img { width: 30px; height: 30px; }
-.site-nav { display: flex; align-items: center; gap: 24px; }
-.site-nav a { text-decoration: none; font-size: 16px; }
+.brand { display: flex; align-items: center; text-decoration: none; }
+.brand img { width: clamp(52px, 4.65vw, 67px); height: auto; aspect-ratio: 708 / 422; }
+.site-nav { display: flex; align-items: center; gap: 30px; }
+.site-nav a { text-decoration: none; font-size: var(--fs-body); }
 .site-nav .nav-link:hover { text-decoration: underline; text-underline-offset: 4px; }
 .menu-btn { display: flex; align-items: center; gap: 8px; }
 .menu-btn img { width: 30px; height: 30px; background: var(--ink); border-radius: 3px; }
@@ -164,7 +162,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .footer-bottom nav { display: flex; gap: 20px; }
 
 /* ---------- Location + legal pages ---------- */
-.page-hero { padding: 140px var(--pad) 60px; display: grid; gap: 20px; }
+.page-hero { padding: 60px var(--pad) 60px; display: grid; gap: 20px; }
 .page-hero .kicker { font-size: var(--fs-body); }
 .loc-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; padding: 0 var(--pad) 120px; }
 .loc-detail .location-img { border-radius: var(--radius); }
@@ -178,7 +176,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .team figure { margin: 0; }
 .team img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius); }
 .team figcaption { margin-top: 8px; font-size: 16px; }
-.legal { padding: 140px var(--pad) 120px; max-width: 860px; display: grid; gap: 20px; }
+.legal { padding: 60px var(--pad) 120px; max-width: 860px; display: grid; gap: 20px; }
 
 /* ---------- Tablet ---------- */
 @media (max-width: 1024px) {
@@ -189,7 +187,6 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 /* ---------- Mobile (Figma frame 76:222, 450px) ---------- */
 @media (max-width: 767px) {
   .site-nav .nav-link, .site-nav .btn { display: none; }
-  .brand span { display: none; }
 
   .hero { grid-template-rows: auto; }
   .hero-media { min-height: 667px; }
