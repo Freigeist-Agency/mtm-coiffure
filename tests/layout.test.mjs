@@ -105,7 +105,7 @@ for (const width of WIDTHS) {
       const orbitItems = orbit ? q('.orbit__item', orbit) : [];
       const heading = q('.services h2')[0], cta = q('.services .btn')[0];
       const team = q('.about .carousel[data-carousel="team"]')[0];
-      const teamImgs = team ? q('.carousel__item > img', team) : [];
+      const teamImgs = team ? q('.carousel__item:not([data-clone]) > img', team) : [];
       const social = q('.social .carousel[data-carousel="social"]')[0];
       const aside = q('.locations .locations__aside')[0], media = q('.locations .locations__media')[0];
       const stack = q('.news .stack')[0];
@@ -117,11 +117,11 @@ for (const width of WIDTHS) {
         itemBoxes: orbitItems.map(box), orbitBox: orbit && box(orbit),
         headBox: heading && box(heading), ctaBox: cta && box(cta),
         team: !!team, teamImgs: teamImgs.length,
-        teamRatios: teamImgs.map(i => { const b = i.getBoundingClientRect(); return { rect: b.width / b.height, nat: i.naturalWidth / i.naturalHeight, w: i.naturalWidth }; }),
+        teamRatios: teamImgs.map(i => { /* layout size: the carousel skews cards, which changes the bounding box */ return { rect: i.offsetWidth / i.offsetHeight, nat: i.naturalWidth / i.naturalHeight, w: i.naturalWidth }; }),
         teamAlt: teamImgs.every(i => (i.getAttribute('alt') || '').trim().length > 3),
         teamAttrs: teamImgs.every(i => i.getAttribute('width') && i.getAttribute('height')),
-        itemsInTeam: team ? q('.carousel__item', team).length : 0,
-        social: !!social, socialItems: social ? q('.carousel__item', social).length : 0,
+        itemsInTeam: team ? q('.carousel__item:not([data-clone])', team).length : 0,
+        social: !!social, socialItems: social ? q('.carousel__item:not([data-clone])', social).length : 0,
         aside: !!aside, media: !!media,
         asideBeforeMedia: !!(aside && media && (aside.compareDocumentPosition(media) & Node.DOCUMENT_POSITION_FOLLOWING)),
         mediaImgs: media ? q('img', media).map(i => { const b = i.getBoundingClientRect(); return b.width / b.height; }) : [],

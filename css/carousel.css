@@ -1,0 +1,30 @@
+/* Click carousels (js/carousel.js). Everything here applies only once the script has added .is-enhanced;
+   without JS, or under prefers-reduced-motion, the row stays the plain scroll-snap strip from site.css. */
+.carousel.is-enhanced {
+  position: relative;
+  overflow: hidden; overflow: clip;       /* clip: nothing can scroll the row by focus or wheel */
+  scroll-snap-type: none;
+  padding-inline: 0;
+  /* room for the vertical shift a skewed, widened outer card makes, given back by the negative margin */
+  padding-block: 3.4vw; margin-block: -3.4vw;
+  cursor: pointer;                        /* clones are inert, so the pointer is set on the row itself */
+  user-select: none; -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.carousel.is-enhanced:focus-visible { outline: 2px solid var(--sand); outline-offset: -4px; }
+.carousel.is-enhanced .carousel__item { scroll-snap-align: none; cursor: pointer; will-change: transform; }
+.carousel.is-enhanced .carousel__item img { -webkit-user-drag: none; pointer-events: none; }
+
+/* frosted strips over the left and right edge; clicks pass through to the cards underneath */
+.carousel__glass {
+  position: absolute; top: 0; bottom: 0; z-index: 2; width: 12vw; pointer-events: none;
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  background: linear-gradient(to right, rgba(255, 255, 255, .10), rgba(255, 255, 255, 0));
+}
+.carousel__glass--left { left: 0; -webkit-mask-image: linear-gradient(to right, #000 45%, transparent); mask-image: linear-gradient(to right, #000 45%, transparent); }
+.carousel__glass--right { right: 0; transform: scaleX(-1); -webkit-mask-image: linear-gradient(to right, #000 45%, transparent); mask-image: linear-gradient(to right, #000 45%, transparent); }
+
+@media (max-width: 767px) {
+  .carousel.is-enhanced { padding-block: 7vw; margin-block: -7vw; }
+  .carousel__glass { width: 8vw; }
+}

@@ -59,7 +59,7 @@ const waitMs = (page, ms) => page.waitForFunction(m => performance.now() - perfo
     cls: document.documentElement.className,
     ready: window.mtmReady instanceof Promise,
     overflow: getComputedStyle(document.documentElement).overflowY,
-    inert: document.querySelectorAll('[inert]').length,
+    inert: document.querySelectorAll('[inert]:not([data-clone])').length,
     at: performance.now() - performance.getEntriesByName('mtm-loader-start')[0].startTime,
   }));
   assert(done.gone, '.loader is removed from the DOM when finished');
@@ -150,7 +150,7 @@ const waitMs = (page, ms) => page.waitForFunction(m => performance.now() - perfo
   assert(early, 'mtmReady is defined by the inline head script (loader.js blocked)');
   const t0 = Date.now();
   await sleep(1500);
-  const inertBefore = await page.evaluate(() => document.querySelectorAll('[inert]').length);
+  const inertBefore = await page.evaluate(() => document.querySelectorAll('[inert]:not([data-clone])').length);
   assert(inertBefore > 0 && !(await page.evaluate(() => document.documentElement.classList.contains('is-loaded'))),
     `inert is set (${inertBefore}) while the cover is up and the fallback has not fired`);
   await page.waitForFunction(() => document.documentElement.classList.contains('is-loaded'), null, { timeout: 9000 });
@@ -158,7 +158,7 @@ const waitMs = (page, ms) => page.waitForFunction(m => performance.now() - perfo
     window.mtmReady.then(() => 'resolved'),
     new Promise(res => setTimeout(() => res('pending'), 500)),
   ]));
-  const inert = await page.evaluate(() => document.querySelectorAll('[inert]').length);
+  const inert = await page.evaluate(() => document.querySelectorAll('[inert]:not([data-clone])').length);
   assert(r === 'resolved' && inert === 0, `head fallback resolves mtmReady and clears inert with loader.js missing (${r}, inert ${inert}, ${Date.now() - t0}ms)`);
   await close();
 }
