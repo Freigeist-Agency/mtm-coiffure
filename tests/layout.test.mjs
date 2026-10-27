@@ -25,6 +25,13 @@ for (const width of WIDTHS) {
         broken: [...document.images].filter(i => !(i.naturalWidth > 0)).map(i => i.getAttribute('src')),
         nav: !!document.querySelector('header nav'),
         footer: document.querySelector('footer')?.textContent || null,
+        headerPos: (h => h && getComputedStyle(h).position)(document.querySelector('header.site-header')),
+        headerH: document.querySelector('header.site-header')?.getBoundingClientRect().height ?? 0,
+        navH: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--nav-h')),
+        logo: (i => i ? { loaded: i.naturalWidth > 0, w: i.getBoundingClientRect().width } : null)(
+          document.querySelector('header.site-header .brand img')),
+        footerBody: !!document.querySelector('footer .footer-body'),
+        cols: [...document.querySelectorAll('footer .footer-cols > *')].map(c => Math.round(c.getBoundingClientRect().left)),
       }));
       assert(r.sw <= r.iw, `${tag}: no horizontal overflow (${r.sw} <= ${r.iw})`);
       assert(errors.length === 0, `${tag}: no page/console errors ${errors.join(' | ')}`);
@@ -32,6 +39,18 @@ for (const width of WIDTHS) {
       assert(r.nav, `${tag}: header nav exists`);
       assert(r.footer !== null && r.footer.includes('Nümbrecht') && r.footer.includes('Waldbröl'),
         `${tag}: footer lists both salons`);
+      assert(r.headerPos === 'sticky', `${tag}: header is sticky (${r.headerPos})`);
+      const wantH = width <= 767 ? 50 : 49;
+      assert(r.navH === wantH && Math.abs(r.headerH - wantH) <= 2,
+        `${tag}: header height ~${wantH}px, --nav-h=${r.navH}, rendered ${r.headerH}`);
+      assert(r.logo !== null && r.logo.loaded && r.logo.w > 40, `${tag}: .brand logo present and loaded ${JSON.stringify(r.logo)}`);
+      assert(r.footerBody, `${tag}: footer has .footer-body`);
+      assert(r.cols.length === 3, `${tag}: .footer-cols has 3 children (${r.cols.length})`);
+      if (r.cols.length === 3) {
+        const distinct = new Set(r.cols).size;
+        if (width >= 768) assert(distinct === 3, `${tag}: footer columns side by side (x=${r.cols})`);
+        else assert(distinct === 1, `${tag}: footer columns stacked (x=${r.cols})`);
+      }
       if (p === 'index.html') {
         const order = await page.evaluate((sels) => {
           const els = sels.map(s => document.querySelector(s));
