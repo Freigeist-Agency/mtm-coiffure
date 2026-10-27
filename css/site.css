@@ -193,6 +193,27 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .news-card p { line-height: 1.25; }
 .stack__video { grid-column: 1 / -1; aspect-ratio: 1440 / 833.7; background: var(--placeholder); overflow: hidden; }
 .stack__video img { width: 100%; height: 100%; object-fit: cover; }
+/* Stacked mode: layers stick one after another, each a little lower than the last so the top edge of a covered card
+   peeks out above the one in front. Gated in CSS (not JS) so there is no layout shift: without JS, or under
+   prefers-reduced-motion, none of this applies and the side-by-side layout above is the page. js/stack.js only adds
+   the scrubbed scale/opacity on layers 1 and 2. No ancestor may be a scroll container (that would kill sticky).
+   --gap-scroll is the empty run after a card; with the card's own height it sets about one viewport of scroll per layer. */
+@media (prefers-reduced-motion: no-preference) {
+  html.js .stack { display: block; padding-inline: 0; --gap-scroll: 65vh; }
+  html.js .stack__layer {
+    position: sticky; top: calc(var(--nav-h) + 4vh + var(--i, 0) * 2.5vh);
+    margin-inline: auto; transform-origin: center top;
+  }
+  html.js .stack__layer:nth-child(1) { --i: 0; }
+  html.js .stack__layer:nth-child(2) { --i: 1; }
+  html.js .stack__layer:nth-child(3) { --i: 2; }
+  html.js .stack__layer:nth-child(n+3) { will-change: auto; }
+  html.js .stack__layer:nth-child(-n+2) { will-change: transform, opacity; margin-bottom: var(--gap-scroll); }
+  html.js .news-card { width: max(32vw, min(460px, calc(100% - 2 * var(--pad)))); } /* Figma 460px at 1440 */
+  html.js .stack__video { width: 100%; margin-inline: 0; }
+  /* the Figma shadow is too faint to separate a white card from a white card, so stacked cards add a tighter sand-tinted edge */
+  html.js .news-card { box-shadow: var(--shadow-card), 0 0 14px rgba(165, 115, 45, .22); }
+}
 
 /* ---------- Footer (Figma 103:14, 1440x891: logo + button on white, black dome over a sand radial, 3 columns, legal strip) ---------- */
 .site-footer { background: var(--paper); color: var(--paper); overflow: hidden; }
