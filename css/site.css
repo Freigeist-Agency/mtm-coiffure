@@ -77,7 +77,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 
 /* ---------- Services (Figma 73:3: 788x788 orbit centred in a 1440x1000 section; the 8 photos keep their Figma tilt) ---------- */
 .services {
-  position: relative; overflow: hidden;
+  position: relative;               /* overflow-x: clip lives in css/orbit.css, next to the entry motion that needs it */
   display: grid; place-items: center;
   padding: 12.43vw 0 2.29vw;   /* 179px above and 33px below the orbit at 1440 */
 }

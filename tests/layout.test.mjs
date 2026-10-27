@@ -97,6 +97,8 @@ for (const width of WIDTHS) {
     });
     await loadAllImages(page);
     await page.waitForTimeout(300);
+    // this block measures the STATIC Figma layout; switch the scroll-linked orbit (js/orbit.js, tested in orbit.test.mjs) off
+    await page.evaluate(() => { const o = document.querySelector('.services').__orbit; if (o) o.kill(); });
     const h = await page.evaluate(() => {
       const q = (s, r = document) => [...r.querySelectorAll(s)];
       const box = e => { const b = e.getBoundingClientRect(); return { l: b.left + scrollX, r: b.right + scrollX, t: b.top + scrollY, b: b.bottom + scrollY, w: b.width, h: b.height }; };
@@ -113,7 +115,7 @@ for (const width of WIDTHS) {
       const imgs = q('.hero img, .intro img, .services img, .about img');
       return {
         orbit: !!orbit, orbitItems: orbitItems.length, orbitImgs: items.length,
-        tilts: orbitItems.map(i => i.style.getPropertyValue('--tilt').trim() || getComputedStyle(i).getPropertyValue('--tilt').trim()),
+        tilts: orbitItems.filter(i => getComputedStyle(i).display !== 'none').map(i => parseFloat(getComputedStyle(i).getPropertyValue('--tilt'))),
         itemBoxes: orbitItems.map(box), orbitBox: orbit && box(orbit),
         headBox: heading && box(heading), ctaBox: cta && box(cta),
         team: !!team, teamImgs: teamImgs.length,
@@ -134,7 +136,8 @@ for (const width of WIDTHS) {
     assert(errors.length === 0, `${tag}: no console errors`);
     // Part A hooks
     assert(h.orbit && h.orbitItems === 8 && h.orbitImgs === 8, `${tag}: .services .orbit has 8 .orbit__item > img (${h.orbitItems}/${h.orbitImgs})`);
-    assert(h.tilts.length === 8 && h.tilts.every(t => t !== '' && !isNaN(parseFloat(t))), `${tag}: every orbit item has a numeric --tilt ${JSON.stringify(h.tilts)}`);
+    { const want = width > 767 ? [-45, 0, 45, -90, 90, -135, 180, 135] : [-30, 0, 30, -135, 180, 135];   // DOM order tl,t,tr,(l,r),bl,b,br; the mobile side two are display:none
+      assert(JSON.stringify(h.tilts) === JSON.stringify(want), `${tag}: computed --tilt of the visible orbit items is ${JSON.stringify(want)} (got ${JSON.stringify(h.tilts)})`); }
     assert(h.team && h.teamImgs === 8 && h.itemsInTeam === 8, `${tag}: .about carousel[data-carousel=team] has 8 .carousel__item > img (${h.teamImgs})`);
     assert(h.teamRatios.length === 8 && h.teamRatios.every(r => Math.abs(r.rect - 1) <= 0.02 && Math.abs(r.nat - 1) <= 0.02),
       `${tag}: team images 1:1 (rendered and natural) ${JSON.stringify(h.teamRatios.map(r => +r.rect.toFixed(3)))}`);

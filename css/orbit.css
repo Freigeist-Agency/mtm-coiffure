@@ -1,0 +1,4 @@
+/* Services orbit. The photos enter from beyond the viewport edges (scale 1.6, see js/orbit.js), so the section must clip
+   horizontally or the page gains a sideways scrollbar. `clip`, not `hidden`: it creates no scroll container, and the
+   vertical axis stays visible so a photo may swell past the section while it spirals in. */
+.services { overflow-x: clip; }
