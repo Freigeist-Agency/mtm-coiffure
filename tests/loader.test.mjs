@@ -87,7 +87,7 @@ const waitMs = (page, ms) => page.waitForFunction(m => performance.now() - perfo
       if (performance.now() - t0 < 450) requestAnimationFrame(tick); else res({ coexist, translated });
     })();
   }));
-  assert(seen.coexist || seen.translated, `counterRolls: in the first ~450ms two spans coexist or one is translated (${JSON.stringify(seen)})`);
+  assert(seen.coexist && seen.translated, `counterRolls: in the first ~450ms two spans coexist AND one is translated (${JSON.stringify(seen)})`);
   await close();
 }
 
@@ -147,6 +147,10 @@ const waitMs = (page, ms) => page.waitForFunction(m => performance.now() - perfo
   const early = await page.evaluate(() => window.mtmReady instanceof Promise);
   assert(early, 'mtmReady is defined by the inline head script (loader.js blocked)');
   const t0 = Date.now();
+  await sleep(1500);
+  const inertBefore = await page.evaluate(() => document.querySelectorAll('[inert]').length);
+  assert(inertBefore > 0 && !(await page.evaluate(() => document.documentElement.classList.contains('is-loaded'))),
+    `inert is set (${inertBefore}) while the cover is up and the fallback has not fired`);
   await page.waitForFunction(() => document.documentElement.classList.contains('is-loaded'), null, { timeout: 9000 });
   const r = await page.evaluate(() => Promise.race([
     window.mtmReady.then(() => 'resolved'),
@@ -154,6 +158,81 @@ const waitMs = (page, ms) => page.waitForFunction(m => performance.now() - perfo
   ]));
   const inert = await page.evaluate(() => document.querySelectorAll('[inert]').length);
   assert(r === 'resolved' && inert === 0, `head fallback resolves mtmReady and clears inert with loader.js missing (${r}, inert ${inert}, ${Date.now() - t0}ms)`);
+  await close();
+}
+
+// Delay js/loader.js until `ms` after navigation start, and sample .loader every frame from the very start.
+function delayLoader(ms) {
+  return async p => {
+    await p.addInitScript(() => {
+      window.__samples = [];
+      (function tick() {
+        const l = document.querySelector('.loader');
+        window.__samples.push([performance.now(), !l ? null : getComputedStyle(l).display === 'none' ? -1 : parseFloat(getComputedStyle(l).opacity)]);
+        if (!(document.documentElement && document.documentElement.classList.contains('is-loaded'))) requestAnimationFrame(tick);
+      })();
+    });
+    const t0 = Date.now();
+    await p.route('**/js/loader.js', async r => {
+      await sleep(Math.max(0, ms - (Date.now() - t0)));
+      await r.continue();
+    });
+  };
+}
+async function fadeOf(page) {
+  await page.waitForFunction(() => document.documentElement.classList.contains('is-loaded'), null, { timeout: 12000 });
+  await sleep(100);
+  return page.evaluate(() => {
+    const vis = window.__samples.filter(s => s[1] !== null && s[1] >= 0);
+    const last = vis[vis.length - 1];
+    const loaded = window.__samples[window.__samples.length - 1][0];
+    return { lastOp: last ? last[1] : null, mid: vis.filter(s => s[1] > 0.02 && s[1] < 0.98).length, loadedAt: loaded };
+  });
+}
+
+// ---- loader.js arrives after the 6s stop: the fade is not cut by the head fallback ----
+{
+  const { page, close } = await begin({ width: 1440, noMark: true, before: delayLoader(6400) });
+  const f = await fadeOf(page);
+  assert(f.lastOp !== null && f.lastOp < 0.35 && f.mid >= 3,
+    `lateLoaderFadesSmoothly: loader.js at ~6.4s, opacity goes down through ${f.mid} frames and the last visible frame is ${f.lastOp} (want < 0.35, >= 3 mid frames)`);
+  assert(f.loadedAt >= 6600, `lateLoaderFadesSmoothly: is-loaded only after the fade (${f.loadedAt.toFixed(0)}ms)`);
+  await close();
+}
+
+// ---- the timeline's own finish() must not fire in the middle of the hard-stop fade ----
+{
+  // loader.js at ~2.8s: count ends 4.8, hold 4.95, reveal ends about 6.15s, inside the 6.0 to 6.3s fade
+  const { page, close } = await begin({ width: 1440, noMark: true, before: delayLoader(2800) });
+  const f = await fadeOf(page);
+  assert(f.lastOp !== null && f.lastOp < 0.35,
+    `finishNotMidFade: the last visible frame before is-loaded is nearly transparent (${f.lastOp})`);
+  assert(f.loadedAt >= 6250, `finishNotMidFade: is-loaded not before the fade ends (${f.loadedAt.toFixed(0)}ms, want >= 6250)`);
+  await close();
+}
+
+// ---- webfont hangs: the 850ms cap still starts the reveal in time ----------
+{
+  const { page, close } = await begin({
+    width: 1440,
+    before: async p => {
+      await p.route('**/fonts.googleapis.com/**', r => r.fulfill({
+        status: 200, contentType: 'text/css',
+        body: "@font-face{font-family:'Geom';font-weight:300;font-display:swap;src:url(https://fonts.gstatic.com/hung.woff2) format('woff2')}",
+      }));
+      await p.route('**/fonts.gstatic.com/**', () => { /* never answered */ });
+    },
+  });
+  const reveal = await page.evaluate(() => new Promise(res => {
+    const start = performance.getEntriesByName('mtm-loader-start')[0].startTime;
+    (function tick() {
+      const d = document.querySelector('.loader__dome');
+      if (!d || d.getBoundingClientRect().top < -2) return res(performance.now() - start);
+      if (performance.now() - start > 7000) return res(-1);
+      requestAnimationFrame(tick);
+    })();
+  }));
+  assert(reveal >= 2800 && reveal <= 3500, `fontHangCap: with the webfont hung the reveal starts at the 850ms cap, within 3.5s of the loader mark (${reveal.toFixed(0)}ms)`);
   await close();
 }
 

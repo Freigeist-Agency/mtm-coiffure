@@ -17,7 +17,9 @@ html.js.is-loading .loader {
   --count-size: 13.9vw;
 }
 /* While scroll is locked the gutter stays reserved, so when the lock lifts the scrollbar takes its place and the page
-   does not shift. It is scoped to the lock on purpose: a classic scrollbar then fills the same width afterwards. */
+   does not shift by a scrollbar width. Accepted trade-off: on classic-scrollbar desktops the reserved 15px shows as a
+   strip of the html background (black here) beside the cover instead of a scrollbar track, which beats a reflow.
+   Overlay scrollbars (macOS, phones) reserve nothing. It is scoped to the lock on purpose. */
 html.js.is-loading { scrollbar-gutter: stable; background: #000; } /* the reserved gutter shows black beside the cover */
 html.js.is-loading, html.js.is-loading body { overflow: hidden; }  /* scroll is locked only while it runs */
 
