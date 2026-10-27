@@ -5,6 +5,8 @@ const OUT = new URL('./out/loader/', import.meta.url).pathname;
 fs.mkdirSync(OUT, { recursive: true });
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+// LOADER_ONLY=late,finish runs just those blocks (used for the mutation runs)
+const want = k => !process.env.LOADER_ONLY || process.env.LOADER_ONLY.split(',').includes(k);
 const readNum = page => page.evaluate(() => {
   const n = [...document.querySelectorAll('.loader__num')].pop();
   return n ? n.textContent : null;
@@ -162,8 +164,14 @@ const waitMs = (page, ms) => page.waitForFunction(m => performance.now() - perfo
 }
 
 // Delay js/loader.js until `ms` after navigation start, and sample .loader every frame from the very start.
-function delayLoader(ms) {
+function delayLoader(ms, { instantFonts = false } = {}) {
   return async p => {
+    if (instantFonts) {
+      // fonts.ready resolves at once, so the reveal end lands at a fixed time (loader.js start + 3.35s)
+      await p.addInitScript(() => {
+        try { Object.defineProperty(document.fonts, 'ready', { get: () => Promise.resolve(document.fonts) }); } catch (e) {}
+      });
+    }
     await p.addInitScript(() => {
       window.__samples = [];
       (function tick() {
@@ -191,22 +199,27 @@ async function fadeOf(page) {
 }
 
 // ---- loader.js arrives after the 6s stop: the fade is not cut by the head fallback ----
-{
-  const { page, close } = await begin({ width: 1440, noMark: true, before: delayLoader(6400) });
+if (want('late')) {
+  // loader.js starts at ~6.5s, the head fallback would fire at 6.6s: a cut then lands at opacity > 0.7
+  const { page, close } = await begin({ width: 1440, noMark: true, before: delayLoader(6500) });
   const f = await fadeOf(page);
-  assert(f.lastOp !== null && f.lastOp < 0.35 && f.mid >= 3,
-    `lateLoaderFadesSmoothly: loader.js at ~6.4s, opacity goes down through ${f.mid} frames and the last visible frame is ${f.lastOp} (want < 0.35, >= 3 mid frames)`);
-  assert(f.loadedAt >= 6600, `lateLoaderFadesSmoothly: is-loaded only after the fade (${f.loadedAt.toFixed(0)}ms)`);
+  const startedAt = await page.evaluate(() => performance.getEntriesByName('mtm-loader-start')[0].startTime);
+  assert(startedAt >= 6400 && startedAt < 6590, `lateLoaderFadesSmoothly: precondition, loader.js started inside the 6.4 to 6.59s window (${startedAt.toFixed(0)}ms)`);
+  assert(f.lastOp !== null && f.lastOp < 0.05 && f.mid >= 3,
+    `lateLoaderFadesSmoothly: opacity goes down through ${f.mid} frames and the last visible frame is ${f.lastOp} (want < 0.05, >= 3 mid frames)`);
+  assert(f.loadedAt >= 6700, `lateLoaderFadesSmoothly: is-loaded only after the fade (${f.loadedAt.toFixed(0)}ms)`);
   await close();
 }
 
 // ---- the timeline's own finish() must not fire in the middle of the hard-stop fade ----
-{
-  // loader.js at ~2.8s: count ends 4.8, hold 4.95, reveal ends about 6.15s, inside the 6.0 to 6.3s fade
-  const { page, close } = await begin({ width: 1440, noMark: true, before: delayLoader(2800) });
+if (want('finish')) {
+  // loader.js at ~2.8s with fonts.ready resolved: the reveal ends at start + 3.35s = ~6.15s, inside the 6.0 to 6.3s fade
+  const { page, close } = await begin({ width: 1440, noMark: true, before: delayLoader(2800, { instantFonts: true }) });
   const f = await fadeOf(page);
-  assert(f.lastOp !== null && f.lastOp < 0.35,
-    `finishNotMidFade: the last visible frame before is-loaded is nearly transparent (${f.lastOp})`);
+  const startedAt = await page.evaluate(() => performance.getEntriesByName('mtm-loader-start')[0].startTime);
+  assert(startedAt + 3350 > 6050 && startedAt + 3350 < 6250, `finishNotMidFade: precondition, the timeline's finish would land mid-fade (${(startedAt + 3350).toFixed(0)}ms)`);
+  assert(f.lastOp !== null && f.lastOp < 0.05,
+    `finishNotMidFade: the last visible frame before is-loaded is transparent (${f.lastOp}, want < 0.05)`);
   assert(f.loadedAt >= 6250, `finishNotMidFade: is-loaded not before the fade ends (${f.loadedAt.toFixed(0)}ms, want >= 6250)`);
   await close();
 }

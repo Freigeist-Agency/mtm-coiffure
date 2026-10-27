@@ -6,7 +6,6 @@
   'use strict';
   var html = document.documentElement;
   // the inline head script owns the promise (so it exists before this file arrives); fall back to our own
-  clearTimeout(window.mtmFallback);   // the head's 6.6s net: from here on this file finishes the loader itself
   var resolveReady = window.mtmResolve;
   if (!window.mtmReady || !resolveReady) window.mtmReady = new Promise(function (r) { resolveReady = r; });
   try { performance.mark('mtm-loader-start'); } catch (e) {}
@@ -113,6 +112,7 @@
     }
 
     hardTimer = setTimeout(fadeOutThenFinish, Math.max(0, HARD_MS - performance.now()));
+    clearTimeout(window.mtmFallback);   // only now that our own hard stop is armed: the head's 6.6s net is no longer needed
 
     run = gsap.timeline({ defaults: { ease: 'sine.inOut' } });
     run.to(counter, {
@@ -124,7 +124,8 @@
     // the reveal waits for the webfont (capped), then plays: dome up, black panel up
     run.call(function () {
       run.pause();
-      fontsReady().then(function () { if (!done && !fading) run.play(); });
+      var go = function () { if (!done && !fading) run.play(); };
+      fontsReady().then(go, go);   // a rejected fonts.ready must not strand the page on 100
     }, null, 'hold');
     run.to(count, { yPercent: -40, opacity: 0, duration: 0.35 }, 'hold')
        .to(dome, { yPercent: -100, duration: 0.6 }, 'hold')
