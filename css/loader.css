@@ -1,0 +1,67 @@
+/* Home-page loader (Figma frames 92:10 / 92:40 desktop, 92:50 / 92:55 mobile).
+   Hidden by default, so a page without JS never sees it. An inline <head> script adds
+   html.js and html.is-loading before first paint, which is the only thing that shows it.
+   All sizes are in vw/vh: the 1440 frame maps 1:1 to 100vw, the 450 frame likewise. */
+.loader { display: none; }
+html.js.is-loading .loader {
+  display: block;
+  position: fixed; inset: 0 0 auto 0; z-index: 10000;    /* above the menu overlay (9998) */
+  height: 100vh; height: 100lvh;
+  overflow: hidden; pointer-events: none;
+  color: #fff; font-family: var(--font);
+  /* desktop: 1440 frame. dome = 172 white + 286 half-ellipse = 458 tall; panel edge ry = 286 */
+  --dome-h: 31.8vw;
+  --dome-ry: 19.9vw;
+  --glow-h: 14vw;
+  --panel-ry: 19.9vw;
+  --count-size: 13.9vw;
+}
+html.js.is-loading, html.js.is-loading body { overflow: hidden; }  /* scroll is locked only while it runs */
+
+/* black sheet. It is taller than the viewport by its curved edge, so at rest the edge sits below the fold;
+   lifting it by its own height brings the ellipse up through the page and off the top. */
+html.js.is-loading .loader__panel {
+  position: absolute; left: 0; right: 0; top: 0;
+  height: calc(100vh + var(--panel-ry)); height: calc(100lvh + var(--panel-ry));
+  background: #000;
+  border-radius: 0 0 50% 50% / 0 0 var(--panel-ry) var(--panel-ry);
+  will-change: transform;
+}
+
+/* white dome + the sand glow that sits under it; they travel together */
+html.js.is-loading .loader__dome {
+  position: absolute; left: 0; right: 0; top: 0;
+  height: calc(var(--dome-h) + var(--glow-h));
+  background: radial-gradient(ellipse 55vw 32.8vw at 50% calc(var(--dome-h) - 14.4vw),
+    #a5732d 0%, rgba(165, 115, 45, 0) 80%);
+  will-change: transform;
+}
+html.js.is-loading .loader__dome::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: var(--dome-h);
+  background: #fff;
+  border-radius: 0 0 50% 50% / 0 0 var(--dome-ry) var(--dome-ry);
+}
+
+/* counter: Geom 300, 200px at 1440. Geom's baseline sits about 0.275em above the bottom of its 1.25 line box */
+html.js.is-loading .loader__count {
+  position: absolute; left: 0; right: 0; bottom: calc(3.1vh - 0.275em);   /* digits' baseline 3.1vh above the fold (32/1024 in the frame) */
+  height: 1.25em; font-size: var(--count-size); line-height: 1.25; font-weight: 300;
+  text-align: center; overflow: hidden;
+  font-variant-numeric: tabular-nums;
+}
+html.js.is-loading .loader__num { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
+
+@media (max-width: 767px) {
+  html.js.is-loading .loader {
+    /* mobile: 450 frame. dome = 172 + 200 = 357 tall (ry 200); panel edge ry = 185 */
+    --dome-h: 79.3vw;
+    --dome-ry: 44.4vw;
+    --glow-h: 64vw;
+    --panel-ry: 41vw;
+    --count-size: 44.4vw;
+  }
+  html.js.is-loading .loader__dome {
+    background: radial-gradient(ellipse 70vw 123vw at 50% calc(var(--dome-h) - 35vw),
+      #a5732d 0%, rgba(165, 115, 45, 0) 80%);
+  }
+}
