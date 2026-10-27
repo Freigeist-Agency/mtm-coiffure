@@ -35,7 +35,7 @@
         { label: 'Leistungen',    href: ROOT + 'index.html#leistungen' },
         { label: 'Über uns',      href: ROOT + 'index.html#ueber-uns' },
         { label: 'Standorte',     href: ROOT + 'index.html#standorte' },
-        { label: 'Termin buchen', href: ROOT + 'index.html#standorte' } // TODO(content): real booking URL
+        { label: 'Termin buchen', href: ROOT + 'index.html#standorte' }
       ],
       // TODO(content): addresses, phone numbers and hours are placeholders.
       locations: [

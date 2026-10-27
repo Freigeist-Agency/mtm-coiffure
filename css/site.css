@@ -147,11 +147,16 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .locations { background: var(--ink); color: var(--paper); padding: 20px var(--pad); container-type: inline-size; } /* cqw below = the 1400px content box */
 .locations > h2 { text-align: right; margin-bottom: 221px; }
 .locations__main { display: grid; grid-template-columns: 17.38cqw minmax(0, 1fr); gap: var(--gap); }
-.locations__aside { display: flex; flex-direction: column; gap: var(--gap); }
-.location-info {   /* one photo tall: label on top, button at the bottom edge */
-  display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start;
-  height: calc((100cqw - 17.38cqw - var(--gap)) * 9 / 16);
+/* The aside sticks under the nav while the two photos scroll past: it is a grid item that does not stretch
+   (align-self: start) so it is shorter than the row, and no ancestor may be a scroll container
+   (overflow hidden/auto/scroll would silently kill sticky; clip is fine). */
+.locations__aside {
+  position: sticky; top: calc(var(--nav-h) + 2vh); align-self: start;
+  display: flex; flex-direction: column; gap: 6vh;
 }
+.location-info { display: flex; flex-direction: column; align-items: flex-start; gap: 2.5vh; }
+.location-info .btn { max-width: 100%; }
+.location-info .btn img { width: min(17.38cqw, 186px); height: auto; aspect-ratio: 186 / 39; }
 .location-info h3 { font-size: var(--fs-body); font-weight: 400; }
 .location-info h3 a { text-decoration: none; }
 .location-info h3 a:hover { text-decoration: underline; text-underline-offset: 4px; }
@@ -299,21 +304,22 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   .about .carousel__item { flex-basis: 73.1vw; scroll-snap-align: center; }
 
   /* Locations (frame 76:279): label, 16:9 photo bleeding off the right edge, button, per salon */
-  .locations { padding-bottom: 123px; overflow: hidden; }
+  .locations { padding-bottom: 123px; overflow: clip; } /* clip, not hidden: hidden would make .locations a scroll container and kill the sticky bar */
   .locations > h2 { text-align: left; margin-bottom: 46px; font-size: 18.9vw; line-height: 1.25; } /* the mobile frame keeps the 85px title */
-  .locations__main { display: flex; flex-direction: column; }
-  .locations__aside, .locations__media, .location-info { display: contents; }
-  .location-info h3 { margin-bottom: 51px; }
-  .location-info .btn { margin-top: 9px; }
-  .location-info:nth-child(2) h3 { margin-top: 37px; }
-  .locations__aside .location-info:nth-child(1) h3 { order: 1; }
-  .locations__media .location-img:nth-child(1) { order: 2; }
-  .locations__aside .location-info:nth-child(1) .btn { order: 3; }
-  .locations__aside .location-info:nth-child(2) h3 { order: 4; }
-  .locations__media .location-img:nth-child(2) { order: 5; }
-  .locations__aside .location-info:nth-child(2) .btn { order: 6; }
+  .locations__main { display: flex; flex-direction: column; gap: 0; }
+  /* The salon switcher is a slim full-width bar pinned directly under the nav while the photos scroll beneath it
+     (deliberate departure from the frame's label / photo / button interleave). Two blocks side by side: label over button. */
+  .locations__aside {
+    top: var(--nav-h); z-index: 5; align-self: stretch; /* desktop sets start; here the bar must span the width */
+    display: grid; grid-template-columns: 1fr 1fr; gap: var(--pad);
+    margin-inline: calc(-1 * var(--pad)); padding: 1.6vh var(--pad) 1.8vh;
+    background: var(--ink);
+  }
+  .location-info { gap: 1vh; }
+  .location-info h3 { font-size: var(--fs-body); }
+  .location-info .btn img { width: min(40vw, 186px); }
+  .locations__media { display: flex; flex-direction: column; gap: var(--gap); margin-top: var(--gap); }
   .locations__media .location-img { width: 117vw; max-width: none; -webkit-mask-image: linear-gradient(to right, #000 68%, transparent); mask-image: linear-gradient(to right, #000 68%, transparent); }
-  .location-info .btn { align-self: flex-start; }
   .curve { height: 74.1vw; }
 
   /* Social (frame 76:297) */
