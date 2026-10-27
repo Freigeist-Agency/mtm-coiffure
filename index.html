@@ -81,22 +81,24 @@
 
   <section class="locations" id="standorte" aria-labelledby="loc-h">
     <h2 class="display" id="loc-h">Standorte.</h2>
-    <article class="location">
-      <div class="location-info">
-        <h3><a href="locations/nuembrecht.html">Nümbrecht.</a></h3>
-        <a class="btn" href="locations/nuembrecht.html" aria-label="Termin buchen in Nümbrecht"><img src="assets/btn-location.svg" alt="" width="186" height="39"></a>
+    <div class="locations__main">
+      <div class="locations__aside">
+        <div class="location-info">
+          <h3><a href="locations/nuembrecht.html">Nümbrecht.</a></h3>
+          <a class="btn" href="locations/nuembrecht.html" aria-label="Termin buchen in Nümbrecht"><img src="assets/btn-location.svg" alt="" width="186" height="39"></a>
+        </div>
+        <div class="location-info">
+          <h3><a href="locations/waldbroel.html">Waldbröl.</a></h3>
+          <a class="btn" href="locations/waldbroel.html" aria-label="Termin buchen in Waldbröl"><img src="assets/btn-location.svg" alt="" width="186" height="39"></a>
+        </div>
       </div>
-      <img class="location-img" src="assets/dsc09341.jpg" alt="Haarschnitt im Salon Nümbrecht" loading="lazy"><!-- TODO(content): one photo per salon (both use the same Figma image) -->
-    </article>
-    <article class="location">
-      <div class="location-info">
-        <h3><a href="locations/waldbroel.html">Waldbröl.</a></h3>
-        <a class="btn" href="locations/waldbroel.html" aria-label="Termin buchen in Waldbröl"><img src="assets/btn-location.svg" alt="" width="186" height="39"></a>
+      <div class="locations__media">
+        <img class="location-img" src="assets/dsc09341-16x9.jpg" alt="Haarschnitt im Salon Nümbrecht" width="2294" height="1290" loading="lazy"><!-- TODO(content): one photo per salon (both use the same Figma image) -->
+        <img class="location-img" src="assets/dsc09341-16x9.jpg" alt="Haarschnitt im Salon Waldbröl" width="2294" height="1290" loading="lazy"><!-- TODO(content): one photo per salon (both use the same Figma image) -->
       </div>
-      <img class="location-img" src="assets/dsc09341.jpg" alt="Haarschnitt im Salon Waldbröl" loading="lazy"><!-- TODO(content): one photo per salon (both use the same Figma image) -->
-    </article>
+    </div>
   </section>
-  <img class="curve" src="assets/curve.svg" alt="" aria-hidden="true">
+  <img class="curve" src="assets/curve.svg" alt="" aria-hidden="true" width="1440" height="628">
 
   <section class="social" aria-labelledby="social-h">
     <div class="social-head">
@@ -108,8 +110,11 @@
       </div>
     </div>
     <!-- TODO(content): social posts / embeds go in these four cards -->
-    <div class="social-cards" aria-hidden="true">
-      <div class="social-card"></div><div class="social-card"></div><div class="social-card"></div><div class="social-card"></div>
+    <div class="carousel" data-carousel="social" role="region" aria-roledescription="Karussell" aria-label="Beiträge auf Social Media" tabindex="0">
+      <div class="carousel__item"></div>
+      <div class="carousel__item"></div>
+      <div class="carousel__item"></div>
+      <div class="carousel__item"></div>
     </div>
   </section>
 
@@ -118,9 +123,10 @@
       <h2 class="display" id="news-h">News &amp; Ankündigungen.</h2>
       <p>Hier findest du alles was du vielleicht kurzfristig erfahren musst, bevor du einen Termin bei uns buchst.</p>
     </div>
-    <div class="news-cards">
-      <article class="news-card"><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare, eros dolor interdum nulla, ut commodo diam libero vitae erat. Aenean faucibus nibh et justo cursus id rutrum lorem imperdiet. Nunc ut sem vitae risus tristique posuere.</p></article><!-- TODO(content): announcement -->
-      <article class="news-card"><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare, eros dolor interdum nulla, ut commodo diam libero vitae erat. Aenean faucibus nibh et justo cursus id rutrum lorem imperdiet. Nunc ut sem vitae risus tristique posuere.</p></article><!-- TODO(content): announcement -->
+    <div class="stack">
+      <article class="stack__layer news-card"><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare, eros dolor interdum nulla, ut commodo diam libero vitae erat. Aenean faucibus nibh et justo cursus id rutrum lorem imperdiet. Nunc ut sem vitae risus tristique posuere.</p></article><!-- TODO(content): announcement -->
+      <article class="stack__layer news-card"><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare, eros dolor interdum nulla, ut commodo diam libero vitae erat. Aenean faucibus nibh et justo cursus id rutrum lorem imperdiet. Nunc ut sem vitae risus tristique posuere.</p></article><!-- TODO(content): announcement -->
+      <div class="stack__layer stack__video" role="img" aria-label="Video folgt"><img src="assets/video-poster.jpg" alt="" width="976" height="651" loading="lazy"></div><!-- TODO(video): news video replaces this placeholder -->
     </div>
   </section>
 </main>

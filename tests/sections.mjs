@@ -12,6 +12,7 @@ for (const width of [1440, 450]) {
     for (let y = 0; y <= document.documentElement.scrollHeight; y += 400) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 40)); }
     window.scrollTo(0, 0);
   });
+  await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(400);
   for (const sel of SECTIONS) {
     await page.locator(sel).first().screenshot({ path: `tests/out/sections/${sel.replace(/\W/g, '')}-${width}.png` });
