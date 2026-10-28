@@ -170,6 +170,21 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   .location-info h3, .location-info .btn { position: sticky; }
 }
 .location-info .btn img { width: min(17.38cqw, 186px); height: auto; aspect-ratio: 186 / 39; }
+/* Locations stack. The Nümbrecht row pins under the nav and the Waldbröl row scrolls up over it and covers it, like the
+   news cards. Needs html.js (head script) and no-preference; without JS or under reduced motion both rows are plain flow.
+   --stack-row-h is the first row's measured height (js/stack.js, on refresh, never per frame); the pin line is nav + 2vh
+   (the label's own sticky line) unless that would push the photo's bottom out of view, then the row is pinned bottom-aligned.
+   The grid gap becomes --stack-hold, a short run where the pinned row stands alone before Waldbröl starts to rise. Waldbröl
+   is opaque black above the pinned row, so nothing of Nümbrecht (label and button included) shows through or sits on top.
+   js/stack.js scrubs the covered row to scale 0.92 and its content to opacity 0.35. No ancestor may be a scroll container. */
+@media (prefers-reduced-motion: no-preference) {
+  html.js .locations__main { gap: 0; --stack-hold: 20vh; }
+  html.js .location-info:nth-child(1) {
+    position: sticky; top: min(var(--nav-h) + 2vh, 100svh - var(--stack-row-h, 0px));
+    transform-origin: center top; will-change: transform;
+  }
+  html.js .location-info:nth-child(2) { position: relative; z-index: 1; margin-top: var(--stack-hold); background: var(--ink); }
+}
 .location-img { width: 100%; aspect-ratio: 930 / 523; object-fit: cover; object-position: 50% 50%; }
 
 .curve { display: block; width: 100%; height: clamp(200px, 43.6vw, 628px); transform: rotate(180deg); margin: -1px 0 -2px; }
@@ -381,4 +396,8 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   .footer-bottom { bottom: 14px; left: var(--pad); right: var(--pad); }
   .loc-detail { grid-template-columns: 1fr; }
   .team { grid-template-columns: repeat(2, 1fr); }
+}
+/* Locations stack on mobile: the bar is the row's own top, so the row pins right under the nav (bottom-aligned if it is taller than the viewport) */
+@media (prefers-reduced-motion: no-preference) and (max-width: 767px) {
+  html.js .location-info:nth-child(1) { top: min(var(--nav-h), 100svh - var(--stack-row-h, 0px)); }
 }

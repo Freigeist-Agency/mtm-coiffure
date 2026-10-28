@@ -62,7 +62,10 @@ const target = (page, name, dir) => page.evaluate(([s, dir]) => {
   const x = (x0 + x1) / 2, y = rr.top + rr.height / 2;
   const hit = document.elementFromPoint(x, y);
   // a clone is inert, so a real hit-test lands on the root; carousel.js then resolves the card from its box
-  const hitOk = !!hit && (hit.closest('.carousel__item') === best || (best.hasAttribute('data-clone') && hit === root));
+  // At phone width the arrow button sits over the narrow peek of the neighbouring card; clicking there does the same move
+  // (arrow next = +1, prev = -1), so the arrow for this direction counts as hitting the intended item.
+  const arrowHit = !!hit && !!hit.closest('.carousel__arrow--' + (dir > 0 ? 'next' : 'prev'));
+  const hitOk = !!hit && (hit.closest('.carousel__item') === best || (best.hasAttribute('data-clone') && hit === root) || arrowHit);
   return { x, y, hitOk, clone: best.hasAttribute('data-clone'), want };
 }, [sel(name), dir]);
 
@@ -83,7 +86,9 @@ const gapScan = (page, name) => page.evaluate(s => {
   for (let x = rr.left + 1; x < rr.right; x += step) {
     total++;
     const hit = document.elementFromPoint(x, y);
-    const inClone = hit === root && [...root.querySelectorAll('[data-clone]')].some(e => { const r = e.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; });
+    // a hit on an inert clone lands on the root; one on an arrow button lands on the button. Ask the card boxes underneath.
+    const sel2 = hit === root ? '[data-clone]' : (hit && hit.closest('.carousel__arrow') ? '.carousel__item' : null);
+    const inClone = !!sel2 && [...root.querySelectorAll(sel2)].some(e => { const r = e.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; });
     if (inClone || (hit && hit.closest('.carousel__item') && root.contains(hit))) { hits++; run = 0; }
     else { run++; maxRun = Math.max(maxRun, run); }
   }

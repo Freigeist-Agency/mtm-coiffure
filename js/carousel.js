@@ -5,7 +5,10 @@
    so the centre card is flat and the cards widen and lean toward the outer edges. The x position is the
    integral of that scale, so widened neighbours keep their gap instead of overlapping.
    Wrapping is done with clones (aria-hidden + inert) appended after the originals. Without JS, with
-   prefers-reduced-motion, or when GSAP did not load, nothing here runs and the scroll-snap row stays. */
+   prefers-reduced-motion, or when GSAP did not load, none of that runs and the scroll-snap row stays.
+   Previous / next arrows are added in every one of those cases (but never without JS): they call api.prev / api.next, or
+   scroll the plain snap row by one item. They sit in a wrapper next to the row, not inside it, so they neither scroll
+   with the row nor take part in its swipe and click handling. */
 (function () {
   'use strict';
   var SKEW = 8, WIDEN = 0.25, DURATION = 0.6, EASE = 'sine.inOut';
@@ -14,7 +17,59 @@
   var FLICK_SPEED = 0.35;
   var LABELS = { team: 'Bild', social: 'Beitrag' };   // spoken in the live region: "Bild 2 von 8"
 
+  var ARROW_LABELS = { team: ['Vorheriges Bild', 'Nächstes Bild'], social: ['Vorheriger Beitrag', 'Nächster Beitrag'] };
+  var CHEVRON = { prev: 'M15 5l-7 7 7 7', next: 'M9 5l7 7-7 7' };
+
   function mod(a, n) { return ((a % n) + n) % n; }
+
+  function arrowButton(dir, label) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'carousel__arrow carousel__arrow--' + dir;
+    b.setAttribute('aria-label', label);
+    b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="' + CHEVRON[dir] +
+      '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    return b;
+  }
+
+  // The plain scroll-snap row (reduced motion, or no GSAP): one item per click, wrapping at the ends.
+  function scrollStep(root, dir) {
+    var it = root.querySelectorAll('.carousel__item');
+    var pitch = it.length > 1 ? it[1].offsetLeft - it[0].offsetLeft : root.clientWidth;
+    var max = root.scrollWidth - root.clientWidth, x = root.scrollLeft;
+    if (dir > 0 && x >= max - 2) root.scrollTo({ left: 0, behavior: 'auto' });
+    else if (dir < 0 && x <= 2) root.scrollTo({ left: max, behavior: 'auto' });
+    else root.scrollBy({ left: dir * pitch, behavior: 'auto' });
+  }
+
+  // Wrap the row, add the two buttons after it (Tab order: carousel, prev, next). Safe to call twice.
+  function addArrows(root, enhanced) {
+    if (root.__arrows || !root.parentNode) return;
+    var kind = root.getAttribute('data-carousel') || 'team';
+    var labels = ARROW_LABELS[kind] || ARROW_LABELS.team;
+    var wrap = document.createElement('div');
+    wrap.className = 'carousel-wrap carousel-wrap--' + kind;
+    root.parentNode.insertBefore(wrap, root);
+    wrap.appendChild(root);
+    var prev = arrowButton('prev', labels[0]), next = arrowButton('next', labels[1]);
+    wrap.appendChild(prev);
+    wrap.appendChild(next);
+    function go(dir) {
+      var api = root.__carousel;
+      if (api) { if (dir > 0) api.next(); else api.prev(); }
+      else scrollStep(root, dir);
+    }
+    prev.addEventListener('click', function () { go(-1); });
+    next.addEventListener('click', function () { go(1); });
+    root.__arrows = { prev: prev, next: next };
+    // a plain row that already fits (four social cards at desktop width) has nothing to scroll, so no arrows
+    if (!enhanced) {
+      var sync = function () { prev.hidden = next.hidden = root.scrollWidth - root.clientWidth <= 2; };
+      sync();
+      if (window.ResizeObserver) new ResizeObserver(sync).observe(root);
+      else window.addEventListener('resize', sync);
+    }
+  }
 
   // x of a card whose unwarped offset from the centre is u, for a half-width of mid
   function warp(u, mid) {
@@ -27,10 +82,11 @@
     if (root.__carousel) return root.__carousel;
     var gsap = window.gsap;
     var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce || !gsap) return null;
     var originals = Array.prototype.slice.call(root.querySelectorAll('.carousel__item'));
     var n = originals.length;
     if (!n) return null;
+    addArrows(root, !(reduce || !gsap));
+    if (reduce || !gsap) return null;
 
     root.classList.add('is-enhanced');
     root.setAttribute('tabindex', '0');

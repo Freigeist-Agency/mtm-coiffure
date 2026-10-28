@@ -124,7 +124,13 @@ async function stickyRun(width, height, { reducedMotion = false, short = false }
           }
         }
         const moved = Math.abs(S[2].img.top - S[0].img.top);
-        assert(moved > 100, `${t} ${z.what}: photo moves under the pinned items (${Math.round(moved)}px)`);
+        const rowVp = S.map(x => x.top - x.y);   // the row's viewport top: constant while it is pinned (the photo itself shifts a few px as the row scales)
+        if (i === 0 && !reducedMotion && !short && (mobile || z.label)) {
+          // the Nümbrecht row is itself pinned here (location stack, js/stack.js): label, button and photo all stand still
+          assert(spread(rowVp) <= 2, `${t} ${z.what}: the row is pinned, so it stands still with its label and button ${JSON.stringify(rowVp.map(Math.round))}`);
+        } else {
+          assert(moved > 100, `${t} ${z.what}: photo moves under the pinned items (${Math.round(moved)}px)`);
+        }
         assert(Math.abs(S[1].y - ys[1]) < 40, `${t} ${z.what}: real wheel scroll landed near its target (${S[1].y} vs ${ys[1]})`);
         if (!reducedMotion && (width === 1440 && !short || mobile)) await shot(page, `${width}-row${i + 1}-${z.label ? (mobile ? 'bar' : 'leaving') : 'entering'}.png`);
       }
@@ -133,19 +139,22 @@ async function stickyRun(width, height, { reducedMotion = false, short = false }
         const bar = await page.evaluate(i => {
           const row = document.querySelectorAll('.location-info')[i];
           const h = row.querySelector('h3').getBoundingClientRect(), b = row.querySelector('.btn').getBoundingClientRect();
-          const cover = [[2, h.top + 2], [h.right - 2, h.bottom - 2], [innerWidth - 2, b.top + 2], [innerWidth - 2, b.bottom - 2], [innerWidth / 2, h.top + 2]]
+          // the pinned Nümbrecht row is scaled once Waldbröl is rising, so measure from the bar's own edges
+          const cover = [[h.left + 2, h.top + 2], [h.right - 2, h.bottom - 2], [b.right - 2, b.top + 2], [b.right - 2, b.bottom - 2], [(h.left + b.right) / 2, h.top + 2]]
             .map(([x, y]) => { const e = document.elementFromPoint(x, y); return !!e && (e.closest('h3') === row.querySelector('h3') || e.closest('.btn') === row.querySelector('.btn')); });
-          return { h: Math.max(h.bottom, b.bottom) - Math.min(h.top, b.top), btnIn: b.left >= 0 && b.right <= innerWidth && b.width > 40, cover };
+          return { h: Math.max(h.bottom, b.bottom) - Math.min(h.top, b.top), btnIn: b.left >= 0 && b.right <= innerWidth && b.width > 40, cover, full: h.left <= 0.5 && b.right >= innerWidth - 0.5 };
         }, i);
         assert(bar.h <= 0.22 * height, `${t}: bar is <= 22vh (${Math.round(bar.h)} <= ${Math.round(0.22 * height)})`);
         assert(bar.btnIn, `${t}: button fully inside the viewport`);
-        assert(bar.cover.every(Boolean), `${t}: bar spans the full width and paints above the photo ${JSON.stringify(bar.cover)}`);
+        assert(bar.cover.every(Boolean), `${t}: bar paints above the photo ${JSON.stringify(bar.cover)}`);
+        if (i === 1) assert(bar.full, `${t}: bar spans the full width`);   // (the Nümbrecht row is scaled down while Waldbröl rises over it)
       }
     }
 
     // handoff sweep: scroll through the whole handoff range in ~8px steps and read both rows' items at every step
     const infos0 = await rowsInfo(page);
-    const y0 = Math.max(0, Math.round(infos0[1].top - height - 50)), y1 = Math.round(infos0[0].bottom);
+    // the sweep runs on past the point where the Waldbröl row has covered the (pinned) Nümbrecht row
+    const y0 = Math.max(0, Math.round(infos0[1].top - height - 50)), y1 = Math.round(infos0[1].top - (mobile ? navH : topLine) + 0.5 * height);
     const sweep = await page.evaluate(([y0, y1]) => {
       const rows = [...document.querySelectorAll('.location-info')];
       const out = [];
@@ -153,25 +162,36 @@ async function stickyRun(width, height, { reducedMotion = false, short = false }
         scrollTo({ top: y, behavior: 'instant' });
         const g = r => rows[r].querySelector.bind(rows[r]);
         const R = e => e.getBoundingClientRect();
+        const nb = R(g(0)('.btn')), nl = R(g(0)('h3'));
+        const onTop = (r) => { const e = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2); return !!e && rows[0].contains(e); };
         out.push({
-          y, nueLabelTop: R(g(0)('h3')).top, nueBtnTop: R(g(0)('.btn')).top, nueBtnBottom: R(g(0)('.btn')).bottom,
-          walLabelTop: R(g(1)('h3')).top, walBtnTop: R(g(1)('.btn')).top, rowBottom: R(rows[0]).bottom,
+          y, nueLabelTop: nl.top, nueBtnTop: nb.top, nueBtnBottom: nb.bottom,
+          walLabelTop: R(g(1)('h3')).top, walBtnTop: R(g(1)('.btn')).top, rowBottom: R(rows[0]).bottom, walRowTop: R(rows[1]).top,
+          nueBtnOnTop: onTop(nb), nueLabelOnTop: onTop(nl), nueLabelMid: (nl.top + nl.bottom) / 2, nueBtnMid: (nb.top + nb.bottom) / 2, nueBtnVisible: nb.top > 60 && nb.bottom < innerHeight, nueLabelVisible: nl.top > 60 && nl.bottom < innerHeight,
         });
       }
       return out;
     }, [y0, y1]);
     assert(sweep.length > 40, `${tag} handoff sweep: enough steps (${sweep.length})`);
     if (!mobile) {
-      const worst = Math.min(...sweep.map(x => x.walLabelTop - x.nueBtnBottom));
-      assert(worst >= 0, `${tag} handoff sweep: Waldbröl label never overlaps the Nümbrecht button (min gap ${worst.toFixed(1)}px)`);
-      const stuck = sweep.filter(x => Math.abs(x.nueBtnBottom - botLine) <= 2).length;
-      assert(stuck >= 3, `${tag} handoff sweep: the Nümbrecht button was actually stuck (>= 3 steps, a free-moving button crosses the line in at most 1) at ${botLine} during the sweep (${stuck} steps)`);
+      // The Waldbröl row now rises OVER the pinned Nümbrecht row (location stack), so their rects overlap by design. What must
+      // hold instead: whenever the Waldbröl row's top edge is above the Nümbrecht button, the button is not hit-testable on top.
+      const covered = sweep.filter(x => x.walRowTop < x.nueBtnTop && x.nueBtnVisible);
+      assert(covered.length >= 1 && covered.every(x => !x.nueBtnOnTop), `${tag} handoff sweep: Waldbröl covers the Nümbrecht button, which is never hit-testable above it (${covered.length} covered steps, ${covered.filter(x => x.nueBtnOnTop).length} leaking)`);
+      // the Nümbrecht button holds still with its pinned row for several steps (a free-moving one moves every step), then leaves with it
+      const plateau = {};
+      for (const x of sweep) { const k = Math.round(x.nueBtnBottom); plateau[k] = (plateau[k] || 0) + 1; }
+      const stuck = Math.max(...Object.values(plateau));
+      assert(stuck >= 3, `${tag} handoff sweep: the Nümbrecht button stood still for at least 3 steps while its row was pinned (${stuck} steps)`);
       const left = sweep.filter(x => x.nueBtnBottom < botLine - 2).length;
       assert(left > 0, `${tag} handoff sweep: the Nümbrecht button then left with its row (${left} steps)`);
     } else {
       const barH = 0.09 * height, lo = navH - 2, hi = navH + barH;
+      // the Waldbröl bar now slides over the pinned Nümbrecht bar, so both can share the nav band: then Waldbröl must be the one on top
       const both = sweep.filter(x => x.nueLabelTop >= lo && x.nueLabelTop < hi && x.walLabelTop >= lo && x.walLabelTop < hi);
-      assert(both.length === 0, `${tag} handoff sweep: never both bars in the nav band at once (${both.length} steps)`);
+      // (the centre of the Nümbrecht bar is covered once Waldbröl's top edge has passed it)
+      const leak = both.filter(x => (x.walRowTop <= x.nueLabelMid && x.nueLabelOnTop) || (x.walRowTop <= x.nueBtnMid && x.nueBtnOnTop));
+      assert(both.length >= 1 && leak.length === 0, `${tag} handoff sweep: whenever the Waldbröl bar's edge has passed the Nümbrecht bar it is on top of it (${both.length} steps share the band, ${leak.length} leaking)`);
       const nueStuck = sweep.filter(x => Math.abs(x.nueLabelTop - navH) <= 2).length, walStuck = sweep.filter(x => Math.abs(x.walLabelTop - navH) <= 2).length;
       assert(nueStuck >= 3 && walStuck >= 3, `${tag} handoff sweep: each bar was stuck under the nav at some step (${nueStuck}, ${walStuck})`);
     }
