@@ -10,6 +10,17 @@
   if (!window.mtmReady || !resolveReady) window.mtmReady = new Promise(function (r) { resolveReady = r; });
   try { performance.mark('mtm-loader-start'); } catch (e) {}
 
+  // html { scroll-behavior: smooth } makes ScrollTrigger's refresh measure with scrollY treated as 0 (its scroll-to-0 and back is
+  // animated), so every start/end comes out one scroll offset too small after a mid-page resize or late load. Switch smoothing
+  // off for the length of each refresh. Registered before any trigger exists (orbit.js and stack.js wait for mtmReady).
+  try {
+    var ST = window.ScrollTrigger;
+    if (ST && ST.addEventListener) {
+      ST.addEventListener('refreshInit', function () { html.style.scrollBehavior = 'auto'; });
+      ST.addEventListener('refresh', function () { html.style.scrollBehavior = ''; });
+    }
+  } catch (e) { /* motion-only: the page works without it */ }
+
   var loader = document.querySelector('.loader');
   var playing = html.classList.contains('is-loading') && loader && window.gsap;
   var done = false, fading = false, hardTimer = 0, run = null;

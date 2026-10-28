@@ -26,16 +26,20 @@
     document.body.appendChild(root);
 
     var ROOT = document.documentElement.getAttribute('data-root') || '';
+    // On the home page "index.html#x" is another document from the canonical URL ("/"), so it reloads and replays the loader:
+    // use bare in-page hashes there. data-home is set on index.html only (ROOT is "" on the root-level subpages too).
+    var HOME = document.documentElement.hasAttribute('data-home');
+    function to(hash){ return HOME ? hash : ROOT + 'index.html' + hash; }
     var CFG = {
       closeScale: 1/0.75,
       // --- PLACEHOLDER COPY. Swap these strings; nothing else needs to change. ---
       // Links resolve against data-root on <html> ("" on the homepage,
       // "../" on pages one folder down), so the same file works everywhere.
       links: [
-        { label: 'Leistungen',    href: ROOT + 'index.html#leistungen' },
-        { label: 'Über uns',      href: ROOT + 'index.html#ueber-uns' },
-        { label: 'Standorte',     href: ROOT + 'index.html#standorte' },
-        { label: 'Termin buchen', href: ROOT + 'index.html#standorte' }
+        { label: 'Leistungen',    href: to('#leistungen') },
+        { label: 'Über uns',      href: to('#ueber-uns') },
+        { label: 'Standorte',     href: to('#standorte') },
+        { label: 'Termin buchen', href: to('#standorte') }
       ],
       // TODO(content): addresses, phone numbers and hours are placeholders.
       locations: [
@@ -402,7 +406,7 @@
       isOpen = false;
       unlockScroll();
       restoreNav();
-      if (btn){ btn.setAttribute('aria-expanded','false'); btn.focus(); }
+      if (btn){ btn.setAttribute('aria-expanded','false'); btn.focus({ preventScroll: true }); }
       if (!tl) { root.classList.remove('lm-open'); return; }
       tl.timeScale(CFG.closeScale).reverse();
       tl.eventCallback('onReverseComplete', function(){ root.classList.remove('lm-open'); });

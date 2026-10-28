@@ -5,7 +5,8 @@
    The scrub for layer N runs from "layer N+1 enters the viewport" to "layer N+1 reaches its sticky top".
    Those scroll positions are worked out from layout (stack top + heights and margin-tops of the layers up to it), not
    from the sticky element itself, whose rect moves while it is stuck. They are re-evaluated on every refresh.
-   Under prefers-reduced-motion, or without GSAP, nothing here runs and the static layout stays. */
+   Without GSAP, none of this depth runs, but the CSS sticky stacking still applies (it needs only the html.js class from the
+   head script, not this file or GSAP). Under prefers-reduced-motion neither runs: the CSS makes the stack plain flow. */
 (function () {
   'use strict';
   var SCALE = 0.92, OPACITY = 0.35, EASE = 'sine.inOut';

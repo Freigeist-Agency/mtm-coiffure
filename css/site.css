@@ -155,7 +155,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .location-info { display: grid; grid-template-columns: 17.38cqw minmax(0, 1fr); column-gap: var(--gap); }
 .location-info h3 {
   grid-column: 1; grid-row: 1; align-self: start; justify-self: start;
-  position: sticky; top: calc(var(--nav-h) + 2vh);
+  top: calc(var(--nav-h) + 2vh);
   font-size: var(--fs-body); font-weight: 400;
 }
 .location-info h3 a { text-decoration: none; }
@@ -163,7 +163,11 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .location-info .location-img { grid-column: 2; grid-row: 1; height: auto; aspect-ratio: 16 / 9; }
 .location-info .btn {
   grid-column: 1; grid-row: 1; align-self: end; justify-self: start; max-width: 100%;
-  position: sticky; bottom: 2vh;
+  bottom: 2vh;
+}
+/* sticky is motion: under prefers-reduced-motion the label and button are plain flow (top/bottom above only apply when sticky) */
+@media (prefers-reduced-motion: no-preference) {
+  .location-info h3, .location-info .btn { position: sticky; }
 }
 .location-info .btn img { width: min(17.38cqw, 186px); height: auto; aspect-ratio: 186 / 39; }
 .location-img { width: 100%; aspect-ratio: 930 / 523; object-fit: cover; object-position: 50% 50%; }
@@ -282,6 +286,10 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 }
 
 /* ---------- Mobile (Figma frame 76:222, 450px) ---------- */
+@media (min-width: 768px) and (max-width: 900px) {
+  /* the columns wrap to taller lines here and the absolutely placed legal strip would sit on the last one */
+  .footer-body { padding-bottom: 9vw; }
+}
 @media (max-width: 767px) {
   .site-header { padding-left: 11px; padding-right: 13px; }
   .site-nav { gap: 12px; }

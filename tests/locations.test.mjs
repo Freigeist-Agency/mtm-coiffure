@@ -188,8 +188,18 @@ async function stickyRun(width, height, { reducedMotion = false, short = false }
 await stickyRun(1440, 900);
 await stickyRun(1440, 520, { short: true });
 await stickyRun(375, 812);
-await stickyRun(1440, 900, { reducedMotion: true });
-await stickyRun(375, 812, { reducedMotion: true });
+// reduced motion: the label and button are plain flow, not sticky (spec: "stack/sticky become plain flow")
+for (const [width, height] of [[1440, 900], [375, 812]]) {
+  const tag = `@${width}x${height} reduced-motion`;
+  const { page, errors, close } = await openPage({ width, height, reducedMotion: true });
+  try {
+    const pos = await page.evaluate(() => [...document.querySelectorAll('.location-info')].flatMap(row => [row.querySelector('h3'), row.querySelector('.btn')].map(e => getComputedStyle(e).position)));
+    assert(pos.length === 4 && pos.every(v => v === 'static'), `${tag}: both labels and both buttons are position:static ${JSON.stringify(pos)}`);
+    const sw = await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
+    assert(sw[0] <= sw[1], `${tag}: no horizontal overflow (${sw[0]} <= ${sw[1]})`);
+    assert(errors.length === 0, `${tag}: no console errors ${errors.join('|')}`);
+  } finally { await close(); }
+}
 
 // ---- in-page anchors clear the sticky nav
 for (const width of [1440, 375]) {
@@ -268,7 +278,7 @@ for (const [p, url, name] of [['locations/nuembrecht.html', NUE, 'Nümbrecht'], 
 
 // ---- sources
 const menu = fs.readFileSync(path.join(ROOT, 'js/menu.js'), 'utf8');
-assert(/label: 'Termin buchen', href: ROOT \+ 'index\.html#standorte'/.test(menu), 'menu.js: Termin buchen item stays on #standorte');
+assert(/label: 'Termin buchen', href: to\('#standorte'\)/.test(menu) && /function to\(hash\)\{ return HOME \? hash : ROOT \+ 'index\.html' \+ hash; \}/.test(menu), 'menu.js: Termin buchen item stays on #standorte (in-page on the home page, ROOT + index.html# elsewhere)');
 const files = [];
 (function walk(d) {
   for (const f of fs.readdirSync(d, { withFileTypes: true })) {

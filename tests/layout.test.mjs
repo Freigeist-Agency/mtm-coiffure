@@ -182,4 +182,16 @@ for (const width of [1440, 375]) {
       `no-JS @${width}: team carousel is a scroll-snap row ${JSON.stringify(c)}`);
   } finally { await close(); }
 }
+// The last footer text line must clear the legal strip (the strip is absolutely positioned, so only padding keeps them apart)
+for (const width of [375, 768, 820, 900, 1024, 1440]) {
+  const { page, close } = await openPage({ width, height: 900, path: 'impressum.html' });
+  try {
+    const r = await page.evaluate(() => {
+      const strip = document.querySelector('.footer-bottom').getBoundingClientRect();
+      const last = Math.max(...[...document.querySelectorAll('.footer-cols li, .footer-cols p, .footer-cols h3, .footer-cols .footer-fred')].map(e => e.getBoundingClientRect().bottom));
+      return { overlap: Math.round(last - strip.top) };
+    });
+    assert(r.overlap <= 0, `impressum.html @${width}: last footer line clears the legal strip (overlap ${r.overlap}px)`);
+  } finally { await close(); }
+}
 await report();

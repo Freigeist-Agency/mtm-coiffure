@@ -307,6 +307,35 @@ for (const width of [800, 850, 900, 768]) {
   } finally { await close(); }
 }
 
+// ---- the trigger is measured correctly when ScrollTrigger refreshes mid-page (html has scroll-behavior: smooth) ----
+{
+  const trig = page => page.evaluate(() => {
+    const sec = document.querySelector('.services');
+    const t = ScrollTrigger.getAll().find(s => s.trigger === sec);
+    const expected = sec.getBoundingClientRect().top + scrollY - innerHeight;
+    return { y: Math.round(scrollY), start: t ? t.start : null, expected, smooth: getComputedStyle(document.documentElement).scrollBehavior };
+  });
+  const wheelTo3000 = async page => {
+    await page.mouse.move(700, 450);
+    for (let i = 0; i < 60 && (await page.evaluate(() => scrollY)) < 3000; i++) { await page.mouse.wheel(0, 300); await page.waitForTimeout(30); }
+    await page.waitForTimeout(500);
+  };
+  for (const how of ['resize', 'refresh()']) {
+    const { page, close } = await openPage({ width: 1440, height: 900 });
+    try {
+      await page.evaluate(() => window.mtmReady);
+      await page.waitForTimeout(300);
+      await wheelTo3000(page);
+      if (how === 'resize') { await page.setViewportSize({ width: 1400, height: 900 }); await page.waitForTimeout(1200); }
+      else { await page.evaluate(() => ScrollTrigger.refresh()); await page.waitForTimeout(600); }
+      const r = await trig(page);
+      assert(r.y >= 2900, `refresh mid-page (${how}): still near scrollY 3000 (${r.y})`);
+      assert(r.start !== null && Math.abs(r.start - r.expected) <= 5, `refresh mid-page (${how}): orbit start ${Math.round(r.start)} is within 5px of ${Math.round(r.expected)}`);
+      assert(r.smooth === 'smooth', `refresh mid-page (${how}): scroll-behavior is restored to smooth (${r.smooth})`);
+    } finally { await close(); }
+  }
+}
+
 // ---- reduced motion and no JS: the static Figma layout, nothing added by JS ----
 for (const mode of ['reduced', 'nojs']) {
   for (const width of [1440, 375]) {
