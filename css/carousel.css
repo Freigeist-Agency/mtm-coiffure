@@ -35,3 +35,29 @@
   position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0;
   overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
 }
+
+/* Previous / next arrows (js/carousel.js adds them in a wrapper after the row; never without JS). They stay when the row
+   falls back to plain scroll-snap under prefers-reduced-motion. Circle + chevron in currentColor: white on a translucent
+   black disc over the team photos (black section), black on a translucent white disc over the social cards (white section).
+   Size is 4vw clamped to 44px (phones) .. 56px (desktop), so the hit target is never smaller than 44px. */
+.carousel-wrap { position: relative; --arrow: clamp(44px, 4vw, 56px); }
+.carousel__arrow {
+  position: absolute; z-index: 3; top: calc(50% - var(--arrow) / 2);
+  display: grid; place-items: center;
+  width: var(--arrow); height: var(--arrow); padding: 0;
+  border: 1px solid currentColor; border-radius: 50%;
+  font: inherit; cursor: pointer;
+  opacity: .88;
+  transition: transform .25s cubic-bezier(.37, 0, .63, 1), opacity .25s cubic-bezier(.37, 0, .63, 1);   /* sine.inOut */
+  -webkit-tap-highlight-color: transparent;
+}
+.carousel__arrow[hidden] { display: none; }
+.carousel__arrow--prev { left: clamp(8px, 2vw, 28px); }
+.carousel__arrow--next { right: clamp(8px, 2vw, 28px); }
+.carousel__arrow svg { width: 42%; height: 42%; }
+.carousel-wrap--team .carousel__arrow { color: var(--paper); background: rgba(0, 0, 0, .5); border-color: rgba(255, 255, 255, .55); }
+.carousel-wrap--social .carousel__arrow { color: var(--ink); background: rgba(255, 255, 255, .62); border-color: rgba(0, 0, 0, .4); }
+@media (hover: hover) { .carousel__arrow:hover { transform: scale(1.08); opacity: 1; } }
+.carousel__arrow:active { transform: scale(.94); opacity: 1; }
+.carousel__arrow:focus-visible { outline: 2px solid var(--sand); outline-offset: 3px; opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .carousel__arrow { transition: none; } }
