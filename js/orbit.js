@@ -1,11 +1,11 @@
 /* Scroll-linked image orbit around the Services CTA (home page).
    The section's pass through the viewport ('top bottom' -> 'bottom top') drives one progress value p in 0..1:
-     p 0 -> 0.4   ENTRY: each photo flies in from the side its slot is on (slot x < 50% from the left, > 50% from the right; the
+     p 0 -> 0.5   ENTRY: each photo flies in from the side its slot is on (slot x < 50% from the left, > 50% from the right; the
                   centre pair: top from the left, bottom from the right), shrinking from scale 1.6 to 1.0 while it spirals onto
-                  its Figma slot. A photo's position is polar around the orbit centre (angle, radius), both eased from the
+                  its Figma slot. A photo's position is polar around the orbit centre (angle, radius), both eased (sine.inOut) from the
                   off-screen start to the slot, so the path is a spiral. Lower photos start a little later so the ones still
                   below the fold are not wasted.
-     p 0.4 -> 1   RING: a rigid turn of the whole ring by RING_DESKTOP degrees (90 = two 45deg slots, so the end state is a
+     p 0.5 -> 1   RING: a rigid turn of the whole ring by RING_DESKTOP degrees, sine.inOut over that span (90 = two 45deg slots, so the end state is a
                   permutation of the Figma layout). On mobile the amplitude is 0: the Figma mobile slots already bleed past the
                   viewport edges, so any turn about the section centre would push some diamond further out.
    The photos are oriented radially around the ring, so a face's net rotation is its Figma tilt plus how far its arm has
@@ -18,11 +18,11 @@
    Figma layout stays. */
 (function () {
   'use strict';
-  var ENTRY_END = 0.4, START_SCALE = 1.6, RING_DESKTOP = 90, RING_MOBILE = 0, STAGGER = 0.14;
+  var ENTRY_END = 0.5, START_SCALE = 1.6, RING_DESKTOP = 90, RING_MOBILE = 0, STAGGER = 0.14;
   var RAD = Math.PI / 180;
   function wrap(a) { return ((((a + 180) % 360) + 360) % 360) - 180; }
   function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
-  function easeOut(t) { return 1 - (1 - t) * (1 - t) * (1 - t); }
+  function ease(t) { return 0.5 - Math.cos(Math.PI * t) / 2; }   // sine.inOut, the site-wide ease; used for the entry and the ring turn
 
   function initOrbit(root, opts) {
     var gsap = window.gsap, ST = window.ScrollTrigger;
@@ -76,10 +76,10 @@
       if (dead || p === last) return;
       last = p; progress = p;
       var rho = clamp01((p - ENTRY_END) / (1 - ENTRY_END));
-      var turn = ring * rho;
+      var turn = ring * ease(rho);
       for (var i = 0; i < items.length; i++) {
         var it = items[i];
-        var e = easeOut(clamp01((p - it.start) / (ENTRY_END - it.start)));
+        var e = ease(clamp01((p - it.start) / (ENTRY_END - it.start)));
         var arm = it.phi0 + it.delta * e + turn;               // arm angle, degrees
         var rad = it.r0 + (it.r + (it.rNext - it.r) * rho - it.r0) * e;
         it.setX(rad * Math.cos(arm * RAD) - it.sx);

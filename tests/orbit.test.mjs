@@ -1,5 +1,5 @@
 // Task 7: scroll-linked image orbit around the Services CTA.
-// Desktop: entry from the sides in the first 40% of the section's pass (scale 1.6 -> 1.0), then a rigid RADIAL ring
+// Desktop: entry from the sides in the first 50% of the section's pass (scale 1.6 -> 1.0), then a rigid RADIAL ring
 // that turns 90deg by the end (45deg slot spacing, so the end state is a permutation of the Figma layout).
 // Mobile (<=767): same entry, settles into the Figma mobile slots, ring amplitude 0 (the Figma mobile slots already bleed
 // past the viewport edges, so any rotation about the section centre would push some diamond further out).
@@ -18,6 +18,7 @@ const frames = page => page.__nojs ? page.waitForTimeout(80)
   : page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
 const wrap = a => ((((a + 180) % 360) + 360) % 360) - 180;
 const clamp01 = v => Math.min(1, Math.max(0, v));
+const ease = t => 0.5 - Math.cos(Math.PI * t) / 2;   // sine.inOut
 
 // scroll so that the section's pass through the viewport is at progress p; wheel=true drives it with real wheel events
 async function goto(page, p, wheel = false) {
@@ -63,7 +64,7 @@ const read = page => page.evaluate(() => {
     };
   });
   return {
-    items, h2: box(sec.querySelector('h2')), btn: box(sec.querySelector('.btn')),
+    items, h2: box(sec.querySelector('h2')), btn: box(sec.querySelector('.btn')), copyP: box(sec.querySelector('.services-copy p')), oh: ob.height,
     sw: document.documentElement.scrollWidth, iw: innerWidth, ih: innerHeight, y: scrollY,
     progress: sec.__orbit ? sec.__orbit.progress() : null, hasOrbit: !!sec.__orbit,
     ow: getComputedStyle(sec).overflowX,
@@ -71,9 +72,14 @@ const read = page => page.evaluate(() => {
 });
 
 // separating-axis test: rotated square (centre, side, deg) against an axis-aligned rect; returns the penetration depth (<= 0: apart)
-function penetration(it, rect) {
+// viewport-space corners of an item (withOrigin() item): centre + size * scale, rotated
+function corners(it) {
   const s = it.size * it.scale / 2, a = it.rot * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a);
-  const pts = [[-s, -s], [s, -s], [s, s], [-s, s]].map(([x, y]) => [it.cx0 + it.cx + x * c - y * sn, it.cy0 + it.cy + x * sn + y * c]);
+  return [[-s, -s], [s, -s], [s, s], [-s, s]].map(([x, y]) => [it.cx0 + it.cx + x * c - y * sn, it.cy0 + it.cy + x * sn + y * c]);
+}
+function penetration(it, rect) {
+  const a = it.rot * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a);
+  const pts = corners(it);
   const rpts = [[rect.l, rect.t], [rect.r, rect.t], [rect.r, rect.b], [rect.l, rect.b]];
   const axes = [[1, 0], [0, 1], [c, sn], [-sn, c]];
   let min = Infinity;
@@ -91,7 +97,7 @@ const withOrigin = (s, it) => {
 };
 const overlapsCopy = (s, it) => {
   const w = withOrigin(s, it);
-  return Math.max(penetration(w, s.h2), penetration(w, s.btn));
+  return Math.max(penetration(w, s.h2), penetration(w, s.copyP), penetration(w, s.btn));
 };
 
 const fmt = v => (Math.round(v * 10) / 10);
@@ -119,7 +125,7 @@ for (const width of [1440, 375]) {
   const { page, errors, close } = await openPage({ width, height: 900 });
   try {
     await page.waitForTimeout(400);
-    const ringFor = p => mobile ? 0 : 90 * clamp01((p - 0.4) / 0.6);
+    const ringFor = p => mobile ? 0 : 90 * ease(clamp01((p - 0.5) / 0.5));
     const S = {};
     const samplePs = mobile ? [0, 0.18, 0.26, 0.3, 0.4] : [0, 0.25, 0.5, 0.75, 1];
     // Samples: positions differ between consecutive samples. Real wheel on two of them.
@@ -144,21 +150,21 @@ for (const width of [1440, 375]) {
     assert(sides, `${tag}: at p=0 left-slot items are fully off the left edge and right-slot items off the right (${vis.map(i => NAMES[i] + side(i))})`);
     assert(side(1) === 'L' && side(6) === 'R', `${tag}: T enters from the left, B from the right`);
 
-    // ---- p >= 0.4 sweep ----
-    const sweep = [0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1];
+    // ---- p >= 0.5 sweep ----
+    const sweep = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1];
     const T = {};
     for (const p of sweep) {
       await goto(page, p, p === 0.5 || p === 1); T[p] = await read(page);
-      if (p === 0.4 && !mobile) await page.screenshot({ path: path.join(OUT, `${width}-p040-formed.png`) });   // the formed ring, for the Figma comparison
+      if (p === 0.5 && !mobile) await page.screenshot({ path: path.join(OUT, `${width}-p050-formed.png`) });   // the formed ring, for the Figma comparison
     }
-    // scale 1.0 from 50% on (and at 40%, the entry is done)
-    assert(sweep.every(p => vis.every(i => Math.abs(T[p].items[i].scale - 1) < 0.05)), `${tag}: all items at scale 1.0 +-0.05 from 40% to 100%`);
+    // scale 1.0 from 50% on (the entry is done)
+    assert(sweep.every(p => vis.every(i => Math.abs(T[p].items[i].scale - 1) < 0.05)), `${tag}: all items at scale 1.0 +-0.05 from 50% to 100%`);
     // no horizontal overflow at any sample
     const all = [...samplePs.map(p => S[p]), ...sweep.map(p => T[p])];
     assert(all.every(s => s.sw <= s.iw), `${tag}: scrollWidth <= innerWidth at every sample (max ${Math.max(...all.map(s => s.sw))} vs ${S[0].iw})`);
     assert(all.every(s => s.ow === 'clip'), `${tag}: .services clips horizontally with overflow-x: clip (${all[0].ow})`);
 
-    // formed layout from 40% on: every item sits in a slot; net rotation = Figma tilt + ring angle
+    // formed layout from 50% on: every item sits in a slot; net rotation = Figma tilt + ring angle
     let worstRing = 0, worstNet = 0, worstSpec = 0;
     for (const p of sweep) for (const i of vis) {
       const it = T[p].items[i];
@@ -167,9 +173,9 @@ for (const width of [1440, 375]) {
       worstNet = Math.max(worstNet, Math.abs(wrap(it.rot - (slot[i].tilt + ring))));
       worstSpec = Math.max(worstSpec, Math.abs(wrap(it.rot - (slot[i].tilt + ringFor(p)))));   // independent of where the item is
     }
-    assert(worstRing <= 3, `${tag}: ring angle follows ${mobile ? '0 (mobile amplitude)' : '90deg * progress after 40%'} within 3deg (worst ${fmt(worstRing)})`);
-    assert(worstNet <= 2, `${tag}: from 40% on every face's net rotation = Figma tilt + ring angle +-2deg (worst ${fmt(worstNet)})`);
-    assert(worstSpec <= 2, `${tag}: net rotation = Figma tilt + the specified ring angle (${mobile ? '0' : '90deg x (p-0.4)/0.6'}) +-2deg (worst ${fmt(worstSpec)})`);
+    assert(worstRing <= 3, `${tag}: ring angle follows ${mobile ? '0 (mobile amplitude)' : '90deg * progress after 50%'} within 3deg (worst ${fmt(worstRing)})`);
+    assert(worstNet <= 2, `${tag}: from 50% on every face's net rotation = Figma tilt + ring angle +-2deg (worst ${fmt(worstNet)})`);
+    assert(worstSpec <= 2, `${tag}: net rotation = Figma tilt + the specified ring angle (${mobile ? '0' : '90deg x ease((p-0.5)/0.5)'}) +-2deg (worst ${fmt(worstSpec)})`);
     // at 100%: the net rotation equals the Figma tilt of the slot the item now occupies
     let endTilt = 0, endPos = 0, permuted = 0;
     for (const i of vis) {
@@ -190,7 +196,7 @@ for (const width of [1440, 375]) {
     // inside the viewport. Desktop: whole rect. Mobile: the Figma slots themselves bleed past the edges, so an item may not
     // reach further out than its Figma slot does, and anything that is fully inside in Figma stays fully inside.
     if (!mobile) {
-      assert(sweep.every(p => vis.every(i => T[p].items[i].l >= -0.5 && T[p].items[i].r <= T[p].iw + 0.5)), `${tag}: every item rect inside [0, innerWidth] from 40% to 100%`);
+      assert(sweep.every(p => vis.every(i => T[p].items[i].l >= -0.5 && T[p].items[i].r <= T[p].iw + 0.5)), `${tag}: every item rect inside [0, innerWidth] from 50% to 100%`);
     } else {
       const ok = sweep.every(p => vis.every(i => T[p].items[i].l >= slot[i].l - 1 && T[p].items[i].r <= slot[i].r + 1));
       assert(ok, `${tag}: mobile items never reach further out than their Figma slot`);
@@ -199,7 +205,39 @@ for (const width of [1440, 375]) {
     // never over the heading or the CTA (rotated rect vs rect, 0.5px slack for antialiasing)
     let worstPen = -Infinity;
     for (const p of sweep) for (const i of vis) worstPen = Math.max(worstPen, overlapsCopy(T[p], T[p].items[i]));
-    assert(worstPen <= 0.5, `${tag}: no item overlaps the heading or CTA from 40% to 100% (worst penetration ${fmt(worstPen)}px)`);
+    assert(worstPen <= 0.5, `${tag}: no item overlaps the heading, paragraph or CTA from 50% to 100% (worst penetration ${fmt(worstPen)}px)`);
+    // ---- ease shape (sine.inOut): halfway through an item's own entry window it has covered ~0.5 of its path, a quarter in ~0.146.
+    // (cubic-out would give 0.875 and 0.58.) Path fraction is read two ways: from the scale (1.6 -> 1) and from the radius
+    // (start radius is the p=0 sample, end radius the Figma slot). Entry window = [stagger start, 0.5]; start = 0.14 * (slot y / box height + 0.5).
+    {
+      const END = 0.5, startOf = i => 0.14 * clamp01(slot[i].cy / S[0].oh + 0.5);
+      const worst = { 0.5: 0, 0.25: 0 };
+      for (const f of [0.5, 0.25]) for (const i of vis) {
+        const st = startOf(i);
+        await goto(page, st + f * (END - st));
+        const it = (await read(page)).items[i];
+        const r0 = Math.hypot(S[0].items[i].cx, S[0].items[i].cy), R = Math.hypot(slot[i].cx, slot[i].cy);
+        const eScale = (1.6 - it.scale) / 0.6, eRad = (r0 - Math.hypot(it.cx, it.cy)) / (r0 - R);
+        worst[f] = Math.max(worst[f], Math.abs(eScale - ease(f)), Math.abs(eRad - ease(f)));
+      }
+      assert(worst[0.5] <= 0.05, `${tag}: halfway through its entry window every item has covered 0.5 of its path +-0.05 (worst error ${worst[0.5].toFixed(3)})`);
+      assert(worst[0.25] <= 0.05, `${tag}: a quarter of the way through it has covered 0.146 +-0.05 (worst error ${worst[0.25].toFixed(3)})`);
+    }
+    // ---- vertical bounds (desktop, 1440x900): for some p in [0.5, 0.6] all 8 rotated rects lie fully inside the viewport, both axes ----
+    if (!mobile) {
+      let best = { p: null, over: Infinity }; const okPs = [];
+      for (let k = 0; k <= 10; k++) {
+        const p = 0.5 + k / 100;
+        await goto(page, p);
+        const s = await read(page);
+        let over = 0;
+        for (const it of s.items) for (const [x, y] of corners(withOrigin(s, it))) over = Math.max(over, -x, x - s.iw, -y, y - s.ih);
+        if (over <= 0.01) okPs.push(p.toFixed(2));
+        if (over < best.over) best = { p, over };
+      }
+      console.log(`INFO vertical bounds @${width}x900: best p=${best.p.toFixed(2)}, worst overshoot there ${fmt(best.over)}px; qualifying p: ${okPs.join(' ') || 'none'}`);
+      assert(best.over <= 0.01, `${tag}: some p in [0.5, 0.6] has all 8 rotated rects inside [0,innerHeight]x[0,innerWidth] (best p=${best.p.toFixed(2)}, overshoot ${fmt(best.over)}px)`);
+    }
     // the DOM stays 8 items, each with 1 img, no wrappers needed
     assert(errors.length === 0, `${tag}: no console errors ${JSON.stringify(errors)}`);
   } finally { await close(); }
@@ -215,17 +253,17 @@ for (const width of [800, 850, 900, 768]) {
       const s = await read(page);
       let worst = -Infinity;
       for (const it of s.items) if (it) worst = Math.max(worst, overlapsCopy(s, it));
-      assert(worst <= 0.5, `@${width} p=${p}: no item overlaps the heading or CTA (worst penetration ${fmt(worst)}px)`);
+      assert(worst <= 0.5, `@${width} p=${p}: no item overlaps the heading, paragraph or CTA (worst penetration ${fmt(worst)}px)`);
       assert(s.sw <= s.iw, `@${width} p=${p}: no horizontal overflow`);
     }
     // all 13 sweep samples as well, to see the in-between positions
     let worst = -Infinity, at = null;
-    for (const p of [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]) {
+    for (const p of [0.5, 0.6, 0.7, 0.8, 0.9, 1]) {
       await goto(page, p);
       const s = await read(page);
       for (const it of s.items) if (it) { const v = overlapsCopy(s, it); if (v > worst) { worst = v; at = p; } }
     }
-    assert(worst <= 0.5, `@${width}: no overlap with heading/CTA across the turn (worst ${fmt(worst)}px at p=${at})`);
+    assert(worst <= 0.5, `@${width}: no overlap with heading/paragraph/CTA across the turn (worst ${fmt(worst)}px at p=${at})`);
   } finally { await close(); }
 }
 
