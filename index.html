@@ -7,16 +7,30 @@
 <meta name="description" content="Familienfriseurbetrieb in vierter Generation. Herren- und Damenschnitte in Nümbrecht und Waldbröl.">
 <script>
   /* js + is-loading are set before first paint so the loader shows with no flash; without JS neither exists and the page is plain.
+     Two cases get the cover: the full loader (home, first visit of the session: mtm-visited unset), and a transition
+     (the page before set mtm-transition: cover and reveal, no counter, is-transition hides the counter). Anything else
+     (bookmark, search result, reload, reduced motion, ?skiploader) is a plain page. If sessionStorage throws it is a plain page too.
      mtmReady lives here so it exists even while js/loader.js waits behind a slow CDN; loader.js picks up window.mtmResolve.
-     6.6s is the safety net in case js/loader.js never runs; once loader.js starts it clears this timer (window.mtmFallback)
-     and owns the finish through its own 6s hard stop plus 0.3s fade. */
+     A subpage that is not covered resolves it at once. 6.6s is the safety net in case js/loader.js never runs; once loader.js
+     starts it clears this timer (window.mtmFallback) and owns the finish through its own 6s hard stop plus 0.3s fade. */
   (function (h, w) {
     h.classList.add('js');
     w.mtmReady = new Promise(function (r) { w.mtmResolve = r; });
     var skip = /[?&]skiploader\b/.test(location.search) || matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!skip) h.classList.add('is-loading');
+    var home = h.hasAttribute('data-home'), tr = false, seen = true;
+    try {
+      tr = w.sessionStorage.getItem('mtm-transition') === '1';
+      if (tr) w.sessionStorage.removeItem('mtm-transition');
+      if (home) seen = !!w.sessionStorage.getItem('mtm-visited');
+    } catch (e) { tr = false; seen = true; }
+    if (!skip && (tr || (home && !seen))) {
+      h.classList.add('is-loading');
+      if (tr) h.classList.add('is-transition');
+      if (home) { try { w.sessionStorage.setItem('mtm-visited', '1'); } catch (e) {} }
+    }
+    if (!home && !h.classList.contains('is-loading')) { w.mtmResolve(); return; }
     w.mtmFallback = setTimeout(function () {
-      if (h.classList.contains('is-loading')) { h.classList.remove('is-loading'); h.classList.add('is-loaded'); }
+      if (h.classList.contains('is-loading')) { h.classList.remove('is-loading', 'is-transition'); h.classList.add('is-loaded'); }
       Array.prototype.forEach.call(document.querySelectorAll('header, main, footer'), function (e) { e.removeAttribute('inert'); });
       w.mtmResolve();
     }, 6600);
