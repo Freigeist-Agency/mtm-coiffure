@@ -2,7 +2,7 @@
    the 450px frame (76:222) drives the mobile layout. */
 
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+html { scroll-behavior: smooth; scroll-padding-top: var(--nav-h); -webkit-text-size-adjust: 100%; } /* in-page anchors clear the sticky nav */
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body {
   margin: 0;
@@ -28,21 +28,19 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .btn:hover { transform: translateY(-2px); }
 .btn:focus-visible, a:focus-visible { outline: 2px solid var(--sand); outline-offset: 3px; }
 
-/* ---------- Site header (not in Figma; frosted bar after the Webflow .container-2) ---------- */
+/* ---------- Site header (Figma Nav 96:142: white 1440x49 bar, logo left, "Standorte." + button right) ---------- */
 .site-header {
-  position: fixed; z-index: 50; top: 12px; left: var(--pad); right: var(--pad);
+  position: sticky; z-index: 50; top: 0;
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  padding: 8px 12px 8px 16px;
-  border-radius: var(--radius);
-  border: .25px solid rgba(82, 74, 64, .15);
-  background: radial-gradient(120% 200% at 0 0, rgba(255,255,255,.55), rgba(255,255,255,.25));
-  box-shadow: inset 0 0 15px rgba(255,255,255,.68);
-  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  height: var(--nav-h);   /* border-box: includes the 1px bottom border */
+  padding: 0 var(--pad) 0 1.25vw;
+  background: var(--paper);
+  border-bottom: 1px solid var(--ink);
 }
-.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-size: 18px; font-weight: 400; }
-.brand img { width: 30px; height: 30px; }
-.site-nav { display: flex; align-items: center; gap: 24px; }
-.site-nav a { text-decoration: none; font-size: 16px; }
+.brand { display: flex; align-items: center; text-decoration: none; }
+.brand img { width: clamp(52px, 4.65vw, 67px); height: auto; aspect-ratio: 708 / 422; }
+.site-nav { display: flex; align-items: center; gap: 30px; }
+.site-nav a { text-decoration: none; font-size: var(--fs-body); }
 .site-nav .nav-link:hover { text-decoration: underline; text-underline-offset: 4px; }
 .menu-btn { display: flex; align-items: center; gap: 8px; }
 .menu-btn img { width: 30px; height: 30px; background: var(--ink); border-radius: 3px; }
@@ -66,44 +64,60 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .hero-title span { display: block; font-size: var(--fs-title); line-height: 1; }
 .hero-arabic { justify-self: end; width: 107.5px; height: auto; mix-blend-mode: multiply; } /* SVG ships with an off-white ground */
 
-/* ---------- Introduction ---------- */
+/* ---------- Introduction (Figma 73:60: card 352.5x321 at x=20, 85px text 688 wide ending at x=1420) ---------- */
 .intro {
   display: flex; justify-content: space-between; align-items: flex-start; gap: 40px;
-  padding: 123px var(--pad) 170px;
+  padding: 123px var(--pad) 167px;
 }
 .review-card {
-  flex: 0 0 352.5px; height: 321px; border: 1px solid var(--ink);
+  flex: 0 0 24.48vw; max-width: 352.5px; height: 321px; border: 1px solid var(--ink);
   display: grid; place-items: center; font-size: var(--fs-body);
 }
-.intro-text { max-width: 640px; margin-right: 48px; font-size: var(--fs-display); line-height: 1.25; }
+.intro-text { flex: 0 1 47.78vw; max-width: 688px; padding-right: 3.5vw; /* Geom wraps "vierten" onto its own line in Figma */ font-size: var(--fs-display); line-height: 1.25; }
 
-/* ---------- Services ring ---------- */
+/* ---------- Services (Figma 73:3: 788x788 orbit centred in a 1440x1000 section; the 8 photos keep their Figma tilt) ---------- */
 .services {
-  --r: clamp(215px, 22.8vw, 328px);    /* ring radius: 328px at 1440 */
-  --tile: clamp(80px, 9.13vw, 131.4px); /* tile size: 131px at 1440 */
-  position: relative; overflow: hidden;
-  min-height: calc(2 * var(--r) + var(--tile) + 340px);
+  position: relative;               /* overflow-x: clip lives in css/orbit.css, next to the entry motion that needs it */
   display: grid; place-items: center;
-  padding: 120px var(--pad);
+  padding: 12.43vw 0 2.29vw;   /* 179px above and 33px below the orbit at 1440 */
 }
-.ring { position: absolute; left: 50%; top: 50%; width: 0; height: 0; list-style: none; margin: 0; padding: 0; }
-.ring li {
-  position: absolute; width: var(--tile); height: var(--tile);
-  left: calc(var(--tile) / -2); top: calc(var(--tile) / -2);
-  transform: rotate(var(--a)) translateY(calc(-1 * var(--r)));
+.orbit {
+  grid-area: 1 / 1; position: relative; list-style: none; margin: 0; padding: 0;
+  width: 54.72vw; aspect-ratio: 1;
 }
-.ring img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius); }
-.services-copy { position: relative; text-align: center; max-width: 460px; display: grid; gap: 28px; justify-items: center; }
+.orbit__item {
+  --tilt: 0deg;
+  --x: 50%; --y: 50%;
+  position: absolute; left: var(--x); top: var(--y);
+  width: 16.68%; aspect-ratio: 1;           /* 131.4 of 788 */
+  margin: -8.34% 0 0 -8.34%;                /* centre the item on (--x, --y) */
+  transform: rotate(var(--tilt));
+}
+.orbit__item img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius); }
+.orbit__item--tl { --x: 20.08%; --y: 20.09%; --tilt: -45deg; }
+.orbit__item--t  { --x: 50%;    --y: 8.34%;  --tilt: 0deg; }
+.orbit__item--tr { --x: 79.92%; --y: 20.09%; --tilt: 45deg; }
+.orbit__item--l  { --x: 8.34%;  --y: 50%;    --tilt: -90deg; }
+.orbit__item--r  { --x: 91.66%; --y: 50%;    --tilt: 90deg; }
+.orbit__item--bl { --x: 20.08%; --y: 79.92%; --tilt: -135deg; }
+.orbit__item--b  { --x: 50%;    --y: 91.66%; --tilt: 180deg; }
+.orbit__item--br { --x: 79.92%; --y: 79.92%; --tilt: 135deg; }
+.services-copy {
+  grid-area: 1 / 1; position: relative; text-align: center;
+  width: 36.5vw; max-width: 460px; display: grid; gap: 29px; justify-items: center;
+}
 .services-copy h2 { font-size: var(--fs-lead); line-height: 1.25; }
-.services-copy p { max-width: 424px; }
+.services-copy p { max-width: 424px; line-height: 1.25; }
 
-/* ---------- About ---------- */
+/* ---------- About (Figma 73:48: black radial under a white ellipse; team photos follow as a carousel) ---------- */
 .about {
   position: relative; overflow: hidden; color: var(--paper);
-  background: radial-gradient(70.2% 70.2% at 50% 0,
-    #a5732d 0%, #7c5622 19.9%, #533a17 39.8%, #3e2b11 49.8%,
-    #291d0b 59.7%, #150e06 69.7%, #0a0703 74.6%, #000 79.6%);
-  padding: calc(19.86vw + 200px) 135px 89px;
+  background:
+    radial-gradient(70.2% 70.2% at 50% 0,
+      #a5732d 0%, #7c5622 19.9%, #533a17 39.8%, #3e2b11 49.8%,
+      #291d0b 59.7%, #150e06 69.7%, #0a0703 74.6%, #000 79.6%) top / 100% 57.9vw no-repeat,
+    var(--ink);                              /* gradient sized to the 834px Figma frame, solid black below */
+  padding: calc(19.86vw + 200px) 0 0;
   text-align: center;
 }
 .about::before { /* white ellipse 1440x572 centred on the section's top edge */
@@ -111,60 +125,140 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   background: var(--paper); border-radius: 50%;
 }
 .about > * { position: relative; }
-.about-copy { display: grid; gap: 23px; justify-items: center; }
+.about-copy { display: grid; gap: 23px; justify-items: center; padding-inline: 135px; }
+.about-copy h2 { line-height: 1.25; }
+.br-m { display: none; }
+.about-copy p { line-height: 1.25; padding-bottom: 28px; }  /* Figma text box is 103px for 3 lines */
 
-.gallery {
-  background: var(--ink);
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap);
-  padding: 88px var(--pad) 120px;
+/* Team photos: 3 x 460 squares at 1440 (Figma 73:61). Without JS this is a plain horizontal scroll-snap row. */
+.gallery { padding: 5.88vw 0 120px; }
+.carousel {
+  display: flex; gap: var(--gap);
+  padding-inline: var(--pad); scroll-padding-inline: var(--pad);
+  overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.35) transparent;
 }
-.gallery img { width: 100%; aspect-ratio: 1; object-fit: cover; }
-.gallery img:last-child { border-radius: var(--radius); }
+.carousel__item { scroll-snap-align: start; }
+.about .carousel__item { flex: 0 0 31.94vw; }
+.carousel__item img { width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius); }
 
-/* ---------- Locations ---------- */
-.locations { background: var(--ink); color: var(--paper); padding: 40px var(--pad) 120px; }
-.locations > h2 { text-align: right; margin-bottom: 160px; }
-.location {
-  display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 8fr); gap: var(--gap);
-  margin-left: auto; margin-bottom: var(--gap);
+/* ---------- Locations (Figma 73:74: title right-aligned, label + button column at x=20, two 16:9 photos 1147x645 from x=273) ---------- */
+.locations { background: var(--ink); color: var(--paper); padding: 20px var(--pad); container-type: inline-size; } /* cqw below = the 1400px content box */
+.locations > h2 { text-align: right; margin-bottom: 221px; }
+/* One row per salon: [label + button cell | 16:9 photo]. DOM order is label, photo, button; grid placement puts the label and
+   the button in the first column and the photo in the second. Both are sticky inside the row (the grid area is as tall as the
+   photo): the label pins from the top, the button from the bottom, so they sit on the photo's top and bottom edges at rest and
+   stay in view while that photo scrolls. When the row leaves, they leave with it and the next salon takes over.
+   No ancestor may be a scroll container (overflow hidden/auto/scroll would silently kill sticky; clip is fine). */
+.locations__main { display: grid; gap: var(--gap); }
+.location-info { display: grid; grid-template-columns: 17.38cqw minmax(0, 1fr); column-gap: var(--gap); }
+.location-info h3 {
+  grid-column: 1; grid-row: 1; align-self: start; justify-self: start;
+  top: calc(var(--nav-h) + 2vh);
+  font-size: var(--fs-body); font-weight: 400;
 }
-.location-info { display: flex; flex-direction: column; justify-content: space-between; padding-block: 10px 0; }
-.location-info h3 { font-size: var(--fs-body); font-weight: 400; }
 .location-info h3 a { text-decoration: none; }
 .location-info h3 a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.location-info .location-img { grid-column: 2; grid-row: 1; height: auto; aspect-ratio: 16 / 9; }
+.location-info .btn {
+  grid-column: 1; grid-row: 1; align-self: end; justify-self: start; max-width: 100%;
+  bottom: 2vh;
+}
+/* sticky is motion: under prefers-reduced-motion the label and button are plain flow (top/bottom above only apply when sticky) */
+@media (prefers-reduced-motion: no-preference) {
+  .location-info h3, .location-info .btn { position: sticky; }
+}
+.location-info .btn img { width: min(17.38cqw, 186px); height: auto; aspect-ratio: 186 / 39; }
 .location-img { width: 100%; aspect-ratio: 930 / 523; object-fit: cover; object-position: 50% 50%; }
 
 .curve { display: block; width: 100%; height: clamp(200px, 43.6vw, 628px); transform: rotate(180deg); margin: -1px 0 -2px; }
 
-/* ---------- Social ---------- */
-.social { padding: 89px 0 0; text-align: center; }
-.social-head { display: grid; gap: 23px; justify-items: center; padding: 0 var(--pad) 40px; }
+/* ---------- Social (Figma 73:122: header, then 4 cards 352.5x617 edge to edge) ---------- */
+.social { margin-top: 39px; padding: 42.5px 0 0; text-align: center; } /* Figma: 39px of white between the curve and the section, title 42px in */
+.social-head { display: grid; gap: 23px; justify-items: center; padding: 0 var(--pad) 52px; }
+.social-head p, .news-head p { min-height: 54px; } /* Figma description box is 54px tall */
 .social-links { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
-.social-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); }
-.social-card { aspect-ratio: 352 / 617; background: var(--placeholder); border-radius: var(--radius); }
+.social .carousel { padding-inline: 0; scroll-padding-inline: 0; }
+.social .carousel__item {
+  flex: 0 0 calc((100% - 3 * var(--gap)) / 4); aspect-ratio: 352.5 / 617;
+  background: var(--placeholder); border-radius: var(--radius);
+}
 
-/* ---------- News ---------- */
-.news { padding: 200px var(--pad) 200px; text-align: center; }
-.news-head { display: grid; gap: 23px; justify-items: center; margin-bottom: 40px; }
+/* ---------- News (Figma 75:194 + Frame 35 101:53: two cards, then the full-width video placeholder) ---------- */
+.news { padding: 73.4px 0 0; text-align: center; }
+.news-head { display: grid; gap: 23px; justify-items: center; margin-bottom: 28px; padding-inline: var(--pad); }
 .news-head p { max-width: 992px; }
-.news-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 470px)); gap: var(--gap); justify-content: center; }
-.news-card { background: var(--paper); border-radius: var(--radius); box-shadow: var(--shadow-card); padding: 81px 20px; text-align: left; }
+/* Static layout: cards side by side (460 each at x=255 and x=725), video block full-bleed below. Task 6 stacks these. */
+.stack { display: grid; grid-template-columns: 1fr repeat(2, minmax(0, 460px)) 1fr; column-gap: var(--gap); row-gap: 215px; }
+.stack__layer:nth-child(1) { grid-column: 2; }
+.stack__layer:nth-child(2) { grid-column: 3; }
+.news-card { background: var(--paper); border-radius: var(--radius); box-shadow: var(--shadow-card); padding: 81px 20px; text-align: left; min-height: 337px; }
+.news-card p { line-height: 1.25; }
+.stack__video { grid-column: 1 / -1; aspect-ratio: 1440 / 833.7; background: var(--placeholder); overflow: hidden; }
+.stack__video img { width: 100%; height: 100%; object-fit: cover; }
+/* Stacked mode: layers stick one after another, each a little lower than the last so the top edge of a covered card
+   peeks out above the one in front. Gated in CSS (not JS) so there is no layout shift: without JS, or under
+   prefers-reduced-motion, none of this applies and the side-by-side layout above is the page. js/stack.js only adds
+   the scrubbed scale (layer) and opacity (card content) on layers 1 and 2. No ancestor may be a scroll container
+   (that would kill sticky).
+   --gap-scroll is the empty run before layers 2 and 3 (margin-top, so a card's margin box is just the card); with the
+   card's own height it sets about one viewport of scroll per layer.
+   A sticky card must stay inside .stack, and the stack ends at the video's bottom. When the video is shorter than a card
+   (mobile, ~58vw tall) the card would be pushed up before the video reached it, so ::after adds a tail that keeps the
+   cards stuck until the video has arrived; the video simply stays put over them for that run. */
+@media (prefers-reduced-motion: no-preference) {
+  html.js .stack { display: block; padding-inline: 0; --gap-scroll: 60vh; }
+  html.js .stack::after { content: ""; display: block; height: max(0px, calc(420px - 58vw)); }
+  html.js .stack__layer { position: sticky; top: calc(var(--nav-h) + 4vh + var(--i) * 2.5vh); margin-inline: auto; transform-origin: center top; }
+  html.js .stack__layer:nth-child(1) { --i: 0; will-change: transform; }
+  html.js .stack__layer:nth-child(2) { --i: 1; will-change: transform; margin-top: var(--gap-scroll); }
+  html.js .stack__layer:nth-child(3) { --i: 2; margin-top: var(--gap-scroll); }
+  html.js .news-card { width: clamp(360px, 32vw, 620px); } /* Figma 460px at 1440; about 360 at 768; 614 at 1920 */
+  html.js .stack__video { margin-inline: 0; }
+}
+@media (prefers-reduced-motion: no-preference) and (max-width: 767px) {
+  html.js .news-card { width: calc(100% - 2 * var(--pad)); }
+}
 
-/* ---------- Footer (not in Figma) ---------- */
-.site-footer { background: var(--ink); color: var(--paper); padding: 80px var(--pad) 24px; }
-.footer-top { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; padding-bottom: 60px; border-bottom: .5px solid rgba(255,255,255,.25); }
-.footer-brand { display: grid; gap: 20px; align-content: start; }
-.footer-brand .wordmark { font-size: var(--fs-title); line-height: 1; }
-.footer-col h3 { font-size: var(--fs-body); font-weight: 400; margin-bottom: 12px; }
-.footer-col p, .footer-col li { font-size: 16px; line-height: 1.6; opacity: .8; }
+/* ---------- Footer (Figma 103:14, 1440x891: logo + button on white, black dome over a sand radial, 3 columns, legal strip) ---------- */
+.site-footer { background: var(--paper); color: var(--paper); overflow: hidden; }
+.footer-top { display: grid; place-items: center; padding-top: 7vw; } /* logo 375x224 at y=101 */
+.footer-logo { display: block; width: clamp(200px, 26vw, 375px); }
+.footer-logo img { width: 100%; height: auto; aspect-ratio: 708 / 422; }
+.footer-body {
+  position: relative; isolation: isolate; min-height: 38.67vw; /* 557px at 1440 */
+  padding: 3.1vw var(--pad) 0;
+  background: radial-gradient(ellipse 100% 100% at 50% 100%, var(--sand) 0%, var(--paper) 96%);
+}
+.footer-body::before { /* black dome: ellipse 1440x572 from y=130 of the 557px block */
+  content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 9vw; height: 39.72vw;
+  background: var(--ink); border-radius: 50%;
+}
+.footer-body::after { /* black rect 1440x137 closes the bottom of the block */
+  content: ""; position: absolute; z-index: -1; left: 0; right: 0; bottom: 0; height: 9.5vw; background: var(--ink);
+}
+.footer-cta { display: block; width: max-content; margin-inline: auto; }
+.footer-cols {
+  display: grid; grid-template-columns: repeat(3, 24.35vw); /* 351px pitch, first column at x=342 */
+  margin: calc(11.8vw - 39px) 0 0 calc(23.72vw - var(--pad)); /* columns start at y=549 of 891 */
+}
+.footer-col h3 { font-size: var(--fs-body); font-weight: 400; margin-bottom: 14px; }
+.footer-col p, .footer-col li { font-size: clamp(14px, 1.11vw, 16px); line-height: 1.45; opacity: .8; }
 .footer-col ul { list-style: none; margin: 0; padding: 0; }
 .footer-col a { text-decoration: none; }
 .footer-col a:hover { text-decoration: underline; text-underline-offset: 4px; }
-.footer-bottom { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; padding-top: 20px; font-size: 14px; opacity: .7; }
+.footer-fred { width: 47px; height: 53px; margin-top: 14px; }
+.footer-bottom {
+  position: absolute; left: 2.08vw; right: 2.08vw; bottom: 0.7vw;
+  display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+  padding-top: 14px; border-top: .5px solid rgba(255,255,255,.25);
+  font-size: 14px; opacity: .7;
+}
 .footer-bottom nav { display: flex; gap: 20px; }
 
 /* ---------- Location + legal pages ---------- */
-.page-hero { padding: 140px var(--pad) 60px; display: grid; gap: 20px; }
+.page-hero { padding: 60px var(--pad) 60px; display: grid; gap: 20px; }
 .page-hero .kicker { font-size: var(--fs-body); }
 .loc-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; padding: 0 var(--pad) 120px; }
 .loc-detail .location-img { border-radius: var(--radius); }
@@ -178,55 +272,113 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .team figure { margin: 0; }
 .team img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius); }
 .team figcaption { margin-top: 8px; font-size: 16px; }
-.legal { padding: 140px var(--pad) 120px; max-width: 860px; display: grid; gap: 20px; }
+.legal { padding: 60px var(--pad) 120px; max-width: 860px; display: grid; gap: 20px; }
 
 /* ---------- Tablet ---------- */
 @media (max-width: 1024px) {
-  .about { padding-inline: 40px; }
-  .footer-top { grid-template-columns: 1fr 1fr; }
+  .about-copy { padding-inline: 40px; }
+}
+/* Text keeps its 16/24px floor, so below ~1100px the ring is drawn larger than its 1440 proportion to leave room for the copy */
+@media (min-width: 768px) and (max-width: 1100px) {
+  .services { padding: 6vw 0; }
+  .orbit { width: 78vw; }
+  .services-copy { width: 46vw; }
 }
 
 /* ---------- Mobile (Figma frame 76:222, 450px) ---------- */
+@media (min-width: 768px) and (max-width: 900px) {
+  /* the columns wrap to taller lines here and the absolutely placed legal strip would sit on the last one */
+  .footer-body { padding-bottom: 9vw; }
+}
 @media (max-width: 767px) {
-  .site-nav .nav-link, .site-nav .btn { display: none; }
-  .brand span { display: none; }
+  .site-header { padding-left: 11px; padding-right: 13px; }
+  .site-nav { gap: 12px; }
+  .site-nav .nav-link { display: none; }
+  .site-nav .btn img { width: clamp(140px, 40.9vw, 184px); height: auto; }
 
   .hero { grid-template-rows: auto; }
   .hero-media { min-height: 667px; }
   .hero-intro {
     grid-area: 1 / 1; align-self: end;
-    display: flex; flex-direction: column; align-items: center; gap: 14px;
-    padding: 0 var(--pad) 110px; text-align: center; min-height: 0;
+    display: flex; flex-direction: column; align-items: center; gap: 25px;
+    padding: 0 var(--pad) 133px; text-align: center; min-height: 0;
   }
   .hero-arabic { order: 1; justify-self: auto; width: 160px; }
   .hero-title { order: 2; }
-  .hero-hello { order: 3; margin-top: 16px; }
-  .hero-cta { margin-bottom: 64px; }
+  .hero-hello { order: 3; }
+  .hero-cta { margin-bottom: 69px; }
 
-  .intro { flex-direction: column; align-items: stretch; padding-top: 30px; gap: 70px; }
-  .review-card { flex-basis: auto; height: auto; aspect-ratio: 410 / 321; }
+  .intro { flex-direction: column; align-items: stretch; padding: 50px var(--pad) 50px; gap: 61px; }
+  .review-card { flex-basis: auto; max-width: none; height: auto; aspect-ratio: 410 / 321; }
+  .intro-text { flex: none; max-width: none; padding-right: 0; }
 
-  .about { padding: calc(19.86vw + 90px) var(--pad) 60px; }
-  .gallery {
-    grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 78%;
-    overflow-x: auto; scroll-snap-type: x mandatory; padding: 40px var(--pad) 80px;
-    scrollbar-width: none;
+  /* Services (frame 76:248, 450 wide): three photos above the copy, three below, the side two are dropped.
+     Positions are the Figma centres as % of the width; vertical offsets in vw (450px = 100vw). */
+  .services { padding: 51vw 0 60.8vw; }
+  .orbit { grid-area: auto; position: absolute; inset: 0; width: auto; aspect-ratio: auto; }
+  .orbit__item { width: 29.2%; margin: -14.6% 0 0 -14.6%; }
+  .orbit__item--l, .orbit__item--r { display: none; }
+  .orbit__item--tr { --x: 9.06%;  --y: 24.44vw; --tilt: 30deg; }   /* Figma mirrors the pair on mobile */
+  .orbit__item--t  { --x: 50%;    --y: 14.6vw; }
+  .orbit__item--tl { --x: 90.94%; --y: 24.44vw; --tilt: -30deg; }
+  .orbit__item--bl { --x: 7.1%;   --y: calc(100% - 31.7vw); }
+  .orbit__item--b  { --x: 50%;    --y: calc(100% - 15.42vw); }
+  .orbit__item--br { --x: 92.9%;  --y: calc(100% - 31.7vw); }
+  .services-copy { width: auto; max-width: none; padding-inline: 13px; }
+  .services-copy p { max-width: 424px; }
+
+  /* About (frame 76:261): ellipse 450x286, copy boxes 170/155 tall in Figma */
+  .about { padding: 50.5vw 0 0; }
+  .about::before { top: -31.78vw; height: 63.56vw; }
+  .about-copy { padding-inline: var(--pad); }
+  .about-copy h2 { padding-bottom: 40px; }
+  .br-m { display: inline; }
+  .about-copy p { padding-bottom: 30px; }
+  .gallery { padding: 41px 0 131px; }
+  .carousel { scrollbar-width: none; scroll-padding-inline: 4.9vw; padding-inline: 4.9vw; gap: 1.78vw; }
+  .about .carousel__item { flex-basis: 73.1vw; scroll-snap-align: center; }
+
+  /* Locations (frame 76:279): label, 16:9 photo bleeding off the right edge, button, per salon */
+  .locations { padding-bottom: 123px; overflow: clip; } /* clip, not hidden: hidden would make .locations a scroll container and kill the sticky bar */
+  .locations > h2 { text-align: left; margin-bottom: 46px; font-size: 18.9vw; line-height: 1.25; } /* the mobile frame keeps the 85px title */
+  .locations__main { gap: var(--gap); }
+  /* Each salon gets its own slim bar (label left, button right) pinned directly under the nav while that salon's photo
+     scrolls beneath it; the next salon's bar takes over as the row ends. The label and button are two sticky items that
+     span both grid rows (the bar row and the photo row) so they can travel; each has an ink background so the photo never
+     shows between them. Full-bleed via the negative margin; 9vh tall = 73px at 375x812 (limit 22vh). */
+  .location-info { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: 9vh auto; column-gap: 0; margin-inline: calc(-1 * var(--pad)); }
+  .location-info h3, .location-info .btn {
+    grid-row: 1 / span 2; align-self: start; height: 9vh; z-index: 5;
+    display: flex; align-items: center; background: var(--ink); border-radius: 0; /* square: a rounded corner would let the photo show */
   }
-  .gallery img { scroll-snap-align: center; }
+  .location-info h3 { grid-column: 1; justify-self: stretch; padding-left: var(--pad); font-size: var(--fs-body); top: var(--nav-h); }
+  .location-info .btn { grid-column: 2; justify-self: end; padding-right: var(--pad); bottom: auto; top: var(--nav-h); }
+  .location-info .btn img { width: min(40vw, 186px); }
+  .location-info .location-img { grid-column: 1 / -1; grid-row: 2; width: 117vw; max-width: none; margin-left: var(--pad); -webkit-mask-image: linear-gradient(to right, #000 68%, transparent); mask-image: linear-gradient(to right, #000 68%, transparent); }
+  .curve { height: 74.1vw; }
 
-  .locations > h2 { margin-bottom: 60px; }
-  .location { grid-template-columns: 1fr; margin-bottom: 60px; }
-  .location-info { display: contents; }
-  .location-info h3 { order: 1; }
-  .location-img { order: 2; }
-  .location-info .btn { order: 3; justify-self: start; }
+  /* Social (frame 76:297) */
+  .social { margin-top: 0; padding-top: 107px; }
+  .social-head { gap: 0; padding-bottom: 136px; }
+  .social-head p, .news-head p { min-height: 0; }
+  .social-links { margin-top: 21px; }
+  .social .carousel__item { flex-basis: calc((100% - var(--gap)) / 2); }
 
-  .social-cards { grid-template-columns: repeat(2, 1fr); }
-  .news { padding-block: 120px; }
-  .news-cards { grid-template-columns: 1fr; }
-  .news-card { padding-block: 60px; }
+  /* News (frame 76:320): cards 410x316, 20px apart; the video placeholder follows */
+  .news { padding: 124px 0 0; }
+  .news-head { gap: 0; margin-bottom: 61px; }
+  .stack { grid-template-columns: minmax(0, 1fr); padding-inline: var(--pad); row-gap: 20px; }
+  .stack__layer:nth-child(n) { grid-column: 1; }
+  .stack__video { margin-inline: calc(-1 * var(--pad)); grid-column: 1; }
+  .news-card { padding: 58px 20px; min-height: 316px; }
 
-  .footer-top { grid-template-columns: 1fr; gap: 32px; }
+  .footer-body { min-height: 0; padding-bottom: 80px; }
+  .footer-body::before { top: 20vw; }
+  .footer-body::after { top: 40vw; height: auto; } /* below the dome's midline everything is black */
+  .footer-cta { margin-top: 4vw; }
+  .footer-cols { grid-template-columns: 1fr; gap: 28px; width: auto; margin: 22vw 0 0; padding-inline: 4.5vw; }
+  .footer-col p, .footer-col li { font-size: 16px; }
+  .footer-bottom { bottom: 14px; left: var(--pad); right: var(--pad); }
   .loc-detail { grid-template-columns: 1fr; }
   .team { grid-template-columns: repeat(2, 1fr); }
 }
