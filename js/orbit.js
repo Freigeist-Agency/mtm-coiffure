@@ -75,8 +75,8 @@
     function render(p) {
       if (dead || p === last) return;
       last = p; progress = p;
-      var rho = clamp01((p - ENTRY_END) / (1 - ENTRY_END));
-      var turn = ring * ease(rho);
+      var rho = ease(clamp01((p - ENTRY_END) / (1 - ENTRY_END)));   // eased ring progress: drives both the turn and the radius morph
+      var turn = ring * rho;
       for (var i = 0; i < items.length; i++) {
         var it = items[i];
         var e = ease(clamp01((p - it.start) / (ENTRY_END - it.start)));
