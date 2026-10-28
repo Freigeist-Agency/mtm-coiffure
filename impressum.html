@@ -12,9 +12,41 @@
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/site.css">
 <link rel="stylesheet" href="css/menu.css">
-<script>window.mtmReady = Promise.resolve();</script>
+<link rel="stylesheet" href="css/loader.css">
+<script>
+  /* js + is-loading are set before first paint so the loader shows with no flash; without JS neither exists and the page is plain.
+     Two cases get the cover: the full loader (home, first visit of the session: mtm-visited unset), and a transition
+     (the page before set mtm-transition: cover and reveal, no counter, is-transition hides the counter). Anything else
+     (bookmark, search result, reload, reduced motion, ?skiploader) is a plain page. If sessionStorage throws it is a plain page too.
+     mtmReady lives here so it exists even while js/loader.js waits behind a slow CDN; loader.js picks up window.mtmResolve.
+     A subpage that is not covered resolves it at once. 6.6s is the safety net in case js/loader.js never runs; once loader.js
+     starts it clears this timer (window.mtmFallback) and owns the finish through its own 6s hard stop plus 0.3s fade. */
+  (function (h, w) {
+    h.classList.add('js');
+    w.mtmReady = new Promise(function (r) { w.mtmResolve = r; });
+    var skip = /[?&]skiploader\b/.test(location.search) || matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var home = h.hasAttribute('data-home'), tr = false, seen = true;
+    try {
+      tr = w.sessionStorage.getItem('mtm-transition') === '1';
+      if (tr) w.sessionStorage.removeItem('mtm-transition');
+      if (home) seen = !!w.sessionStorage.getItem('mtm-visited');
+    } catch (e) { tr = false; seen = true; }
+    if (!skip && (tr || (home && !seen))) {
+      h.classList.add('is-loading');
+      if (tr) h.classList.add('is-transition');
+      if (home) { try { w.sessionStorage.setItem('mtm-visited', '1'); } catch (e) {} }
+    }
+    if (!home && !h.classList.contains('is-loading')) { w.mtmResolve(); return; }
+    w.mtmFallback = setTimeout(function () {
+      if (h.classList.contains('is-loading')) { h.classList.remove('is-loading', 'is-transition'); h.classList.add('is-loaded'); }
+      Array.prototype.forEach.call(document.querySelectorAll('header, main, footer'), function (e) { e.removeAttribute('inert'); });
+      w.mtmResolve();
+    }, 6600);
+  })(document.documentElement, window);
+</script>
 </head>
 <body>
+<div class="loader" aria-hidden="true"><div class="loader__panel"></div><div class="loader__dome"></div></div>
 <header class="site-header">
   <a class="brand" href="index.html" aria-label="MTM Coiffure, Startseite"><img src="assets/logo-nav.png" alt="" width="67" height="40"></a>
   <nav class="site-nav" aria-label="Hauptnavigation">
@@ -59,7 +91,14 @@
     </div>
   </div>
 </footer>
+<script>
+  /* keep Tab out of the page while the cover is up; js/loader.js lifts it */
+  if (document.documentElement.classList.contains('is-loading')) {
+    Array.prototype.forEach.call(document.querySelectorAll('header, main, footer'), function (e) { e.setAttribute('inert', ''); });
+  }
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="js/loader.js"></script>
 <script src="js/menu.js"></script>
 </body>
 </html>
