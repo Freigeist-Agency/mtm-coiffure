@@ -56,6 +56,11 @@ html.js.is-loading .loader__count {
 }
 html.js.is-loading .loader__num { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
 
+/* Page transition (js/loader.js): the same cover and reveal, with no counter. is-transition is set by the inline head script on
+   arrival and by loader.js while the cover comes down. The cover also takes the pointer, so nothing behind it can be clicked. */
+html.js.is-loading.is-transition .loader { pointer-events: auto; }
+html.js.is-loading.is-transition .loader__count { display: none; }
+
 @media (max-width: 767px) {
   html.js.is-loading .loader {
     /* mobile: 450 frame. dome = 172 + 200 = 357 tall (ry 200); panel edge ry = 185 */
