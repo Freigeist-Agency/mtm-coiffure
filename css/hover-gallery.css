@@ -29,11 +29,11 @@
 .hover-gallery__card:first-child .hover-gallery__img { opacity: 1; }
 .hover-gallery__img { -webkit-user-drag: none; user-select: none; }
 
-/* Phone: a snap scroller. Active card 66vw wide, the others 15vw; the row is as tall as the active card's 4:5 box. */
+/* Phone: a snap scroller. Active card 66vw wide, the others 15vw; cards 460px tall in Figma's 450px mobile frame (102.2vw). */
 @media (max-width: 720px) {
   .hover-gallery {
     gap: 7px; aspect-ratio: auto;
-    height: min(82.5vw, 80svh);
+    height: min(102.2vw, 80svh);
     padding-block: 6px; margin-block: -6px;      /* room for the focus ring, which the scroller would otherwise clip */
     overflow: auto hidden; overflow-clip-margin: 0;
     scroll-snap-type: x mandatory; scroll-padding-inline: var(--pad);

@@ -165,9 +165,9 @@ for (const width of [1440, 768, 375]) {
       // phone scroller
       assert(s0.sw > s0.cw + 20, `${tag}: gallery scrolls horizontally (${s0.sw} > ${s0.cw})`);
       assert(near(s0.cards[0].w, 0.66 * width, 3), `${tag}: active card ~66vw (${s0.cards[0].w.toFixed(1)} vs ${(0.66 * width).toFixed(1)})`);
+      assert(near(s0.cards[0].h, width * 460 / 450, 2), `${tag}: cards as tall as Figma's mobile variant, 460 in a 450 frame (${s0.cards[0].h.toFixed(1)} vs ${(width * 460 / 450).toFixed(1)})`);
       assert(s0.cards.every(c => near(c.imgW, s0.cards[0].w, 1)), `${tag}: every photo is as wide as the active card (${s0.cards.map(c => c.imgW)})`);
       assert(s0.cards.slice(1).every(c => near(c.w, 0.15 * width, 3)), `${tag}: inactive cards ~15vw (${s0.cards.slice(1).map(c => c.w.toFixed(1))})`);
-      assert(near(s0.cards[0].h, Math.min(0.825 * width, 0.8 * 812), 3) && near(s0.cards[0].w / s0.cards[0].h, 0.8, 0.02), `${tag}: active card is 4:5 (${s0.cards[0].w.toFixed(0)}x${s0.cards[0].h.toFixed(0)})`);
       const cs = await page.evaluate(s => { const c = getComputedStyle(document.querySelector(s)); return { ox: c.overflowX, snap: c.scrollSnapType, gap: c.columnGap, sb: c.scrollbarWidth }; }, SEL);
       assert(cs.ox === 'auto' && cs.snap.includes('mandatory') && cs.gap === '7px' && cs.sb === 'none', `${tag}: scroll-snap scroller, 7px gap, no scrollbar ${JSON.stringify(cs)}`);
       await shot(page, `phone-${width}-rest.png`);
