@@ -106,8 +106,10 @@ for (const width of WIDTHS) {
       const items = orbit ? q('.orbit__item > img', orbit) : [];
       const orbitItems = orbit ? q('.orbit__item', orbit) : [];
       const heading = q('.services h2')[0], cta = q('.services .btn')[0];
-      const team = q('.about .carousel[data-carousel="team"]')[0];
-      const teamImgs = team ? q('.carousel__item:not([data-clone]) > img', team) : [];
+      const gal = q('.about .gallery > .hover-gallery')[0];
+      const galCards = gal ? q('button.hover-gallery__card', gal) : [];
+      const galImgs = galCards.map(c => c.querySelector('img'));
+      const oldTeam = q('.about .carousel[data-carousel="team"]').length;
       const social = q('.social .carousel[data-carousel="social"]')[0];
       const rows = q('.locations .location-info');
       const stack = q('.news .stack')[0];
@@ -118,11 +120,10 @@ for (const width of WIDTHS) {
         tilts: orbitItems.filter(i => getComputedStyle(i).display !== 'none').map(i => parseFloat(getComputedStyle(i).getPropertyValue('--tilt'))),
         itemBoxes: orbitItems.map(box), orbitBox: orbit && box(orbit),
         headBox: heading && box(heading), ctaBox: cta && box(cta),
-        team: !!team, teamImgs: teamImgs.length,
-        teamRatios: teamImgs.map(i => { /* layout size: the carousel skews cards, which changes the bounding box */ return { rect: i.offsetWidth / i.offsetHeight, nat: i.naturalWidth / i.naturalHeight, w: i.naturalWidth }; }),
-        teamAlt: teamImgs.every(i => (i.getAttribute('alt') || '').trim().length > 3),
-        teamAttrs: teamImgs.every(i => i.getAttribute('width') && i.getAttribute('height')),
-        itemsInTeam: team ? q('.carousel__item:not([data-clone])', team).length : 0,
+        gal: !!gal, galCards: galCards.length, galImgs: galImgs.filter(Boolean).length, oldTeam,
+        galAlt: galImgs.every(i => i && (i.getAttribute('alt') || '').trim().length > 3),
+        galAttrs: galImgs.every(i => i && i.getAttribute('width') && i.getAttribute('height')),
+        galLabels: galCards.every(c => (c.getAttribute('aria-label') || '').trim().length > 3),
         social: !!social, socialItems: social ? q('.carousel__item:not([data-clone])', social).length : 0,
         rows: rows.length,
         rowOrder: rows.every(r => [...r.children].map(c => c.tagName + (c.classList.contains('btn') ? '.btn' : '')).join() === 'H3,IMG,A.btn'),
@@ -138,10 +139,9 @@ for (const width of WIDTHS) {
     assert(h.orbit && h.orbitItems === 8 && h.orbitImgs === 8, `${tag}: .services .orbit has 8 .orbit__item > img (${h.orbitItems}/${h.orbitImgs})`);
     { const want = width > 767 ? [-45, 0, 45, -90, 90, -135, 180, 135] : [-30, 0, 30, -135, 180, 135];   // DOM order tl,t,tr,(l,r),bl,b,br; the mobile side two are display:none
       assert(JSON.stringify(h.tilts) === JSON.stringify(want), `${tag}: computed --tilt of the visible orbit items is ${JSON.stringify(want)} (got ${JSON.stringify(h.tilts)})`); }
-    assert(h.team && h.teamImgs === 8 && h.itemsInTeam === 8, `${tag}: .about carousel[data-carousel=team] has 8 .carousel__item > img (${h.teamImgs})`);
-    assert(h.teamRatios.length === 8 && h.teamRatios.every(r => Math.abs(r.rect - 1) <= 0.02 && Math.abs(r.nat - 1) <= 0.02),
-      `${tag}: team images 1:1 (rendered and natural) ${JSON.stringify(h.teamRatios.map(r => +r.rect.toFixed(3)))}`);
-    assert(h.teamAlt && h.teamAttrs, `${tag}: team images have German alt text and width/height`);
+    assert(h.gal && h.galCards === 6 && h.galImgs === 6, `${tag}: .about .gallery > .hover-gallery has 6 button.hover-gallery__card > img (${h.galCards}/${h.galImgs})`);
+    assert(h.oldTeam === 0, `${tag}: the team carousel is gone from .about (${h.oldTeam})`);
+    assert(h.galAlt && h.galAttrs && h.galLabels, `${tag}: gallery images have German alt text and width/height, buttons have aria-label`);
     assert(h.imgAttrs, `${tag}: hero..about images have width, height and alt`);
     if (h.orbitBox && h.itemBoxes.length === 8) {
       const B = h.itemBoxes, hb = h.headBox, cb = h.ctaBox;
@@ -168,18 +168,21 @@ for (const width of WIDTHS) {
   } finally { await close(); }
 }
 
-// Without JS the team carousel is a horizontal scroll-snap row
+// Without JS the hover gallery is a static row of six cards (phone: fixed 66vw / 15vw cards in a scroll-snap row)
 for (const width of [1440, 375]) {
   const { page, close } = await openPage({ width, path: 'index.html', js: false });
   try {
     const c = await page.evaluate(() => {
-      const el = document.querySelector('.about .carousel[data-carousel="team"]');
+      const el = document.querySelector('.about .hover-gallery');
       if (!el) return null;
-      const cs = getComputedStyle(el);
-      return { ox: cs.overflowX, snap: cs.scrollSnapType, scrollable: el.scrollWidth > el.clientWidth };
+      const cs = getComputedStyle(el), cards = [...el.querySelectorAll('.hover-gallery__card')];
+      const w = cards.map(b => b.getBoundingClientRect().width), top = cards.map(b => Math.round(b.getBoundingClientRect().top));
+      return { ox: cs.overflowX, snap: cs.scrollSnapType, scrollable: el.scrollWidth > el.clientWidth, n: cards.length,
+        w: w.map(Math.round), oneRow: top.every(t => t === top[0]), firstWidest: w.slice(1).every(x => x < w[0]) };
     });
-    assert(c && c.ox === 'auto' && c.snap.includes('x') && c.snap.includes('mandatory') && c.scrollable,
-      `no-JS @${width}: team carousel is a scroll-snap row ${JSON.stringify(c)}`);
+    assert(c && c.n === 6 && c.oneRow && c.firstWidest && c.w.every(x => x > 0),
+      `no-JS @${width}: hover gallery is a static row, first card widest ${JSON.stringify(c)}`);
+    if (width === 375) assert(c.ox === 'auto' && c.snap.includes('mandatory') && c.scrollable, `no-JS @${width}: phone row is a scroll-snap scroller ${JSON.stringify(c)}`);
   } finally { await close(); }
 }
 // The last footer text line must clear the legal strip (the strip is absolutely positioned, so only padding keeps them apart)

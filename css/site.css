@@ -130,7 +130,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .br-m { display: none; }
 .about-copy p { line-height: 1.25; padding-bottom: 28px; }  /* Figma text box is 103px for 3 lines */
 
-/* Team photos: 3 x 460 squares at 1440 (Figma 73:61). Without JS this is a plain horizontal scroll-snap row. */
+/* Team photos: the hover gallery (css/hover-gallery.css) sits in .gallery. .carousel below is the shared base for the social carousel. */
 .gallery { padding: 5.88vw 0 120px; }
 .carousel {
   display: flex; gap: var(--gap);
@@ -140,7 +140,6 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.35) transparent;
 }
 .carousel__item { scroll-snap-align: start; }
-.about .carousel__item { flex: 0 0 31.94vw; }
 .carousel__item img { width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius); }
 
 /* ---------- Locations (Figma 73:74: title right-aligned, label + button column at x=20, two 16:9 photos 1147x645 from x=273) ---------- */
@@ -351,7 +350,6 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   .about-copy p { padding-bottom: 30px; }
   .gallery { padding: 41px 0 131px; }
   .carousel { scrollbar-width: none; scroll-padding-inline: 4.9vw; padding-inline: 4.9vw; gap: 1.78vw; }
-  .about .carousel__item { flex-basis: 73.1vw; scroll-snap-align: center; }
 
   /* Locations (frame 76:279): label, 16:9 photo bleeding off the right edge, button, per salon */
   .locations { padding-bottom: 123px; overflow: clip; } /* clip, not hidden: hidden would make .locations a scroll container and kill the sticky bar */

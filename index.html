@@ -45,6 +45,7 @@
 <link rel="stylesheet" href="css/menu.css">
 <link rel="stylesheet" href="css/loader.css">
 <link rel="stylesheet" href="css/carousel.css">
+<link rel="stylesheet" href="css/hover-gallery.css">
 <link rel="stylesheet" href="css/orbit.css">
 </head>
 <body>
@@ -101,15 +102,13 @@
       <a class="btn" href="#standorte" aria-label="Termin buchen"><img src="assets/btn-about.svg" alt="" width="184" height="39"></a>
     </div>
     <div class="gallery">
-      <div class="carousel" data-carousel="team" role="region" aria-roledescription="Karussell" aria-label="Das Team von MTM Coiffure" tabindex="0">
-        <div class="carousel__item"><img src="assets/dsc00642-1x1.jpg" alt="Drei Mitarbeiter von MTM Coiffure im Salon" width="920" height="920" loading="lazy"></div>
-        <div class="carousel__item"><img src="assets/dsc09979-1x1.jpg" alt="Friseur hält lächelnd eine Schere in die Kamera" width="920" height="920" loading="lazy"></div>
-        <div class="carousel__item"><img src="assets/dsc00594-1x1.jpg" alt="Friseurmeister mit Schere vor dem Spiegel" width="920" height="920" loading="lazy"></div>
-        <div class="carousel__item"><img src="assets/dsc00155-1x1.jpg" alt="Hände mit Kamm und Schere beim Locken schneiden" width="920" height="920" loading="lazy"></div>
-        <div class="carousel__item"><img src="assets/dsc00651-1x1.jpg" alt="Das Team von MTM Coiffure im Salon" width="920" height="920" loading="lazy"></div>
-        <div class="carousel__item"><img src="assets/dsc00483-1x1.jpg" alt="Friseurmeister im beigen Anzug mit verschränkten Armen" width="920" height="920" loading="lazy"></div>
-        <div class="carousel__item"><img src="assets/dsc00512-1x1.jpg" alt="Lächelnder Friseur im schwarzen Hemd mit verschränkten Armen" width="920" height="920" loading="lazy"></div>
-        <div class="carousel__item"><img src="assets/dsc00236-1x1.jpg" alt="Werkzeug und Scheren am Frisierplatz" width="920" height="920" loading="lazy"></div>
+      <div class="hover-gallery" role="group" aria-label="Das Team von MTM Coiffure bei der Arbeit">
+        <button class="hover-gallery__card" type="button" aria-pressed="true" aria-label="Drei Mitarbeiter von MTM Coiffure im Salon"><span class="hover-gallery__visual"><img class="hover-gallery__img" src="assets/dsc00642-1x1.jpg" alt="Drei Mitarbeiter von MTM Coiffure im Salon" width="920" height="920" loading="lazy"></span></button>
+        <button class="hover-gallery__card" type="button" aria-pressed="false" aria-label="Friseur hält lächelnd eine Schere in die Kamera"><span class="hover-gallery__visual"><img class="hover-gallery__img" src="assets/dsc09979-1x1.jpg" alt="Friseur hält lächelnd eine Schere in die Kamera" width="920" height="920" loading="lazy"></span></button>
+        <button class="hover-gallery__card" type="button" aria-pressed="false" aria-label="Lächelnder Friseur im schwarzen Hemd mit verschränkten Armen"><span class="hover-gallery__visual"><img class="hover-gallery__img" src="assets/dsc00512-1x1.jpg" alt="Lächelnder Friseur im schwarzen Hemd mit verschränkten Armen" width="920" height="920" loading="lazy"></span></button>
+        <button class="hover-gallery__card" type="button" aria-pressed="false" aria-label="Friseur schneidet einem Kunden die Haare"><span class="hover-gallery__visual"><img class="hover-gallery__img" src="assets/dsc00126.jpg" alt="Friseur schneidet einem Kunden die Haare" width="1200" height="1800" loading="lazy"></span></button>
+        <button class="hover-gallery__card" type="button" aria-pressed="false" aria-label="Hände mit Kamm und Schere beim Locken schneiden"><span class="hover-gallery__visual"><img class="hover-gallery__img" src="assets/dsc00155-1x1.jpg" alt="Hände mit Kamm und Schere beim Locken schneiden" width="920" height="920" loading="lazy"></span></button>
+        <button class="hover-gallery__card" type="button" aria-pressed="false" aria-label="Friseur formt mit dem Trimmer den Haaransatz im Nacken eines Kunden"><span class="hover-gallery__visual"><img class="hover-gallery__img" src="assets/dsc09804.jpg" alt="Friseur formt mit dem Trimmer den Haaransatz im Nacken eines Kunden" width="1200" height="1800" loading="lazy"></span></button>
       </div>
     </div>
   </section>
@@ -205,6 +204,7 @@
 <script src="js/orbit.js"></script>
 <script src="js/stack.js"></script>
 <script src="js/carousel.js"></script>
+<script src="js/hover-gallery.js"></script>
 <script src="js/menu.js"></script>
 </body>
 </html>
