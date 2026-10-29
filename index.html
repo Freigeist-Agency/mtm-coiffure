@@ -47,6 +47,7 @@
 <link rel="stylesheet" href="css/carousel.css">
 <link rel="stylesheet" href="css/hover-gallery.css">
 <link rel="stylesheet" href="css/orbit.css">
+<link rel="stylesheet" href="css/arc-scroll.css">
 </head>
 <body>
 <div class="loader" aria-hidden="true"><div class="loader__panel"></div><div class="loader__dome"></div><div class="loader__count"><span class="loader__num">0</span></div></div>
@@ -128,7 +129,20 @@
       </div>
     </div>
   </section>
-  <img class="curve" src="assets/curve.svg" alt="" aria-hidden="true" width="1440" height="628">
+  <!-- assets/curve.svg, inlined so js/arc-scroll.js can change the ellipse's ry; at rest it renders exactly as the <img> did -->
+  <svg class="curve" aria-hidden="true" focusable="false" preserveAspectRatio="none" width="1440" height="628" viewBox="0 0 1440 628" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <g clip-path="url(#curve-clip)">
+      <rect width="1440" height="628" fill="url(#curve-paint)"/>
+      <ellipse class="curve__dome" cx="720" rx="720" ry="286" fill="white"/>
+    </g>
+    <defs>
+      <radialGradient id="curve-paint" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(720 5.31732e-06) rotate(90) scale(440.742 1010.62)">
+        <stop stop-color="#A5732D"/>
+        <stop offset="0.948695"/>
+      </radialGradient>
+      <clipPath id="curve-clip"><rect width="1440" height="628" fill="white"/></clipPath>
+    </defs>
+  </svg>
 
   <section class="social" aria-labelledby="social-h">
     <div class="social-head">
@@ -205,6 +219,7 @@
 <script src="js/stack.js"></script>
 <script src="js/carousel.js"></script>
 <script src="js/hover-gallery.js"></script>
+<script src="js/arc-scroll.js"></script>
 <script src="js/menu.js"></script>
 </body>
 </html>

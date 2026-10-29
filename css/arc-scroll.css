@@ -1,0 +1,7 @@
+/* Scroll-driven depth of the three curved section edges (js/arc-scroll.js). Without the script, with
+   prefers-reduced-motion, or when GSAP is missing none of this applies and the curves are the static Figma shapes in site.css.
+   The script adds .arc-live to an element only while its curve is off its resting depth and removes it again at rest, so a
+   settled page carries no transform at all. --arc-s is the depth factor: 1 = the designed ellipse, 0 = a straight edge.
+   scaleY about the ellipse's own centre line keeps the section edge (the ellipse's corners) fixed; only the apex moves. */
+.about.arc-live::before,
+.footer-body.arc-live::before { transform: scaleY(var(--arc-s, 1)); will-change: transform; }
