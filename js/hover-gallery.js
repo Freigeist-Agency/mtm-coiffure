@@ -1,191 +1,312 @@
 /* Hover accordion gallery: .hover-gallery > button.hover-gallery__card (home page, team photos).
+   A line-by-line port of the Figma Make original (references/hover-gallery-make/source/src/App.tsx): same constants,
+   same function names (getPanelSizes, setLayout, updateClipPaths, animateTo), same math, same GSAP timeline.
    One card is wide, the rest are narrow; hovering, focusing or clicking a card makes it the wide one and the gallery
-   returns to the first card when the pointer leaves. Widths, the photo offset inside each card and its opacity are
-   tweened together with the global gsap (loaded in index.html; no second GSAP tag).
-   Edge bend: while a card's width changes, its .hover-gallery__visual gets a clip-path whose left and right edges bow
-   sideways (sin curve, peak at half the move, exactly 0 again at the end). At rest the clip is a plain rectangle.
-   Desktop (> 720px): the widths fill the row, active : inactive = 460 : 178. Phone (<= 720px): a snap scroller with
-   66vw / 15vw cards, tap to activate, no hover and no reset.
-   Without JS, with a failed GSAP load or with prefers-reduced-motion the layout is set at once; css/hover-gallery.css
-   already shows a static row. */
+   returns to the first card when the pointer leaves.
+   Edge bend: what bends are the BOUNDARIES between neighbouring cards, not the cards. Each boundary has one signed
+   `bend`; the right edge of card i and the left edge of card i + 1 both read boundariesRef[i].bend, so when the row
+   shifts every gap bows the same way. At rest every bend is exactly 0 (straight edges).
+   Site-only parts (the Make version has none of them): the aria-pressed sync, the phone snap scroller (<= 720px, 66vw /
+   15vw cards, tap scrolls the card to the start), the touch guard on pointerleave, the init-once guard and the
+   fallback when GSAP did not load. Each deviation from Make is marked with a `// Make:` or `// site:` comment.
+   Uses the global gsap (loaded in index.html); no second GSAP tag. */
 (function () {
   'use strict';
-  var DURATION = 0.75, EASE = 'sine.inOut';
-  var ACTIVE_RATIO = 460 / 178;       // active card width / inactive card width on desktop
-  var INACTIVE_OPACITY = 0.78;
-  var PHONE_ACTIVE_VW = 66, PHONE_INACTIVE_VW = 15;
-  var CLIP_OVERFLOW = 72;             // the visual is this much wider than the card on each side (css: inset 0 -72px)
-  var CURVE_STEPS = 24;               // points down each bent edge
-  var MIN_TRANSITION_BEND = 10;       // a card that moves less than this px does not bend
-  var BEND_MIN = 22, BEND_MAX = 56, BEND_PER_PX = 0.24;
-  var SETTLE = 0.12;                  // the bend is faded to exactly 0 over the last 0.12s of the move
+  var ACTIVE_RATIO = 460 / 178;
+  var MOVE_DURATION = 0.75;
+  var CLIP_OVERFLOW = 72;
+  var CURVE_STEPS = 24;
+  var MIN_TRANSITION_BEND = 10;
+  var IMAGE_RADIUS = 5;
 
   var phoneMQ = window.matchMedia ? window.matchMedia('(max-width: 720px)') : { matches: false };
   var reduceMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 
-  function listen(mq, fn) {
-    if (mq.addEventListener) mq.addEventListener('change', fn);
-    else if (mq.addListener) mq.addListener(fn);
+  // Make: gsap.set(target, vars). site: without GSAP (failed CDN load) the same three properties are written directly.
+  function set(target, vars) {
+    if (window.gsap) { window.gsap.set(target, vars); return; }
+    if (vars.width !== undefined) target.style.width = vars.width + 'px';
+    if (vars.x !== undefined) target.style.transform = 'translate(' + vars.x + 'px, 0px)';
+    if (vars.opacity !== undefined) target.style.opacity = vars.opacity;
   }
 
-  // clip-path for a visual that is (w + 2 * CLIP_OVERFLOW) wide and h tall. bend > 0 bows both edges outward, < 0 inward.
-  function clipPath(w, h, bend) {
-    var l = CLIP_OVERFLOW, r = CLIP_OVERFLOW + w, k, t, s;
-    if (!bend) return 'path("M' + l + ' 0 L' + r.toFixed(2) + ' 0 L' + r.toFixed(2) + ' ' + h + ' L' + l + ' ' + h + ' Z")';
-    var d = 'M' + l.toFixed(2) + ' 0';
-    for (k = 0; k <= CURVE_STEPS; k++) {              // right edge, top to bottom
-      t = k / CURVE_STEPS; s = bend * Math.sin(Math.PI * t);
-      d += ' L' + (r + s).toFixed(2) + ' ' + (h * t).toFixed(2);
-    }
-    for (k = CURVE_STEPS; k >= 0; k--) {              // left edge, bottom to top
-      t = k / CURVE_STEPS; s = bend * Math.sin(Math.PI * t);
-      d += ' L' + (l - s).toFixed(2) + ' ' + (h * t).toFixed(2);
-    }
-    return 'path("' + d + ' Z")';
-  }
+  function initGallery(gallery) {
+    if (gallery.__hoverGallery) return gallery.__hoverGallery;
+    // Make: cardRefs and visualRefs come from React refs; here from the DOM, card i <-> photos[i].
+    var cardRefs = Array.prototype.slice.call(gallery.querySelectorAll('.hover-gallery__card'));
+    var photosLength = cardRefs.length;
+    if (!photosLength) return null;
+    var visualRefs = cardRefs.map(function (card) { return card.querySelector('.hover-gallery__visual'); });
+    var boundariesRef = [];
+    for (var b = 0; b < photosLength - 1; b += 1) boundariesRef.push({ bend: 0 });
+    var activeRef = 0;
+    var timelineRef = null;
+    var scrollTween = null; // site: the phone scroller's tween, not part of Make's timeline
 
-  function initGallery(root) {
-    if (root.__hoverGallery) return root.__hoverGallery;
-    var els = Array.prototype.slice.call(root.querySelectorAll('.hover-gallery__card'));
-    var n = els.length;
-    if (!n) return null;
-    var gsap = window.gsap;
-    var active = 0, geo = null, cardH = 0, scrollTween = null;
-    var cards = els.map(function (el) {
-      return { el: el, visual: el.querySelector('.hover-gallery__visual'), img: el.querySelector('img'),
-        w: 0, x: 0, o: 1, b: 0, b0: 0, amp: 0, p: 0 };
-    });
-
-    // widths of the two card kinds, the photo width (always the active width) and the gap, from the live layout
-    function measure() {
-      var cs = getComputedStyle(root);
-      var gap = parseFloat(cs.columnGap) || 0, padL = parseFloat(cs.paddingLeft) || 0, padR = parseFloat(cs.paddingRight) || 0;
-      if (phoneMQ.matches) {
-        var vw = document.documentElement.clientWidth;
-        return { phone: true, gap: gap, pad: padL, active: vw * PHONE_ACTIVE_VW / 100, inactive: vw * PHONE_INACTIVE_VW / 100 };
+    function getPanelSizes() {
+      if (window.matchMedia && window.matchMedia('(max-width: 720px)').matches) {
+        return {
+          active: window.innerWidth * 0.66,
+          inactive: window.innerWidth * 0.15,
+        };
       }
-      var inner = root.clientWidth - padL - padR;
-      var inactive = (inner - (n - 1) * gap) / ((n - 1) + ACTIVE_RATIO);
-      return { phone: false, gap: gap, pad: padL, active: inactive * ACTIVE_RATIO, inactive: inactive };
+
+      var style = getComputedStyle(gallery);
+      var gap = parseFloat(style.columnGap);
+      // Make: gallery.clientWidth has no padding; this gallery has padding-inline (the page gutter), which is not row width.
+      var availableWidth = gallery.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - gap * (photosLength - 1);
+      var inactive = availableWidth / (photosLength - 1 + ACTIVE_RATIO);
+
+      return { active: inactive * ACTIVE_RATIO, inactive: inactive };
     }
 
-    function target(i, isActive) {
-      return isActive
-        ? { w: geo.active, x: 0, o: 1 }
-        : { w: geo.inactive, x: (geo.inactive - geo.active) / 2, o: INACTIVE_OPACITY };
+    // site: scrollLeft that puts the active card at the start of the phone scroller (the content width is constant)
+    function scrollTarget(activeIndex, sizes) {
+      var style = getComputedStyle(gallery);
+      var gap = parseFloat(style.columnGap), pad = parseFloat(style.paddingLeft);
+      var left = pad + activeIndex * (sizes.inactive + gap);
+      var max = pad * 2 + sizes.active + (photosLength - 1) * sizes.inactive + (photosLength - 1) * gap - gallery.clientWidth;
+      return Math.max(0, Math.min(left - pad, max));
     }
 
-    function render(c) {
-      c.el.style.width = c.w.toFixed(2) + 'px';
-      c.img.style.transform = 'translate3d(' + c.x.toFixed(2) + 'px,0,0)';
-      c.img.style.opacity = c.o.toFixed(3);
-      c.visual.style.clipPath = clipPath(c.w, cardH, c.b);
+    function killScrollTween() {
+      if (scrollTween) { scrollTween.kill(); scrollTween = null; }
+      gallery.style.scrollSnapType = ''; // snapping is switched off while the tween scrolls
     }
 
-    function setBend(c) {
-      var secs = c.p * DURATION;
-      var fade = secs > DURATION - SETTLE ? Math.max(0, (DURATION - secs) / SETTLE) : 1;
-      // c.b0 is the bend a move was interrupted at; it fades out linearly so a retarget does not jump
-      c.b = (c.b0 * (1 - c.p) + c.amp * Math.sin(Math.PI * c.p)) * fade;
-    }
+    function setLayout(activeIndex) {
+      var cards = cardRefs;
+      var sizes = getPanelSizes();
+      var active = sizes.active;
+      var inactive = sizes.inactive;
 
-    function killAll() {
-      cards.forEach(function (c) { if (gsap) gsap.killTweensOf(c); c.p = 0; c.b = 0; c.b0 = 0; c.amp = 0; });
-      if (scrollTween) { scrollTween.kill(); scrollTween = null; root.style.scrollSnapType = ''; }
-    }
+      cards.forEach(function (card, index) {
+        var image = card.querySelector('img');
+        var isActive = index === activeIndex;
 
-    // scrollLeft that puts the active card at the start of the scroller (phone only; the content width is constant)
-    function scrollTarget() {
-      var left = geo.pad + active * (geo.inactive + geo.gap);
-      var max = geo.pad * 2 + geo.active + (n - 1) * geo.inactive + (n - 1) * geo.gap - root.clientWidth;
-      return Math.max(0, Math.min(left - geo.pad, max));
-    }
-
-    // Lay every card out for the current active index. animate=false: at once, no bend.
-    function layout(animate) {
-      geo = measure();
-      cardH = cards[0].el.offsetHeight;
-      var go = animate && gsap && !reduceMQ.matches;
-      if (!go) {
-        killAll();
-        cards.forEach(function (c, i) {
-          var t = target(i, i === active);
-          c.w = t.w; c.x = t.x; c.o = t.o;
-          c.img.style.width = geo.active.toFixed(2) + 'px';
-          c.el.style.flex = '0 0 auto';
-          render(c);
+        set(card, {
+          width: isActive ? active : inactive,
         });
-        if (geo.phone) root.scrollLeft = scrollTarget();
+        set(image, {
+          width: active,
+          x: isActive ? 0 : (inactive - active) / 2,
+          opacity: isActive ? 1 : 0.78,
+        });
+        card.style.flex = '0 0 auto'; // Make: .gallery-card has flex: 0 0 auto in CSS; here the no-JS static row uses flex-grow until now
+      });
+
+      boundariesRef.forEach(function (boundary) {
+        boundary.bend = 0;
+      });
+      updateClipPaths();
+      // site: the phone scroller shows the active card at its start
+      if (window.matchMedia && window.matchMedia('(max-width: 720px)').matches) gallery.scrollLeft = scrollTarget(activeIndex, sizes);
+    }
+
+    function updateClipPaths() {
+      cardRefs.forEach(function (card, index) {
+        var visual = visualRefs[index];
+        if (!card || !visual) return;
+
+        var leftBoundary = index > 0 ? boundariesRef[index - 1].bend : 0;
+        var rightBoundary =
+          index < photosLength - 1 ? boundariesRef[index].bend : 0;
+        var width = card.offsetWidth;
+        var height = card.offsetHeight;
+        var curveTop = IMAGE_RADIUS;
+        var curveHeight = height - IMAGE_RADIUS * 2;
+        var curveAt = function (y) {
+          return Math.sin(
+            Math.PI * Math.max(0, Math.min(1, (y - curveTop) / curveHeight)),
+          );
+        };
+        var leftX = function (y) { return CLIP_OVERFLOW + leftBoundary * curveAt(y); };
+        var rightX = function (y) { return CLIP_OVERFLOW + width + rightBoundary * curveAt(y); };
+        var path = [
+          'M ' + (CLIP_OVERFLOW + IMAGE_RADIUS) + ' 0',
+          'L ' + (CLIP_OVERFLOW + width - IMAGE_RADIUS) + ' 0',
+          'Q ' + (CLIP_OVERFLOW + width) + ' 0 ' + rightX(curveTop) + ' ' + curveTop,
+        ];
+
+        for (var step = 0; step <= CURVE_STEPS; step += 1) {
+          var y = curveTop + curveHeight * (step / CURVE_STEPS);
+          path.push('L ' + rightX(y) + ' ' + y);
+        }
+
+        path.push(
+          'Q ' + (CLIP_OVERFLOW + width) + ' ' + height + ' ' + (CLIP_OVERFLOW + width - IMAGE_RADIUS) + ' ' + height,
+          'L ' + (CLIP_OVERFLOW + IMAGE_RADIUS) + ' ' + height,
+          'Q ' + CLIP_OVERFLOW + ' ' + height + ' ' + leftX(height - IMAGE_RADIUS) + ' ' + (height - IMAGE_RADIUS),
+        );
+
+        for (var step2 = CURVE_STEPS; step2 >= 0; step2 -= 1) {
+          var y2 = curveTop + curveHeight * (step2 / CURVE_STEPS);
+          path.push('L ' + leftX(y2) + ' ' + y2);
+        }
+
+        path.push('Q ' + CLIP_OVERFLOW + ' 0 ' + (CLIP_OVERFLOW + IMAGE_RADIUS) + ' 0', 'Z');
+
+        var clipPath = 'path("' + path.join(' ') + '")';
+        visual.style.clipPath = clipPath;
+        visual.style.webkitClipPath = clipPath;
+      });
+    }
+
+    function animateTo(nextIndex) {
+      if (nextIndex === activeRef) return;
+
+      var cards = cardRefs;
+      var sizes = getPanelSizes();
+      var active = sizes.active;
+      var inactive = sizes.inactive;
+      var reduceMotion = reduceMQ.matches;
+
+      activeRef = nextIndex;
+      syncAria(); // Make: setActivePhoto(nextIndex), which drives aria-pressed in the JSX
+      if (timelineRef) timelineRef.kill();
+      killScrollTween();
+
+      // Make: no GSAP fallback. site: without GSAP the final layout is set at once, like reduced motion.
+      if (reduceMotion || !window.gsap) {
+        setLayout(nextIndex);
         return;
       }
-      cards.forEach(function (c, i) {
-        var t = target(i, i === active);
-        var move = t.w - c.w;
-        c.img.style.width = geo.active.toFixed(2) + 'px';
-        gsap.killTweensOf(c);
-        c.b0 = c.b; c.p = 0;
-        c.amp = Math.abs(move) < MIN_TRANSITION_BEND ? 0
-          : (move > 0 ? 1 : -1) * Math.min(BEND_MAX, Math.max(BEND_MIN, Math.abs(move) * BEND_PER_PX));
-        // progress drives the bend; created first so the layout tween below paints the fresh value
-        gsap.to(c, { p: 1, duration: DURATION, ease: 'none', onUpdate: function () { setBend(c); render(c); },
-          onComplete: function () { c.p = 0; c.b = c.b0 = c.amp = 0; render(c); } });
-        gsap.to(c, { w: t.w, x: t.x, o: t.o, duration: DURATION, ease: EASE, overwrite: 'auto', onUpdate: function () { render(c); } });
+      var gsap = window.gsap;
+
+      var currentWidths = cards.map(function (card) {
+        return card.getBoundingClientRect().width;
       });
-      if (geo.phone) {
-        if (scrollTween) scrollTween.kill();
-        var s = { v: root.scrollLeft };
-        root.style.scrollSnapType = 'none';          // snapping would fight the tween
-        scrollTween = gsap.to(s, { v: scrollTarget(), duration: DURATION, ease: EASE,
-          onUpdate: function () { root.scrollLeft = s.v; },
-          onComplete: function () { scrollTween = null; root.style.scrollSnapType = ''; } });
+      var targetWidths = cards.map(function (_, index) {
+        return index === nextIndex ? active : inactive;
+      });
+      var timeline = gsap.timeline({
+        onUpdate: updateClipPaths,
+        defaults: {
+          duration: MOVE_DURATION,
+          ease: 'sine.inOut',
+          overwrite: 'auto',
+        },
+      });
+
+      cards.forEach(function (card, index) {
+        var image = card.querySelector('img');
+        var isActive = index === nextIndex;
+
+        timeline.to(card, { width: isActive ? active : inactive }, 0);
+        timeline.to(
+          image,
+          {
+            width: active,
+            x: isActive ? 0 : (inactive - active) / 2,
+            opacity: isActive ? 1 : 0.78,
+          },
+          0,
+        );
+      });
+
+      boundariesRef.forEach(function (boundary, index) {
+        var currentPosition = currentWidths
+          .slice(0, index + 1)
+          .reduce(function (sum, width) { return sum + width; }, 0);
+        var targetPosition = targetWidths
+          .slice(0, index + 1)
+          .reduce(function (sum, width) { return sum + width; }, 0);
+        var movement = targetPosition - currentPosition;
+        if (Math.abs(movement) < 0.5) {
+          timeline.to(boundary, { bend: 0, duration: 0.15 }, 0);
+          return;
+        }
+
+        var direction =
+          Math.abs(boundary.bend) > 0.1
+            ? Math.sign(boundary.bend)
+            : Math.sign(movement);
+        var amplitude = Math.min(56, Math.max(22, Math.abs(movement) * 0.24));
+        var restingBend = direction * MIN_TRANSITION_BEND;
+        var bend = direction * amplitude;
+
+        boundary.bend =
+          Math.abs(boundary.bend) < MIN_TRANSITION_BEND
+            ? restingBend
+            : boundary.bend;
+
+        timeline.to(
+          boundary,
+          { bend: bend, duration: MOVE_DURATION / 2, ease: 'sine.inOut' },
+          0,
+        );
+        timeline.to(
+          boundary,
+          {
+            bend: restingBend,
+            duration: MOVE_DURATION / 2,
+            ease: 'sine.inOut',
+          },
+          MOVE_DURATION / 2,
+        );
+        timeline.to(
+          boundary,
+          { bend: 0, duration: 0.12, ease: 'sine.out' },
+          MOVE_DURATION,
+        );
+      });
+
+      updateClipPaths();
+      timelineRef = timeline;
+
+      // site: the phone scroller follows the active card to the start (a separate tween, so Make's timeline is untouched)
+      if (window.matchMedia && window.matchMedia('(max-width: 720px)').matches) {
+        var s = { v: gallery.scrollLeft };
+        gallery.style.scrollSnapType = 'none'; // snapping would fight the tween
+        scrollTween = gsap.to(s, {
+          v: scrollTarget(nextIndex, sizes), duration: MOVE_DURATION, ease: 'sine.inOut',
+          onUpdate: function () { gallery.scrollLeft = s.v; },
+          onComplete: function () { scrollTween = null; gallery.style.scrollSnapType = ''; },
+        });
       }
     }
 
+    // site: Make drives aria-pressed from the React state
     function syncAria() {
-      cards.forEach(function (c, i) { c.el.setAttribute('aria-pressed', i === active ? 'true' : 'false'); });
+      cardRefs.forEach(function (card, index) {
+        card.setAttribute('aria-pressed', index === activeRef ? 'true' : 'false');
+      });
     }
 
-    function activate(i) {
-      if (i === active) return;
-      active = i;
-      syncAria();
-      layout(true);
-    }
-
-    cards.forEach(function (c, i) {
-      c.el.addEventListener('mouseenter', function () { if (!phoneMQ.matches) activate(i); });
-      c.el.addEventListener('focus', function () { activate(i); });
-      c.el.addEventListener('click', function () { activate(i); });
+    cardRefs.forEach(function (card, index) {
+      // site: no hover on the phone scroller
+      card.addEventListener('mouseenter', function () { if (!phoneMQ.matches) animateTo(index); });
+      card.addEventListener('focus', function () { animateTo(index); });
+      card.addEventListener('click', function () { animateTo(index); });
     });
-    // back to the first card when a mouse or pen leaves; a finger lifting is not a leave, and the phone scroller keeps its card
-    root.addEventListener('pointerleave', function (e) {
+    // Make: onMouseLeave={() => animateTo(0)}. site: a finger lifting is not a leave, and the phone scroller keeps its card.
+    gallery.addEventListener('pointerleave', function (e) {
       if (e.pointerType === 'touch' || phoneMQ.matches) return;
-      activate(0);
+      animateTo(0);
     });
-    // a finger on the scroller takes over from a running scroll tween
-    root.addEventListener('touchstart', function () {
-      if (scrollTween) { scrollTween.kill(); scrollTween = null; root.style.scrollSnapType = ''; }
-    }, { passive: true });
+    // site: a finger on the scroller takes over from a running scroll tween
+    gallery.addEventListener('touchstart', function () { killScrollTween(); }, { passive: true });
 
-    function relayout() { layout(false); }
-    relayout();
-    root.classList.add('is-enhanced');
-    listen(phoneMQ, relayout);
-    var lastW = root.clientWidth, lastH = root.clientHeight;
+    setLayout(activeRef);
+    gallery.classList.add('is-enhanced');
+
     if (window.ResizeObserver) {
-      new ResizeObserver(function () {
-        if (root.clientWidth !== lastW || root.clientHeight !== lastH) { lastW = root.clientWidth; lastH = root.clientHeight; relayout(); }
-      }).observe(root);
+      var observer = new ResizeObserver(function () {
+        if (timelineRef) timelineRef.kill();
+        killScrollTween();
+        setLayout(activeRef);
+      });
+      observer.observe(gallery);
     } else {
-      window.addEventListener('resize', relayout);
+      window.addEventListener('resize', function () { setLayout(activeRef); }); // site: browsers without ResizeObserver
     }
 
     var api = {
-      length: n,
-      index: function () { return active; },
-      goTo: function (i) { if (i >= 0 && i < n) activate(i); }
+      length: photosLength,
+      index: function () { return activeRef; },
+      goTo: function (i) { if (i >= 0 && i < photosLength) animateTo(i); },
     };
-    root.__hoverGallery = api;
+    gallery.__hoverGallery = api;
     return api;
   }
 
