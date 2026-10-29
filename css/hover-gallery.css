@@ -11,14 +11,19 @@
 .hover-gallery__card {
   position: relative; flex: 178 1 0; min-width: 0;
   padding: 0; border: 0; background: none;
-  border-radius: 8px; overflow: clip; cursor: pointer;
+  border-radius: 8px; cursor: pointer;
+  overflow: visible; isolation: isolate;         /* Make: .gallery-card overflow visible; the edge bend must be able to bow past the card box */
   font: inherit; color: inherit;
   -webkit-tap-highlight-color: transparent;
 }
 .hover-gallery__card:first-child { flex-grow: 460; }
 .hover-gallery__card:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
-/* The visual is 72px wider than the card on each side so the edge-bend clip-path can bow outward into it. */
-.hover-gallery__visual { position: absolute; inset: 0 -72px; display: block; background: #111; }
+/* The visual is 72px wider than the card on each side so the edge-bend clip-path can bow outward into it.
+   overflow: clip keeps the photo (wider than its card) from adding scrollable overflow in the phone scroller; the clip-path
+   bows at most 56px, so nothing visible is cut. pointer-events: none as in Make: only the card box takes the pointer. */
+.hover-gallery__visual { position: absolute; inset: 0 -72px; display: block; background: #111; overflow: clip; pointer-events: none; }
+.hover-gallery.is-enhanced .hover-gallery__card:last-child .hover-gallery__visual { inset: 0 0 0 -72px; }  /* the last card's right edge never bends; no room needed (it would widen the phone scroller) */
+.hover-gallery:not(.is-enhanced) .hover-gallery__card { overflow: clip; }  /* no JS / before JS: no clip-path yet, so the card box clips the 72px overhang */
 .hover-gallery__img {
   position: absolute; left: 72px; top: 0;
   height: 100%; width: calc(100% - 144px);       /* JS replaces this with the active card's width */
