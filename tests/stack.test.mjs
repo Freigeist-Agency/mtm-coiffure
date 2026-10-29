@@ -24,7 +24,7 @@ const layerInfo = page => page.evaluate(() => {
     };
   });
   const footer = document.querySelector('.site-footer').getBoundingClientRect();
-  return { layers, stack: { top: sr.top, bottom: sr.bottom, h: sr.height, docTop: sr.top + scrollY }, footerTop: footer.top, y: scrollY, ih: innerHeight, st: window.ScrollTrigger ? window.ScrollTrigger.getAll().filter(t => t.trigger !== document.querySelector('.services') && t.vars.id !== 'stack-locations').length : -1   /* the services orbit owns one more, the Standorte stack another (tests/location-stack.test.mjs) */ };
+  return { layers, stack: { top: sr.top, bottom: sr.bottom, h: sr.height, docTop: sr.top + scrollY }, footerTop: footer.top, y: scrollY, ih: innerHeight, st: window.ScrollTrigger ? window.ScrollTrigger.getAll().filter(t => t.trigger !== document.querySelector('.services') && t.vars.id !== 'stack-locations' && !/^arc-/.test(t.vars.id || '')).length : -1   /* the services orbit owns one more, the Standorte stack another (tests/location-stack.test.mjs), js/arc-scroll.js three (ids arc-*) */ };
 });
 
 // scroll so that layer `idx` sits at its sticky top (it is still unstuck at the start of the search)
