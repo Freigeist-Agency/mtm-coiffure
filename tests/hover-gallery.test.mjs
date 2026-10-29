@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openPage, assert, report } from './harness.mjs';
+import { edgeBends, isStraight, boundaryBends } from './clip-geometry.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'tests/out/hover-gallery');
@@ -28,13 +29,7 @@ const snap = page => page.evaluate(s => {
     api: root.__hoverGallery ? root.__hoverGallery.index() : null, enhanced: root.classList.contains('is-enhanced') };
 }, SEL);
 
-// a clip-path is a plain rectangle when its path has at most two distinct x and two distinct y values
-const isRect = clip => {
-  const nums = (clip.match(/-?\d+(\.\d+)?/g) || []).map(Number);
-  const xs = new Set(), ys = new Set();
-  nums.forEach((v, i) => (i % 2 ? ys : xs).add(Math.round(v * 100)));
-  return nums.length >= 8 && xs.size <= 2 && ys.size <= 2;
-};
+// 'straight' = both curved edges of the Make-shaped clip-path deviate by < 0.01px (null / other shapes are not straight)
 const centre = (page, i) => page.evaluate(([s, i]) => {
   const r = document.querySelectorAll(s)[i].getBoundingClientRect();
   return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
@@ -87,7 +82,7 @@ for (const width of [1440, 768, 375]) {
           `${tag}: active ${activeW.toFixed(0)} / inactive ${inactive.toFixed(0)} from the width formula (${s0.cards.map(c => c.w.toFixed(0))})`);
       }
       assert(near(s0.cards[0].op, 1, 0.01) && s0.cards.slice(1).every(c => near(c.op, 0.78, 0.01)), `${tag}: photo opacity 1 active / 0.78 inactive`);
-      assert(s0.cards.every(c => isRect(c.clip)), `${tag}: at rest every clip-path is a plain rectangle`);
+      assert(s0.cards.every(c => isStraight(c.clip)), `${tag}: at rest every clip-path edge is straight`);
       assert(s0.cards.every(c => near(c.imgW, s0.cards[0].w, 1)), `${tag}: every photo is as wide as the active card`);
       // the five gaps are 10px
       assert(s0.cards.slice(1).every((c, i) => near(c.left - (s0.cards[i].left + s0.cards[i].w), 10, 1.5)), `${tag}: 10px between cards`);
@@ -104,20 +99,18 @@ for (const width of [1440, 768, 375]) {
       await hover(page, 3);
       await sleep(375);
       const mid = await snap(page);
-      assert(mid.cards.some(c => !isRect(c.clip)), `${tag}: mid-animation (~375ms) some clip-path is bent`);
       assert(mid.cards[3].w > s0.cards[3].w + 20 && mid.cards[3].w < s0.cards[0].w - 20, `${tag}: card 3 is part-way wide at ~375ms (${mid.cards[3].w.toFixed(0)})`);
       if (width === 1440) await shot(page, 'desktop-1440-mid-hover.png');
       await sleep(525);
       const s1 = await snap(page);
       assert(near(s1.cards[3].w, activeW, 3) && near(s1.cards[0].w, inactive, 3), `${tag}: after hovering card 3, card 3 is ${activeW.toFixed(0)} and card 0 ${inactive.toFixed(0)} (${s1.cards[3].w.toFixed(1)} / ${s1.cards[0].w.toFixed(1)})`);
       assert(s1.cards.map(c => c.pressed).join() === 'false,false,false,true,false,false', `${tag}: card 3 aria-pressed=true, others false (${s1.cards.map(c => c.pressed)})`);
-      assert(s1.cards.every(c => isRect(c.clip)), `${tag}: after 900ms every clip-path is a plain rectangle again`);
+      assert(s1.cards.every(c => isStraight(c.clip)), `${tag}: after 900ms every clip-path edge is straight again`);
       assert(near(s1.cards[3].op, 1, 0.01) && near(s1.cards[0].op, 0.78, 0.01), `${tag}: opacities follow (${s1.cards[3].op}, ${s1.cards[0].op})`);
       const smp = await page.evaluate(() => window.__bend.samples);
-      const bent = smp.filter(s => s.clips.some(c => !isRect(c)));
+      const bent = smp.filter(s => s.clips.some(c => !isStraight(c)));
       assert(bent.length > 5 && bent.some(s => s.t > 250 && s.t < 500), `${tag}: the bend is visible over many frames, including 250-500ms (${bent.length} frames)`);
-      assert(smp.length && smp[smp.length - 1].clips.every(c => isRect(c)), `${tag}: the last sampled frame is straight`);
-      function isRect(clip) { const nums = (clip.match(/-?\d+(\.\d+)?/g) || []).map(Number); const xs = new Set(), ys = new Set(); nums.forEach((v, i) => (i % 2 ? ys : xs).add(Math.round(v * 100))); return nums.length >= 8 && xs.size <= 2 && ys.size <= 2; }
+      assert(smp.length && smp[smp.length - 1].clips.every(c => isStraight(c)), `${tag}: the last sampled frame is straight`);
 
       // leaving the gallery returns to card 0
       await page.mouse.move(5, 5);
@@ -130,7 +123,7 @@ for (const width of [1440, 768, 375]) {
       const c1 = await centre(page, 1); await page.mouse.move(c1.x, c1.y);
       await sleep(950);
       const s3 = await snap(page);
-      assert(s3.api === 1 && near(s3.cards[1].w, activeW, 3) && s3.cards.filter((c, i) => i !== 1).every(c => near(c.w, inactive, 3)) && s3.cards.every(c => isRect(c.clip)),
+      assert(s3.api === 1 && near(s3.cards[1].w, activeW, 3) && s3.cards.filter((c, i) => i !== 1).every(c => near(c.w, inactive, 3)) && s3.cards.every(c => isStraight(c.clip)),
         `${tag}: an interrupted move retargets cleanly (${s3.cards.map(c => c.w.toFixed(0))})`);
       const tot = s3.cards.reduce((a, c) => a + c.w, 0) + 50;
       assert(near(tot, s3.inner, 2), `${tag}: widths + gaps fill the gallery after the interruption (${tot.toFixed(1)} vs ${s3.inner})`);
@@ -158,7 +151,7 @@ for (const width of [1440, 768, 375]) {
         await page.setViewportSize({ width: 1100, height: 900 });
         await sleep(150);
         const s5 = await snap(page), inner2 = s5.inner, in2 = (inner2 - 50) / (5 + ratio);
-        assert(s5.api === 2 && near(s5.cards[2].w, in2 * ratio, 3) && s5.cards.every(c => isRect(c.clip)), `${tag}: resize to 1100 re-lays out at index 2 with no animation (${s5.cards[2].w.toFixed(0)} vs ${(in2 * ratio).toFixed(0)})`);
+        assert(s5.api === 2 && near(s5.cards[2].w, in2 * ratio, 3) && s5.cards.every(c => isStraight(c.clip)), `${tag}: resize to 1100 re-lays out at index 2 with no animation (${s5.cards[2].w.toFixed(0)} vs ${(in2 * ratio).toFixed(0)})`);
         await page.setViewportSize({ width: 1440, height: 900 });
       }
     } else {
@@ -184,6 +177,60 @@ for (const width of [1440, 768, 375]) {
   } finally { await close(); }
 }
 
+// ---- edge bend belongs to the BOUNDARIES between cards (Figma Make), not to the cards ---------------
+// Boundary i = right edge of card i = left edge of card i + 1. Hovering the last image from rest moves every boundary left
+// by (active - inactive) = 282px at 1440, so each one swings to -min(56, max(22, 282 * 0.24)) = -56 at 375ms, all the same way.
+if (want('bend')) {
+  const { page, errors, close } = await openPage({ width: 1440, height: 900 });
+  try {
+    await wait(page); await reveal(page);
+    await page.evaluate(() => {
+      const vs = [...document.querySelectorAll('.hover-gallery__visual')];
+      window.__bs = { t0: 0, on: false, s: [] };
+      window.__bs.arm = () => { window.__bs.s = []; window.__bs.t0 = performance.now(); window.__bs.on = true; };
+      const tick = () => { if (window.__bs.on) window.__bs.s.push({ t: performance.now() - window.__bs.t0, clips: vs.map(v => v.style.clipPath) }); requestAnimationFrame(tick); };
+      requestAnimationFrame(tick);
+    });
+    const rest = await snap(page);
+    assert(rest.cards.length === 6 && rest.cards.every(c => isStraight(c.clip)), 'bend: at rest all 12 clip edges are straight (< 0.01px)');
+    const expected = Math.min(56, Math.max(22, Math.abs(rest.cards[0].w - rest.cards[5].w) * 0.24));
+    assert(near(expected, 56, 0.01), `bend: the Make amplitude for a ${Math.abs(rest.cards[0].w - rest.cards[5].w).toFixed(0)}px move is ${expected.toFixed(1)} (cap 56)`);
+
+    const move = async i => { await page.evaluate(() => window.__bs.arm()); await hover(page, i); await sleep(1000); const smp = await page.evaluate(() => window.__bs.s); await page.evaluate(() => { window.__bs.on = false; }); return smp; };
+    const rows = smp => smp.map(x => ({ t: x.t, bb: boundaryBends(x.clips) }));
+    const win = r => r.filter(x => x.t >= 330 && x.t <= 460);
+    const all = r => r.flatMap(x => (x.bb || []).flatMap(b => [b.right, b.left]));
+
+    // hover the LAST image from rest
+    let r = rows(await move(5));
+    assert(r.length > 30 && r.every(x => x.bb && x.bb.length === 5), `bend/last: ${r.length} frames sampled, every one parses into 5 boundaries`);
+    assert(r.every(x => x.bb.every(b => Math.abs(b.right - b.left) < 0.01)), 'bend/last: both sides of every boundary (right edge of card i, left edge of card i+1) always bend by the same amount');
+    let w = win(r);
+    assert(w.length >= 4, `bend/last: ${w.length} frames in the 330-460ms window`);
+    assert(w.every(x => x.bb.every(b => b.right < 0 && b.left < 0)), 'bend/last @375ms: all 5 interior boundaries bow the same way (negative: the row shifts left)');
+    assert(w.every(x => x.bb.every(b => Math.abs(b.right) >= 30 && Math.abs(b.right) <= expected + 0.01)), `bend/last @375ms: |bend| within [30, ${expected}] (${w.length ? w[Math.floor(w.length / 2)].bb.map(b => b.right.toFixed(1)).join(' ') : ''})`);
+    const peak = Math.max(...all(r).map(Math.abs));
+    assert(near(peak, expected, 0.5), `bend/last: the peak |bend| reaches the Make amplitude ${expected} (${peak.toFixed(2)}) and never exceeds it`);
+    assert(all(r).every(v => v <= 0.01), 'bend/last: no boundary ever bends the other way during the move');
+    assert(r[r.length - 1].bb.every(b => Math.abs(b.right) < 0.01 && Math.abs(b.left) < 0.01), 'bend/last: after 1s every edge is straight again');
+    await shot(page, 'bend-last-end.png');
+
+    // and back to the FIRST image: the mirror image, every boundary bows positive
+    r = rows(await move(0));
+    w = win(r);
+    assert(r.every(x => x.bb && x.bb.every(b => Math.abs(b.right - b.left) < 0.01)) && w.length >= 4 && w.every(x => x.bb.every(b => b.right > 0 && b.left > 0 && Math.abs(b.right) >= 30)),
+      'bend/first @375ms: hovering the first image from the last bows all 5 boundaries the opposite way (positive)');
+    assert(near(Math.max(...all(r).map(Math.abs)), expected, 0.5) && all(r).every(v => v >= -0.01), `bend/first: peak ${Math.max(...all(r).map(Math.abs)).toFixed(2)} and never negative`);
+
+    // a MIDDLE image: only the boundaries between the old and the new active card move, the others stay straight
+    r = rows(await move(3));
+    w = win(r);
+    assert(w.length >= 4 && w.every(x => x.bb && x.bb.slice(0, 3).every(b => b.right < -30 && near(b.left, b.right, 0.01))), 'bend/3rd @375ms: boundaries 0-2 (left of the hovered card) bow negative');
+    assert(r.every(x => x.bb && x.bb.slice(3).every(b => Math.abs(b.right) < 0.01 && Math.abs(b.left) < 0.01)), 'bend/3rd: boundaries 3-4 (right of the hovered card, 0px movement) stay straight in every frame');
+    assert(errors.length === 0, `bend: no console errors ${errors.join('|')}`);
+  } finally { await close(); }
+}
+
 // ---- viewport crossing the 720px breakpoint switches layout live -------------------------------
 if (want('breakpoint')) {
   const { page, close } = await openPage({ width: 1000, height: 900 });
@@ -206,9 +253,9 @@ if (want('reduced')) {
   try {
     await wait(page); await reveal(page);
     await page.evaluate(() => {
-      window.__rm = { bent: 0 };
+      window.__rm = { clips: new Set() };
       const vs = [...document.querySelectorAll('.hover-gallery__visual')];
-      const tick = () => { vs.forEach(v => { const nums = (v.style.clipPath.match(/-?\d+(\.\d+)?/g) || []); if (nums.length > 8) window.__rm.bent++; }); requestAnimationFrame(tick); };
+      const tick = () => { vs.forEach(v => window.__rm.clips.add(v.style.clipPath)); requestAnimationFrame(tick); };
       requestAnimationFrame(tick);
     });
     await hover(page, 3);
@@ -217,7 +264,8 @@ if (want('reduced')) {
     const inactive = (s.inner - 50) / (5 + 460 / 178);
     assert(s.api === 3 && near(s.cards[3].w, inactive * 460 / 178, 3) && near(s.cards[0].w, inactive, 3), `reduced-motion: hover sets the final widths within 50ms (${s.cards[3].w.toFixed(0)} / ${s.cards[0].w.toFixed(0)})`);
     await sleep(300);
-    assert((await page.evaluate(() => window.__rm.bent)) === 0, 'reduced-motion: no frame ever carried a bent clip-path');
+    const rmClips = await page.evaluate(() => [...window.__rm.clips]);
+    assert(rmClips.length > 0 && rmClips.every(c => isStraight(c)), `reduced-motion: no frame ever carried a bent clip-path (${rmClips.length} distinct clips seen)`);
     assert(errors.length === 0, `reduced-motion: no console errors ${errors.join('|')}`);
   } finally { await close(); }
 }
