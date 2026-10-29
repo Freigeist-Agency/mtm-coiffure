@@ -1,4 +1,4 @@
-// Previous / next arrows on both click carousels (team, social).
+// Previous / next arrows on the click carousel (social; the team photos are the hover gallery now).
 // ARROWS_ONLY=a,b runs just those blocks (used for the mutation runs).
 import fs from 'node:fs';
 import path from 'node:path';
@@ -13,7 +13,6 @@ const want = k => !process.env.ARROWS_ONLY || process.env.ARROWS_ONLY.split(',')
 const mod = (a, n) => ((a % n) + n) % n;
 
 const CASES = {
-  team: { prev: 'Vorheriges Bild', next: 'Nächstes Bild', word: 'Bild', n: 8, colour: 'rgb(255, 255, 255)' },
   social: { prev: 'Vorheriger Beitrag', next: 'Nächster Beitrag', word: 'Beitrag', n: 4, colour: 'rgb(0, 0, 0)' },
 };
 const sel = name => `.carousel[data-carousel="${name}"]`;

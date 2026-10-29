@@ -7,7 +7,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 // CAROUSEL_ONLY=a,b runs just those blocks (used for the mutation runs)
 const want = k => !process.env.CAROUSEL_ONLY || process.env.CAROUSEL_ONLY.split(',').includes(k);
 
-const NAMES = ['team', 'social'];
+const NAMES = ['social'];   // the team photos are the hover gallery now (hover-gallery.test.mjs)
 const sel = name => `.carousel[data-carousel="${name}"]`;
 
 // ---- in-page helpers (all take the carousel name) --------------------------------------------
@@ -318,7 +318,7 @@ for (const width of [1440, 375]) {
       try {
         await page.waitForSelector(`${sel(name)}.is-enhanced`, { timeout: 5000 }).catch(() => {});
         await reveal(page, name);
-        const word = name === 'team' ? 'Bild' : 'Beitrag';
+        const word = 'Beitrag';
         const read = () => page.evaluate(s => {
           const root = document.querySelector(s), l = root.querySelector('[aria-live]');
           if (!l) return null;
@@ -539,7 +539,7 @@ if (want('nojs')) {
             sizes: items.map(e => [e.offsetWidth, e.offsetHeight]), transforms: items.filter(e => getComputedStyle(e).transform !== 'none').length,
             glass: root.querySelectorAll('[class*="carousel__glass"]').length };
         }, sel(name));
-        const want = name === 'social' ? 4 : 8;
+        const want = 4;
         assert(r.n === want && r.sizes.every(([w, h]) => w > 0 && h > 0),
           `no-JS @${width} ${name}: all ${want} items have non-zero size ${JSON.stringify(r.sizes[0])}`);
         assert(r.transforms === 0 && r.glass === 0, `no-JS @${width} ${name}: no transforms, no glass`);

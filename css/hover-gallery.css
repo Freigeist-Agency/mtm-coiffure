@@ -1,0 +1,45 @@
+/* Team hover gallery (js/hover-gallery.js), Figma Make frame 1400x460 at 1440 wide.
+   Without JS this is a static row: the first photo is wide (460:178 against the others), the rest share the remaining width.
+   The script then sets each card's width inline (it animates them) and the photo offset, opacity and edge clip. */
+.hover-gallery {
+  box-sizing: content-box;                       /* aspect-ratio and padding: 1400x460 content, 20px page padding either side */
+  display: flex; gap: 10px;
+  aspect-ratio: 1400 / 460;
+  padding-inline: var(--pad);
+  overflow: clip; overflow-clip-margin: 8px;      /* the margin keeps the 3px-offset focus ring visible above and below the cards */
+}
+.hover-gallery__card {
+  position: relative; flex: 178 1 0; min-width: 0;
+  padding: 0; border: 0; background: none;
+  border-radius: 8px; overflow: clip; cursor: pointer;
+  font: inherit; color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.hover-gallery__card:first-child { flex-grow: 460; }
+.hover-gallery__card:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+/* The visual is 72px wider than the card on each side so the edge-bend clip-path can bow outward into it. */
+.hover-gallery__visual { position: absolute; inset: 0 -72px; display: block; background: #111; }
+.hover-gallery__img {
+  position: absolute; left: 72px; top: 0;
+  height: 100%; width: calc(100% - 144px);       /* JS replaces this with the active card's width */
+  max-width: none;                               /* the global img max-width: 100% would shrink the photo to its (narrower) card */
+  object-fit: cover; border-radius: 5px;
+  opacity: .78;
+}
+.hover-gallery__card:first-child .hover-gallery__img { opacity: 1; }
+.hover-gallery__img { -webkit-user-drag: none; user-select: none; }
+
+/* Phone: a snap scroller. Active card 66vw wide, the others 15vw; the row is as tall as the active card's 4:5 box. */
+@media (max-width: 720px) {
+  .hover-gallery {
+    gap: 7px; aspect-ratio: auto;
+    height: min(82.5vw, 80svh);
+    padding-block: 6px; margin-block: -6px;      /* room for the focus ring, which the scroller would otherwise clip */
+    overflow: auto hidden; overflow-clip-margin: 0;
+    scroll-snap-type: x mandatory; scroll-padding-inline: var(--pad);
+    scrollbar-width: none; overscroll-behavior-x: contain;
+  }
+  .hover-gallery::-webkit-scrollbar { display: none; }
+  .hover-gallery__card { flex: none; width: 15vw; scroll-snap-align: start; }
+  .hover-gallery__card:first-child { width: 66vw; }
+}
