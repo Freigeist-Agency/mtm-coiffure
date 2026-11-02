@@ -29,22 +29,26 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .btn:hover { transform: translateY(-2px); }
 .btn:focus-visible, a:focus-visible { outline: 2px solid var(--sand); outline-offset: 3px; }
 
-/* ---------- Site header (Figma Nav 96:142: white 1440x49 bar, logo left, "Standorte." + button right) ---------- */
+/* ---------- Site header (Figma Nav 94:62: white 1440x50 bar, no border; logo 67x40 at x=18 y=5, "Standorte." at x=1119 y=13, button at x=1236 y=5) ---------- */
 .site-header {
   position: sticky; z-index: 50; top: 0;
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  height: var(--nav-h);   /* border-box: includes the 1px bottom border */
+  height: var(--nav-h);
   padding: 0 var(--pad) 0 1.25vw;
   background: var(--paper);
-  border-bottom: 1px solid var(--ink);
 }
 .brand { display: flex; align-items: center; text-decoration: none; }
-.brand img { width: clamp(52px, 4.65vw, 67px); height: auto; aspect-ratio: 708 / 422; }
-.site-nav { display: flex; align-items: center; gap: 30px; }
+.brand img { width: clamp(52px, 4.6528vw, 67px); height: auto; aspect-ratio: 708 / 422; }
+.site-nav { display: flex; align-items: center; gap: 1.5972vw; }   /* the 94px "Standorte." box ends 23px before the button */
 .site-nav a { text-decoration: none; font-size: var(--fs-body); }
+.site-nav .nav-link { min-width: 6.5278vw; }
 .site-nav .nav-link:hover { text-decoration: underline; text-underline-offset: 4px; }
-.menu-btn { display: flex; align-items: center; gap: 8px; }
-.menu-btn img { width: 30px; height: 30px; background: var(--ink); border-radius: 3px; }
+@media (min-width: 768px) {   /* top-aligned as in Figma: logo and button 5px from the top, the text 13px */
+  .site-header { align-items: flex-start; }
+  .brand { margin-top: 5px; }
+  .site-nav { align-items: flex-start; margin-top: 5px; }
+  .site-nav .nav-link { margin-top: 8px; line-height: 1.25; }
+}
 
 /* ---------- Hero (Figma Hero video 1440x1080: sand, text row at y=329, the decorative curve from y=452 ends the hero) ---------- */
 /* The curve frame is a radial gradient (sand to transparent black, centred on the frame's BOTTOM edge: the frame is flipped)

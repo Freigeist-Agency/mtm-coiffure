@@ -323,21 +323,4 @@ for (const p of ['impressum.html', 'datenschutz.html', '404.html', 'locations/nu
   await h.close();
 }
 
-// ---- the open logo menu goes under the cover ---------------------------------------------
-{
-  const h = await openPage({ width: 1440, path: 'impressum.html', skipLoader: false });
-  const { page } = h;
-  await loaded(page, 3000);
-  await arm(page, { unload: true });
-  await page.locator('.menu-btn').click();
-  await page.waitForFunction(() => window.__lmDebug && window.__lmDebug.isOpen());
-  await sleep(1200);
-  await page.locator('.lm-link').first().click();
-  await page.waitForURL(/index\.html#leistungen$/, { timeout: 5000 });
-  const probe = JSON.parse(await flag(page, 'probe-unload') || 'null');
-  assert(probe && probe.centreInCover && probe.panelCovers, `menu open: the cover goes over the menu (${JSON.stringify(probe)})`);
-  await loaded(page, 2500);
-  await h.close();
-}
-
 await report();

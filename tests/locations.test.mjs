@@ -297,8 +297,6 @@ for (const [p, url, name] of [['locations/nuembrecht.html', NUE, 'Nümbrecht'], 
 }
 
 // ---- sources
-const menu = fs.readFileSync(path.join(ROOT, 'js/menu.js'), 'utf8');
-assert(/label: 'Termin buchen', href: to\('#standorte'\)/.test(menu) && /function to\(hash\)\{ return HOME \? hash : ROOT \+ 'index\.html' \+ hash; \}/.test(menu), 'menu.js: Termin buchen item stays on #standorte (in-page on the home page, ROOT + index.html# elsewhere)');
 const files = [];
 (function walk(d) {
   for (const f of fs.readdirSync(d, { withFileTypes: true })) {

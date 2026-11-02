@@ -52,7 +52,7 @@ for (const width of WIDTHS) {
       assert(r.footer !== null && r.footer.includes('Nümbrecht') && r.footer.includes('Waldbröl'),
         `${tag}: footer lists both salons`);
       assert(r.headerPos === 'sticky', `${tag}: header is sticky (${r.headerPos})`);
-      const wantH = width <= 767 ? 50 : 49;
+      const wantH = 50;
       assert(r.navH === wantH && Math.abs(r.headerH - wantH) <= 1,
         `${tag}: header height ~${wantH}px, --nav-h=${r.navH}, rendered ${r.headerH}`);
       assert(r.logo !== null && r.logo.loaded && r.logo.w > 40, `${tag}: .brand logo present and loaded ${JSON.stringify(r.logo)}`);
