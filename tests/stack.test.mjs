@@ -1,4 +1,5 @@
-// Task 6: stacked news cards with depth (sticky layers + scrubbed scale/opacity), plus the static fallback.
+// News cards. Phones (<= 767px): the two cards stack and pin with depth (sticky layers + scrubbed scale/opacity). 768px and up: Figma
+// has them side by side, plain flow, no motion. Plus the static fallbacks (no JS, reduced motion).
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -51,22 +52,16 @@ const stacked = async (width, height) => {
     await settle(page);
     const s0 = await layerInfo(page);
     const navH = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--nav-h')));
-    assert(s0.layers.length === 3, `${tag}: three stack layers`);
+    assert(s0.layers.length === 2, `${tag}: two stack layers`);
     assert(s0.layers.every(l => l.position === 'sticky'), `${tag}: every layer is position:sticky (${s0.layers.map(l => l.position)})`);
     const exp = i => navH + 0.04 * height + i * 0.025 * height;
-    assert(s0.layers.every((l, i) => near(l.top, exp(i), 1)), `${tag}: sticky tops are nav + 4vh + i*2.5vh (${s0.layers.map(l => l.top.toFixed(1))} vs ${[0, 1, 2].map(i => exp(i).toFixed(1))})`);
-    const travel = s0.stack.h - (s0.layers[2].rect.bottom - s0.layers[2].rect.top);
-    assert(travel <= 2.5 * height, `${tag}: sticky travel (stack ${s0.stack.h.toFixed(0)} - video) ${travel.toFixed(0)} <= 2.5*innerHeight (${2.5 * height})`);
-    assert(travel >= 1.5 * height, `${tag}: sticky travel ${travel.toFixed(0)} >= 1.5*innerHeight (about a viewport per layer)`);
-    assert(s0.st === 2, `${tag}: exactly 2 ScrollTriggers (one per covered layer) (${s0.st})`);
+    assert(s0.layers.every((l, i) => near(l.top, exp(i), 1)), `${tag}: sticky tops are nav + 4vh + i*2.5vh (${s0.layers.map(l => l.top.toFixed(1))} vs ${[0, 1].map(i => exp(i).toFixed(1))})`);
+    assert(s0.st === 1, `${tag}: exactly 1 ScrollTrigger (one per covered layer) (${s0.st})`);
     const cardW = s0.layers[0].rect.right - s0.layers[0].rect.left;
     const cx = (s0.layers[0].rect.left + s0.layers[0].rect.right) / 2;
     assert(near(cx, width / 2, 1), `${tag}: cards are centred (${cx})`);
-    if (width >= 1200) assert(near(cardW, 460, 8), `${tag}: card width ~460 (${cardW.toFixed(1)})`);
-    else if (width >= 768) assert(cardW >= 355 && cardW <= 465, `${tag}: card width at least ~360 (${cardW.toFixed(1)})`);
-    else assert(near(cardW, width - 40, 1), `${tag}: card width is viewport minus padding (${cardW.toFixed(1)})`);
-    assert(s0.layers.slice(0, 2).every(l => l.surface === 1), `${tag}: card surfaces stay opaque`);
-    assert(s0.layers[2].rect.left <= 0.5 && s0.layers[2].rect.right >= width - 0.5, `${tag}: video layer is full-bleed`);
+    assert(near(cardW, width - 40, 1), `${tag}: card width is viewport minus padding (${cardW.toFixed(1)})`);
+    assert(s0.layers.every(l => l.surface === 1), `${tag}: card surfaces stay opaque`);
 
     // before anything has been covered, layer 1 is untouched
     const a = await layerInfo(page);
@@ -96,39 +91,46 @@ const stacked = async (width, height) => {
     const pre = await layerInfo(page);
     assert(pre.layers[0].opacity === 1 && near(pre.layers[0].scale, 1, 0.001), `${tag}: before layer 2 enters, layer 1 is still opacity 1 scale 1`);
 
-    // layer 3 (video) reaches its sticky top
-    const c3 = await toLayer(page, 2);
-    const [k1, k2, k3] = c3.layers;
-    assert(near(k2.opacity, 0.35, 0.05) && near(k2.scale, 0.92, 0.01), `${tag}: video covers layer 2 -> layer 2 opacity ${k2.opacity.toFixed(3)} scale ${k2.scale.toFixed(3)}`);
-    assert(k1.opacity <= l1.opacity + 0.001 && k1.scale <= l1.scale + 0.001, `${tag}: layer 1 is no brighter/larger than before (${k1.opacity.toFixed(3)}/${k1.scale.toFixed(3)} vs ${l1.opacity.toFixed(3)}/${l1.scale.toFixed(3)})`);
-    assert(k3.opacity === 1 && near(k3.scale, 1, 0.001), `${tag}: video layer ends opacity 1 scale 1`);
-    assert(near(k2.rect.top, k2.top, 1), `${tag}: when the video reaches its sticky top, card 2 is still stuck (top ${k2.rect.top.toFixed(1)} vs ${k2.top.toFixed(1)})`);
-    assert(k3.rect.top < k2.rect.bottom - 10 && k3.rect.bottom > k2.rect.top, `${tag}: the video overlaps card 2 (video top ${k3.rect.top.toFixed(1)} < card 2 bottom ${k2.rect.bottom.toFixed(1)})`);
-    assert(k2.rect.bottom > 0 && k3.rect.top > 0 && k3.rect.top < height, `${tag}: card 2 and the video are both on screen at that frame`);
-    assert(k3.rect.left <= k2.rect.left && k3.rect.right >= k2.rect.right, `${tag}: the video is wider than the cards`);
-    assert(k1.surface === 1 && k2.surface === 1, `${tag}: covered card surfaces stay opaque (${k1.surface}/${k2.surface})`);
-    await page.screenshot({ path: path.join(OUT, `video-covers-both-${width}.png`) });
-    // and mid-cover: the video's top edge half way down card 2
-    const back = (k2.rect.top + (k2.rect.bottom - k2.rect.top) / 2) - k3.rect.top;
-    await page.evaluate(d => window.scrollBy({ top: -d, behavior: 'instant' }), back);
-    await settle(page);
-    await page.screenshot({ path: path.join(OUT, `video-half-covers-card2-${width}.png`) });
-    await page.evaluate(d => window.scrollBy({ top: d, behavior: 'instant' }), back);
-    await settle(page);
-
     // the stack ends cleanly: past it the footer never sits under a stuck layer
     const sweep = [];
-    for (let y = c3.y; y <= (await page.evaluate(() => document.documentElement.scrollHeight)) ; y += 120) {
+    for (let y = c2.y; y <= (await page.evaluate(() => document.documentElement.scrollHeight)); y += 120) {
       await page.evaluate(v => window.scrollTo({ top: v, behavior: 'instant' }), y);
       await page.waitForTimeout(25);
       const s = await layerInfo(page);
       sweep.push(s.layers.every(l => l.rect.bottom <= s.stack.bottom + 0.5) && s.footerTop >= Math.max(...s.layers.map(l => l.rect.bottom)) - 0.5);
     }
-    assert(sweep.length > 3 && sweep.every(Boolean), `${tag}: across ${sweep.length} scroll steps past the video, no layer extends below the stack and the footer top is >= every layer bottom`);
+    assert(sweep.length > 3 && sweep.every(Boolean), `${tag}: across ${sweep.length} scroll steps past the cards, no layer extends below the stack and the footer top is >= every layer bottom`);
     await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
     await settle(page);
     const end = await layerInfo(page);
-    assert(end.footerTop >= end.layers[2].rect.bottom - 0.5, `${tag}: at the very bottom footer top ${end.footerTop.toFixed(1)} >= last layer bottom ${end.layers[2].rect.bottom.toFixed(1)}`);
+    assert(end.footerTop >= end.layers[1].rect.bottom - 0.5, `${tag}: at the very bottom footer top ${end.footerTop.toFixed(1)} >= last layer bottom ${end.layers[1].rect.bottom.toFixed(1)}`);
+    assert(errors.length === 0, `${tag}: no page errors ${JSON.stringify(errors)}`);
+  } finally { await close(); }
+};
+
+// 768px and up: Figma 64:2 puts the two cards side by side (460 at x=255 and x=725 at 1440). Plain flow: no sticky, no transform, no trigger.
+const sideBySide = async (width, height) => {
+  const tag = `${width}x${height}`;
+  const { page, errors, close } = await openPage({ width, height });
+  try {
+    await page.evaluate(() => window.mtmReady);
+    await settle(page);
+    const s = await layerInfo(page);
+    assert(s.layers.length === 2, `${tag}: two cards`);
+    assert(s.layers.every(l => l.position !== 'sticky' && l.position !== 'absolute' && l.position !== 'fixed'), `${tag}: no card is sticky/absolute/fixed (${s.layers.map(l => l.position)})`);
+    assert(s.layers.every(l => !l.hasTransform && l.opacity === 1 && l.surface === 1), `${tag}: no card carries a transform or reduced opacity`);
+    assert(near(s.layers[0].rect.top, s.layers[1].rect.top, 1) && s.layers[1].rect.left >= s.layers[0].rect.right + 9, `${tag}: the two cards sit side by side with a gap`);
+    assert(near((s.layers[0].rect.left + s.layers[1].rect.right) / 2, width / 2, 1), `${tag}: the pair is centred`);
+    if (width >= 1200) {
+      const cw = s.layers[0].rect.right - s.layers[0].rect.left;
+      assert(near(cw, 460, 1), `${tag}: card width 460 (${cw.toFixed(1)})`);
+      assert(near(s.layers[0].rect.left, (width - 930) / 2, 1) && near(s.layers[1].rect.left, (width - 930) / 2 + 470, 1), `${tag}: cards at x=${(width - 930) / 2} and x=${(width - 930) / 2 + 470} (${s.layers.map(l => l.rect.left.toFixed(1))})`);
+    }
+    assert(s.st === 0, `${tag}: the news stack owns no ScrollTrigger (${s.st})`);
+    await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight / 2, behavior: 'instant' }));
+    await settle(page);
+    const t = await layerInfo(page);
+    assert(t.layers.every(l => !l.hasTransform && l.opacity === 1 && l.surface === 1), `${tag}: still no transform/opacity change after scrolling`);
     assert(errors.length === 0, `${tag}: no page errors ${JSON.stringify(errors)}`);
   } finally { await close(); }
 };
@@ -139,18 +141,13 @@ const baseline = async (label, opts) => {
   try {
     await settle(page);
     const s = await layerInfo(page);
-    assert(s.layers.length === 3, `${tag}: three layers`);
+    assert(s.layers.length === 2, `${tag}: two layers`);
     assert(s.layers.every(l => l.position !== 'sticky' && l.position !== 'absolute' && l.position !== 'fixed'), `${tag}: no layer is sticky/absolute/fixed (${s.layers.map(l => l.position)})`);
     assert(s.layers.every(l => !l.hasTransform && l.opacity === 1 && l.surface === 1), `${tag}: no layer carries a transform or reduced opacity`);
-    let overlap = false;
-    for (let i = 0; i < 3; i++) for (let j = i + 1; j < 3; j++) {
-      const a = s.layers[i].rect, b = s.layers[j].rect;
-      if (a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5) overlap = true;
-    }
-    assert(!overlap, `${tag}: no two layers' rects overlap`);
+    const a = s.layers[0].rect, b = s.layers[1].rect;
+    assert(!(a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5), `${tag}: the two layers' rects do not overlap`);
     assert(s.st <= 0, `${tag}: no ScrollTrigger exists (${s.st})`);
-    if (opts.width >= 1200) assert(near(s.layers[0].rect.top, s.layers[1].rect.top, 1) && s.layers[1].rect.left > s.layers[0].rect.right, `${tag}: the two cards sit side by side`);
-    assert(s.layers[2].rect.left <= 0.5 && s.layers[2].rect.right >= opts.width - 0.5, `${tag}: video block is full-bleed`);
+    if (opts.width >= 1200) assert(near(a.top, b.top, 1) && b.left > a.right, `${tag}: the two cards sit side by side`);
     await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight / 2, behavior: 'instant' }));
     await settle(page);
     const t = await layerInfo(page);
@@ -159,37 +156,11 @@ const baseline = async (label, opts) => {
   } finally { await close(); }
 };
 
-await stacked(1440, 900);
-await stacked(768, 1024);
-await stacked(375, 812);
+for (const [w, h] of [[375, 812], [600, 900], [767, 1024]]) await stacked(w, h);
+for (const [w, h] of [[1440, 900], [768, 1024], [1024, 768], [1280, 800], [1920, 1080]]) await sideBySide(w, h);
 
-// in-between widths: the video is shorter or taller than a card here, card 2 must still be stuck under it
-for (const [w, h] of [[600, 900], [767, 1024], [1024, 768], [1280, 800]]) {
-  const { page, close } = await openPage({ width: w, height: h });
-  try {
-    await page.evaluate(() => window.mtmReady);
-    await settle(page);
-    const c = await toLayer(page, 2);
-    const [, k2, k3] = c.layers;
-    assert(near(k2.rect.top, k2.top, 1) && k3.rect.top < k2.rect.bottom - 10, `${w}x${h}: video reaches its sticky top while card 2 is still stuck beneath it (card 2 ${k2.rect.top.toFixed(0)}..${k2.rect.bottom.toFixed(0)}, video top ${k3.rect.top.toFixed(0)})`);
-  } finally { await close(); }
-}
-
-// sticky travel budget across target viewports
-for (const [w, h] of [[1440, 789], [1366, 768], [1440, 600], [1920, 1080]]) {
-  const { page, close } = await openPage({ width: w, height: h });
-  try {
-    await page.evaluate(() => window.mtmReady);
-    await settle(page);
-    const s = await layerInfo(page);
-    const travel = s.stack.h - (s.layers[2].rect.bottom - s.layers[2].rect.top);
-    assert(travel <= 2.5 * h && travel >= 1.5 * h, `${w}x${h}: sticky travel ${travel.toFixed(0)} within [1.5, 2.5] x innerHeight (${1.5 * h}..${2.5 * h})`);
-    if (w === 1920) { const cw = s.layers[0].rect.right - s.layers[0].rect.left; assert(cw <= 625, `${w}x${h}: card width capped (${cw.toFixed(1)})`); }
-  } finally { await close(); }
-}
-
-// real wheel scrolling: drive until layer 2 reaches its sticky top, then read layer 1
-for (const [w, h] of [[1440, 900], [375, 812]]) {
+// real wheel scrolling on a phone: drive until layer 2 reaches its sticky top, then read layer 1
+for (const [w, h] of [[375, 812]]) {
   const { page, close } = await openPage({ width: w, height: h });
   try {
     await page.evaluate(() => window.mtmReady);

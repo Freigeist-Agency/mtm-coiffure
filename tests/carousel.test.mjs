@@ -131,7 +131,7 @@ for (const width of [1440, 375]) {
         assert(/blur\(12px\)/.test(s.blur || ''), `${tag}: glass has backdrop-filter blur(12px) (${s.blur})`);
         assert(s.pe === 'none', `${tag}: glass strips let clicks through (pointer-events ${s.pe})`);
         assert(s.cloneOk && s.origOk, `${tag}: clones are aria-hidden + inert, originals are not`);
-        if (name === 'social') assert(s.clones.length >= 4 && s.nOrig === 4, `${tag}: social (4 cards) is padded with clones (${s.clones.length})`);
+        if (name === 'social') assert(s.nOrig === 6 && (width <= 767 || s.clones.length >= 4), `${tag}: social has 6 cards; on desktop (6 cards do not fill the loop) it is padded with clones, on a phone the 6 already cover it (${s.clones.length} clones)`);
         assert(s.overflow !== 'auto' && s.overflow !== 'scroll', `${tag}: enhanced root does not scroll natively (overflow-x ${s.overflow})`);
         assert(s.gsapTags === 1, `${tag}: exactly one gsap script tag (${s.gsapTags})`);
         assert(errors.length === 0, `${tag}: no page errors (${errors.join(' | ')})`);
@@ -225,7 +225,7 @@ for (const width of [1440, 375]) {
         const exp = Array.from({ length: 10 }, (_, i) => mod(s0.index - 1 - i, s0.n));
         assert(JSON.stringify(seq) === JSON.stringify(exp), `${tag}: 10 clicks backwards wrap ${seq.join(',')} (want ${exp.join(',')})`);
         assert(hitsOk, `${tag}: every backward click landed on the intended item (real mouse hit-test)`);
-        if (name === 'social') assert(clones > 0, `${tag}: some of those clicks were on clones and still mapped right (${clones} clones)`);
+        if (name === 'social' && width > 767) assert(clones > 0, `${tag}: some of those clicks were on clones and still mapped right (${clones} clones)`);
         const st = await snap(page, name), c = centred(st);
         assert(c.idx === st.index && Math.abs(c.cx - st.mid) <= st.rw * 0.02, `${tag}: centred after wrapping backwards`);
       } finally { await close(); }
@@ -248,7 +248,7 @@ for (const width of [1440, 375]) {
         const exp = Array.from({ length: 10 }, (_, i) => mod(s0.index + 1 + i, s0.n));
         assert(JSON.stringify(seq) === JSON.stringify(exp), `${tag}: 10 clicks forwards wrap ${seq.join(',')} (want ${exp.join(',')})`);
         assert(hitsOk, `${tag}: every forward click landed on the intended item`);
-        if (name === 'social') assert(clones > 0, `${tag}: forward clicks on clones map to the right logical index (${clones} clones clicked)`);
+        if (name === 'social' && width > 767) assert(clones > 0, `${tag}: forward clicks on clones map to the right logical index (${clones} clones clicked)`);
       } finally { await close(); }
     }
 
@@ -309,7 +309,7 @@ for (const width of [1440, 375]) {
         assert(inClone === 0, `${tag}: Tab through the page ${presses}x never enters a clone (${inClone} times)`);
         assert(probeHits >= (await page.evaluate(s => document.querySelectorAll(s + ' .carousel__item:not([data-clone]) .probe-btn').length, sel(name))),
           `${tag}: the loop did reach the originals' buttons (${probeHits}), so it can see a clone if one were reachable`);
-        if (name === 'social') assert(info.cloneButtons >= 4, `${tag}: clones really hold buttons for this check (${info.cloneButtons})`);
+        if (name === 'social' && width > 767) assert(info.cloneButtons >= 4, `${tag}: clones really hold buttons for this check (${info.cloneButtons})`);
       } finally { await close(); }
     }
 
@@ -539,7 +539,7 @@ if (want('nojs')) {
             sizes: items.map(e => [e.offsetWidth, e.offsetHeight]), transforms: items.filter(e => getComputedStyle(e).transform !== 'none').length,
             glass: root.querySelectorAll('[class*="carousel__glass"]').length };
         }, sel(name));
-        const want = 4;
+        const want = 6;
         assert(r.n === want && r.sizes.every(([w, h]) => w > 0 && h > 0),
           `no-JS @${width} ${name}: all ${want} items have non-zero size ${JSON.stringify(r.sizes[0])}`);
         assert(r.transforms === 0 && r.glass === 0, `no-JS @${width} ${name}: no transforms, no glass`);

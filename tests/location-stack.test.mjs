@@ -91,8 +91,8 @@ async function run(width, height) {
     for (;;) {
       const s = await probe(page);
       trace.push(s);
-      if (s.y >= endY || guard++ > 80) break;
-      await wheel(page, 110);
+      if (s.y >= endY || guard++ > 240) break;
+      await wheel(page, mobile ? 40 : 110);   // a phone card is only ~190px tall: finer steps so the mid-cover window (0.3H..0.7H) is sampled
     }
     assert(trace.length > 12, `${tag}: wheel trace has enough steps (${trace.length})`);
 
@@ -100,7 +100,7 @@ async function run(width, height) {
     const pinned = trace.filter(s => near(s.nue.row.top, expTop, 1));
     assert(pinned.length >= 3, `${tag} (a): the Nümbrecht row holds its position for several wheel steps (${pinned.length} steps at top ${expTop.toFixed(1)})`);
     const pin = pinned[0];
-    assert(pin && pin.nue.img.top >= pin.navH - 0.5 && pin.nue.img.bottom <= height + 0.5, `${tag} (a): pinned, the whole photo is inside the viewport below the nav (photo ${pin && pin.nue.img.top.toFixed(1)}..${pin && pin.nue.img.bottom.toFixed(1)}, nav ${navH}, viewport ${height})`);
+    assert(pin && (pin.nue.img.top >= pin.navH - 0.5 || H + navH > height) && pin.nue.img.bottom <= height + 0.5, `${tag} (a): pinned, the whole photo is inside the viewport below the nav, or bottom-aligned when the 16:9 card is taller than the viewport minus the nav (photo ${pin && pin.nue.img.top.toFixed(1)}..${pin && pin.nue.img.bottom.toFixed(1)}, nav ${navH}, viewport ${height})`);
     const tops = pinned.map(s => +s.nue.row.top.toFixed(1));
     assert(Math.max(...tops) - Math.min(...tops) <= 1.5, `${tag} (a): its top is constant while pinned ${JSON.stringify(tops.slice(0, 8))}`);
     const x = (pin.nue.img.left + pin.nue.img.right) / 2, yMid = (pin.nue.img.top + pin.nue.img.bottom) / 2;
@@ -194,7 +194,7 @@ if (want('short')) {
     assert(H > height - p0.navH, `${tag}: the row (${H}px) does not fit under the nav, so the bottom-aligned branch is the one under test`);
     assert(near(p0.nue.topCss, height - H, 1), `${tag}: pin line is innerHeight - row height (${p0.nue.topCss.toFixed(1)} vs ${(height - H)})`);
     await page.mouse.move(width / 2, height / 2);
-    await wheelTo(page, Math.round(natNue - (height - H) + 120));
+    await wheelTo(page, Math.round(natNue - (height - H) + 2));   // the instant it pins: Waldbröl is only 12px below, so it has not started to cover
     const s = await probe(page);
     assert(near(s.nue.row.top, height - H, 1) && near(s.nue.row.bottom, height, 1), `${tag}: pinned bottom-aligned, row bottom ${s.nue.row.bottom.toFixed(1)} = viewport bottom ${height}`);
     assert(s.nue.btn.bottom <= height && s.nue.btn.top >= s.navH, `${tag}: its button is in view (${s.nue.btn.top.toFixed(0)}..${s.nue.btn.bottom.toFixed(0)})`);

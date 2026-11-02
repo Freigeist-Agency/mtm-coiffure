@@ -1,9 +1,10 @@
-// Scroll-driven curved edges (js/arc-scroll.js): the white ellipse over About, the curve before Social, the footer dome.
+// Scroll-driven curved edges (js/arc-scroll.js): the white ellipse over Standorte (.locations), the curve before Social, the footer dome,
+// the white ellipse over the full-width image (.finale).
 // Real wheel scrolling (page.mouse.wheel) through each curve at 1440x900, 768x1024 and 375x812. Every sample reads the
 // rendered state (computed transform of the ::before ellipse / the ry of the inlined SVG ellipse) and the geometry of the
 // section edge, derives the expected depth factor from the reference mapping on its own, and compares.
 //   dome  (Locations curve, footer):  s = max(0.04, p)        p = 0 when the edge enters at the bottom, 1 when it has settled
-//   smile (About top):                s = max(0.04, 1 - p)    p = 0 when the edge enters, 1 when it reaches the top
+//   smile (Standorte top, image top): s = max(0.04, 1 - p)    p = 0 when the edge enters, 1 when it reaches the top
 //   s = rendered depth / designed depth. The footer's p ends where the document ends (the page cannot scroll the dome higher).
 // At rest (scrolling stopped, edge anywhere in view) s must be exactly 1 and the geometry the Figma one from css/site.css.
 import fs from 'node:fs';
@@ -18,13 +19,13 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 const MIN_S = 0.04;
 const TOL = 0.15;            // |rendered s - expected s| while moving: one frame of lag plus the gate's 90ms rise
-const NAMES = ['about', 'curve', 'footer'];
-const KIND = { about: 'smile', curve: 'dome', footer: 'dome' };
+const NAMES = ['about', 'curve', 'footer', 'photo'];   // 'about' = .locations (the old About smile moved to the Standorte top)
+const KIND = { about: 'smile', curve: 'dome', footer: 'dome', photo: 'smile' };
 
 // everything a test needs to know, read in one evaluate (layout reads are fine here, this is the test)
 const READ = () => {
   const iw = window.innerWidth, H = window.innerHeight;
-  const about = document.querySelector('.about'), fb = document.querySelector('.footer-body'), svg = document.querySelector('svg.curve');
+  const about = document.querySelector('.locations'), photo = document.querySelector('.finale'), fb = document.querySelector('.footer-body'), svg = document.querySelector('svg.curve');
   const pseudo = el => {
     const cs = getComputedStyle(el, '::before');
     return {
@@ -32,12 +33,13 @@ const READ = () => {
       top: parseFloat(cs.top), height: parseFloat(cs.height), radius: cs.borderTopLeftRadius, live: el.classList.contains('arc-live'),
     };
   };
-  const a = pseudo(about), f = pseudo(fb);
+  const a = pseudo(about), f = pseudo(fb), ph = pseudo(photo);
   const sr = svg.getBoundingClientRect(), dome = svg.querySelector('.curve__dome');
   const max = document.documentElement.scrollHeight - H;
   return {
     iw, H, y: window.scrollY, max, overflow: document.documentElement.scrollWidth > iw,
     about: { ...a, corner: about.getBoundingClientRect().top },
+    photo: { ...ph, corner: photo.getBoundingClientRect().top },
     curve: { s: parseFloat(dome.getAttribute('ry')) / 286, ry: dome.getAttribute('ry'), live: false, boxH: sr.height, boxW: sr.width, corner: sr.bottom },
     footer: { ...f, corner: fb.getBoundingClientRect().top + f.top + f.height / 2 },
   };
@@ -57,7 +59,8 @@ const expected = (name, p) => Math.max(MIN_S, KIND[name] === 'smile' ? 1 - p : p
 function restGeometry(iw) {
   const mobile = iw <= 767;
   return {
-    about: { top: -(mobile ? 31.78 : 19.86) * iw / 100, height: (mobile ? 63.56 : 39.72) * iw / 100 },
+    about: { top: -(mobile ? 31.78 : 20.2083) * iw / 100, height: (mobile ? 63.56 : 42.2917) * iw / 100 },
+    photo: { top: -(mobile ? 31.78 : 21.18) * iw / 100, height: (mobile ? 63.56 : 42.2917) * iw / 100 },
     footer: { top: (mobile ? 20 : 9) * iw / 100, height: 39.72 * iw / 100 },
     curveH: mobile ? 0.741 * iw : Math.min(628, Math.max(200, 0.436 * iw)),
   };
@@ -71,9 +74,10 @@ const settle = () => sleep(900);                           // gate falls over 50
 async function yForProgress(page, name, p) {
   return page.evaluate(([name, p, MIN]) => {
     const H = innerHeight, y = scrollY, max = document.documentElement.scrollHeight - H;
-    const about = document.querySelector('.about'), fb = document.querySelector('.footer-body'), svg = document.querySelector('svg.curve');
+    const about = document.querySelector('.locations'), photo = document.querySelector('.finale'), fb = document.querySelector('.footer-body'), svg = document.querySelector('svg.curve');
     let corner;
     if (name === 'about') corner = about.getBoundingClientRect().top;
+    else if (name === 'photo') corner = photo.getBoundingClientRect().top;
     else if (name === 'curve') corner = svg.getBoundingClientRect().bottom;
     else { const cs = getComputedStyle(fb, '::before'); corner = fb.getBoundingClientRect().top + parseFloat(cs.top) + parseFloat(cs.height) / 2; }
     let target;
@@ -192,8 +196,8 @@ async function reduced(w, h, mobile) {
   const check = async () => {
     const r = await page.evaluate(READ);
     samples++;
-    const ok = r.about.transform === 'none' && !r.about.live && r.footer.transform === 'none' && !r.footer.live && r.curve.ry === '286'
-      && Math.abs(r.about.top - G.about.top) <= 1 && Math.abs(r.footer.top - G.footer.top) <= 1 && Math.abs(r.curve.boxH - G.curveH) <= 1;
+    const ok = r.about.transform === 'none' && !r.about.live && r.photo.transform === 'none' && !r.photo.live && r.footer.transform === 'none' && !r.footer.live && r.curve.ry === '286'
+      && Math.abs(r.about.top - G.about.top) <= 1 && Math.abs(r.photo.top - G.photo.top) <= 1 && Math.abs(r.footer.top - G.footer.top) <= 1 && Math.abs(r.curve.boxH - G.curveH) <= 1;
     if (!ok && !bad) bad = `y=${r.y} about ${r.about.transform} footer ${r.footer.transform} ry ${r.curve.ry}`;
     return r;
   };
@@ -208,7 +212,7 @@ async function reduced(w, h, mobile) {
     if (r.y <= 1) break;
   }
   assert(samples > 20, `${tag}: sampled the whole page down and up (${samples} samples)`);
-  assert(!bad, `${tag}: all three curves static at every scroll position${bad ? ' - ' + bad : ''}`);
+  assert(!bad, `${tag}: all four curves static at every scroll position${bad ? ' - ' + bad : ''}`);
   assert(await page.evaluate(() => !window.arcScroll), `${tag}: the script is not running`);
   assert(errors.length === 0, `${tag}: 0 console/page errors (${errors.join(' | ')})`);
   await close();

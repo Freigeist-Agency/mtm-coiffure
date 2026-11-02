@@ -91,7 +91,9 @@ for (const [width, height] of [[1440, 900], [375, 812]]) {
       assert(!s.cover && !/is-loading|is-transition/.test(s.cls) && s.inert === 0 && s.flag === null,
         `${tag} not internal (${what}): no cover, no inert, no mtm-transition flag (${JSON.stringify(s)})`);
     };
-    await page.locator('a[target="_blank"][href*="planity"]').first().scrollIntoViewIfNeeded();
+    // the Nümbrecht card pins and the Waldbröl card slides over it; scroll to where card 1 sits whole under the nav, so its button is not covered
+    await page.evaluate(() => { const c = document.querySelector('.location-info'); window.scrollTo({ top: c.getBoundingClientRect().top + scrollY - 70, behavior: 'instant' }); });
+    await page.waitForTimeout(300);
     await page.locator('a[target="_blank"][href*="planity"]').first().click();
     await idle('target=_blank');
     for (const p of page.context().pages()) if (p !== page) await p.close();

@@ -425,6 +425,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 }
 /* Locations stack on mobile: the card pins right under the nav (bottom-aligned if it is taller than the viewport) */
 @media (prefers-reduced-motion: no-preference) and (max-width: 767px) {
+  html.js .locations__main { --stack-hold: 20vh; }   /* phones keep the short run where the pinned card stands alone */
   html.js .location-info:nth-child(1) { top: min(var(--nav-h), 100svh - var(--stack-row-h, 0px)); }
 }
 /* News stack, phones only (at 768 and up the two cards sit side by side, Figma). Layers stick one after another, each a little
