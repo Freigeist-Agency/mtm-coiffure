@@ -34,7 +34,7 @@ fs.mkdirSync(OUT, { recursive: true });
 
 const FRAME_MS = 1000 / 60, MOVE_FRAMES = 45;                  // 0.75 s
 const TOL_PX = 1, TOL_OPACITY = 0.01;
-const PHOTOS = ['dsc00642-1x1.jpg', 'dsc09979-1x1.jpg', 'dsc00512-1x1.jpg', 'dsc00126.jpg', 'dsc00155-1x1.jpg', 'dsc09804.jpg'];
+const PHOTOS = ['gallery-1.jpg', 'gallery-2.jpg', 'gallery-3.jpg', 'gallery-4.jpg', 'gallery-5.jpg', 'gallery-6.jpg'];
 const MAKE_PHOTOS = ['a794b', 'b61c3', 'f23b3', 'a0e50', 'ae034', '115a7'];
 
 // ---- servers -------------------------------------------------------------------------------------

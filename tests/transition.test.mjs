@@ -91,7 +91,9 @@ for (const [width, height] of [[1440, 900], [375, 812]]) {
       assert(!s.cover && !/is-loading|is-transition/.test(s.cls) && s.inert === 0 && s.flag === null,
         `${tag} not internal (${what}): no cover, no inert, no mtm-transition flag (${JSON.stringify(s)})`);
     };
-    await page.locator('a[target="_blank"][href*="planity"]').first().scrollIntoViewIfNeeded();
+    // the Nümbrecht card pins and the Waldbröl card slides over it; scroll to where card 1 sits whole under the nav, so its button is not covered
+    await page.evaluate(() => { const c = document.querySelector('.location-info'); window.scrollTo({ top: c.getBoundingClientRect().top + scrollY - 70, behavior: 'instant' }); });
+    await page.waitForTimeout(300);
     await page.locator('a[target="_blank"][href*="planity"]').first().click();
     await idle('target=_blank');
     for (const p of page.context().pages()) if (p !== page) await p.close();
@@ -320,23 +322,6 @@ for (const p of ['impressum.html', 'datenschutz.html', '404.html', 'locations/nu
   const r = await page.evaluate(() => ({ cover: !!document.querySelector('.loader'), cls: document.documentElement.className }));
   assert(!r.cover && !/is-loading|is-transition/.test(r.cls), `sessionStorage throws: navigation still works, plain page on arrival (${r.cls})`);
   assert(errors.length === 0, `sessionStorage throws: 0 console errors ${JSON.stringify(errors)}`);
-  await h.close();
-}
-
-// ---- the open logo menu goes under the cover ---------------------------------------------
-{
-  const h = await openPage({ width: 1440, path: 'impressum.html', skipLoader: false });
-  const { page } = h;
-  await loaded(page, 3000);
-  await arm(page, { unload: true });
-  await page.locator('.menu-btn').click();
-  await page.waitForFunction(() => window.__lmDebug && window.__lmDebug.isOpen());
-  await sleep(1200);
-  await page.locator('.lm-link').first().click();
-  await page.waitForURL(/index\.html#leistungen$/, { timeout: 5000 });
-  const probe = JSON.parse(await flag(page, 'probe-unload') || 'null');
-  assert(probe && probe.centreInCover && probe.panelCovers, `menu open: the cover goes over the menu (${JSON.stringify(probe)})`);
-  await loaded(page, 2500);
   await h.close();
 }
 

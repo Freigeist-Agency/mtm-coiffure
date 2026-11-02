@@ -3,7 +3,7 @@ import { openPage, assert, report } from './harness.mjs';
 const WIDTHS = [375, 768, 1440];
 const PAGES = ['index.html', 'impressum.html', 'datenschutz.html', '404.html',
   'locations/nuembrecht.html', 'locations/waldbroel.html'];
-const ORDER = ['.hero', '.intro', '.services', '.about', '.gallery', '.locations', '.social', '.news', 'footer'];
+const ORDER = ['.hero', '.about', '.gallery', '.intro', '.services', '.locations', '.social', '.reviews', '.news', '.finale', 'footer'];   // Figma 64:2, top to bottom
 
 
 // Lazy images that sit off-axis (carousel items, hidden mobile orbit items) never load from a vertical scroll;
@@ -52,7 +52,7 @@ for (const width of WIDTHS) {
       assert(r.footer !== null && r.footer.includes('Nümbrecht') && r.footer.includes('Waldbröl'),
         `${tag}: footer lists both salons`);
       assert(r.headerPos === 'sticky', `${tag}: header is sticky (${r.headerPos})`);
-      const wantH = width <= 767 ? 50 : 49;
+      const wantH = 50;
       assert(r.navH === wantH && Math.abs(r.headerH - wantH) <= 1,
         `${tag}: header height ~${wantH}px, --nav-h=${r.navH}, rendered ${r.headerH}`);
       assert(r.logo !== null && r.logo.loaded && r.logo.w > 40, `${tag}: .brand logo present and loaded ${JSON.stringify(r.logo)}`);
@@ -114,7 +114,7 @@ for (const width of WIDTHS) {
       const rows = q('.locations .location-info');
       const stack = q('.news .stack')[0];
       const layers = stack ? q('.stack__layer', stack) : [];
-      const imgs = q('.hero img, .intro img, .services img, .about img');
+      const imgs = q('.hero img, .about img, .intro img, .services img, .reviews img, .finale img');
       return {
         orbit: !!orbit, orbitItems: orbitItems.length, orbitImgs: items.length,
         tilts: orbitItems.filter(i => getComputedStyle(i).display !== 'none').map(i => parseFloat(getComputedStyle(i).getPropertyValue('--tilt'))),
@@ -129,7 +129,7 @@ for (const width of WIDTHS) {
         rowOrder: rows.every(r => [...r.children].map(c => c.tagName + (c.classList.contains('btn') ? '.btn' : '')).join() === 'H3,IMG,A.btn'),
         mediaImgs: rows.flatMap(r => q('.location-img', r)).map(i => { const b = i.getBoundingClientRect(); return b.width / b.height; }),
         stack: !!stack, layers: layers.length,
-        videoLayer: layers.some(l => q('[aria-label="Video folgt"]', l).length || l.getAttribute('aria-label') === 'Video folgt'),
+        finaleImg: !!q('.finale > img')[0],
         imgAttrs: imgs.every(i => i.hasAttribute('width') && i.hasAttribute('height') && i.hasAttribute('alt')),
         sw: document.documentElement.scrollWidth, iw: innerWidth,
       };
@@ -160,10 +160,10 @@ for (const width of WIDTHS) {
       }
     }
     // Part B hooks (not built yet: expected to fail until part B)
-    assert(h.social && h.socialItems === 4, `${tag}: .social carousel[data-carousel=social] has 4 .carousel__item (${h.socialItems})`);
+    assert(h.social && h.socialItems === 6, `${tag}: .social carousel[data-carousel=social] has 6 .carousel__item (${h.socialItems})`);
     assert(h.rows === 2 && h.rowOrder, `${tag}: locations has 2 .location-info rows, each h3 -> img -> a.btn in DOM order (${h.rows})`);
     assert(h.mediaImgs.length === 2 && h.mediaImgs.every(r => Math.abs(r - 16 / 9) <= 0.03), `${tag}: locations rows have two 16:9 images ${JSON.stringify(h.mediaImgs.map(r => +r.toFixed(2)))}`);
-    assert(h.stack && h.layers === 3 && h.videoLayer, `${tag}: .news .stack has 3 .stack__layer, one aria-label="Video folgt" (${h.layers})`);
+    assert(h.stack && h.layers === 3 && h.finaleImg, `${tag}: .news .stack has 3 .stack__layer, the full-width image is the third (${h.layers})`);
     assert(h.sw <= h.iw, `${tag}: no horizontal overflow (${h.sw} <= ${h.iw})`);
   } finally { await close(); }
 }

@@ -1,4 +1,4 @@
-// Task 5: sticky Standorte aside + Planity booking links.
+// Standorte cards + Planity booking links.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,198 +23,142 @@ const settle = async (page, y) => {
   await page.waitForTimeout(80);
 };
 
-const rowsInfo = page => page.evaluate(() => [...document.querySelectorAll('.location-info')].map(row => {
-  const r = e => { const b = e.getBoundingClientRect(); return { top: b.top, bottom: b.bottom, left: b.left, right: b.right, h: b.height, w: b.width }; };
-  const rr = r(row);
-  return { top: rr.top + scrollY, bottom: rr.bottom + scrollY, label: r(row.querySelector('h3')), img: r(row.querySelector('.location-img')), btn: r(row.querySelector('.btn')), y: scrollY };
-}));
-
-async function goTo(page, y, wheel, width, height) {
-  if (wheel) { // real wheel scrolling
-    await page.mouse.move(width / 2, height / 2);
-    const cur = await page.evaluate(() => scrollY);
-    await page.mouse.wheel(0, y - cur);
-    await settle(page);
-  } else {
-    await page.evaluate(v => window.scrollTo({ top: v, behavior: 'instant' }), y);
-    await page.waitForTimeout(150);
-  }
-}
-const spread = a => Math.max(...a) - Math.min(...a);
 const shot = (page, name) => page.screenshot({ path: path.join(OUT, name) });
 
-async function stickyRun(width, height, { reducedMotion = false, short = false } = {}) {
+// Standorte cards (Figma 64:2): Figma's Glass render of the photo + the salon name centred, Planity link at the bottom edge, one generic button in the header row.
+async function cardRun(width, height, { reducedMotion = false } = {}) {
   const tag = `@${width}x${height}${reducedMotion ? ' reduced-motion' : ''}`;
-  const mobile = width <= 767;
-  const names = ['nuembrecht', 'waldbroel'];
   const { page, errors, close } = await openPage({ width, height, reducedMotion });
   try {
-    // 1. nothing between the sticky items and the body is a scroll container (hidden/auto/scroll kill sticky)
+    // nothing above the cards is a scroll container (hidden/auto/scroll would kill the sticky pin)
     const chain = await page.evaluate(() => {
-      const bad = [], pos = [];
+      const bad = [];
       for (const row of document.querySelectorAll('.location-info')) {
-        for (const it of [row.querySelector('h3'), row.querySelector('.btn')]) {
-          pos.push(getComputedStyle(it).position);
-          for (let e = it.parentElement; e && e !== document.body; e = e.parentElement) {
-            const cs = getComputedStyle(e);
-            if (['hidden', 'auto', 'scroll'].some(v => cs.overflowX === v || cs.overflowY === v)) bad.push(`${e.tagName}.${e.className} ${cs.overflowX}/${cs.overflowY}`);
-          }
+        for (let e = row.parentElement; e && e !== document.body; e = e.parentElement) {
+          const cs = getComputedStyle(e);
+          if (['hidden', 'auto', 'scroll'].some(v => cs.overflowX === v || cs.overflowY === v)) bad.push(`${e.tagName}.${e.className} ${cs.overflowX}/${cs.overflowY}`);
         }
       }
       const h = getComputedStyle(document.documentElement);
-      return { bad: [...new Set(bad)], htmlOverflow: `${h.overflowX}/${h.overflowY}`, pos };
+      return { bad: [...new Set(bad)], htmlOverflow: `${h.overflowX}/${h.overflowY}` };
     });
-    assert(chain.bad.length === 0, `${tag}: no ancestor of the sticky label/button is a scroll container ${JSON.stringify(chain.bad)}`);
+    assert(chain.bad.length === 0, `${tag}: no ancestor of the cards is a scroll container ${JSON.stringify(chain.bad)}`);
     assert(chain.htmlOverflow === 'visible/visible', `${tag}: html overflow is visible so body overflow-x propagates to the viewport (${chain.htmlOverflow})`);
-    assert(chain.pos.length === 4 && chain.pos.every(v => v === 'sticky'), `${tag}: both labels and both buttons are position:sticky ${JSON.stringify(chain.pos)}`);
-
-    const navH = await page.evaluate(() => document.querySelector('.site-header').getBoundingClientRect().height);
-    const topLine = mobile ? navH : navH + 0.02 * height;   // where a stuck label sits
-    const botLine = height - 0.02 * height;                  // where a stuck button sits (desktop)
 
     for (let i = 0; i < 2; i++) {
-      const n = names[i], t = `${tag} row ${i + 1} (${n})`;
-      const info0 = (await rowsInfo(page))[i];
-      const rowTop = info0.top, rowBottom = info0.bottom;
-      const imgH = info0.img.h;
-
-      if (!mobile) {
-        // at rest: photo fully in view -> label on the photo's top edge, button on its bottom edge
-        await goTo(page, Math.round(rowTop - (navH + 0.08 * height)), false, width, height);
-        const rest = (await rowsInfo(page))[i];
-        if (imgH + navH + 0.08 * height <= height) {
-          assert(Math.abs(rest.label.top - rest.img.top) <= 0.03 * height, `${t}: at rest the label top is on the photo top (${(rest.label.top - rest.img.top).toFixed(1)}px)`);
-          assert(Math.abs(rest.img.bottom - rest.btn.bottom) <= 0.03 * height, `${t}: at rest the button bottom is on the photo bottom (${(rest.img.bottom - rest.btn.bottom).toFixed(1)}px)`);
-        }
-        if (!reducedMotion && width === 1440 && !short) await shot(page, `${width}-row${i + 1}-rest.png`);
+      const t = `${tag} card ${i + 1}`;
+      // scroll so the card sits whole under the nav (card 1 pinned; card 2 below it is not yet covering)
+      await page.evaluate(i => { const c = document.querySelectorAll('.location-info')[i]; window.scrollTo({ top: c.getBoundingClientRect().top + scrollY - 70, behavior: 'instant' }); }, i);
+      await page.waitForTimeout(300);
+      const c = await page.evaluate(i => {
+        const row = document.querySelectorAll('.location-info')[i];
+        const R = e => { const b = e.getBoundingClientRect(); return { l: b.left, t: b.top, r: b.right, b: b.bottom, w: b.width, h: b.height }; };
+        const h3 = row.querySelector('h3'), img = row.querySelector('.location-img'), btn = row.querySelector('.btn');
+        const br = R(btn);
+        const hit = e => { const x = document.elementFromPoint((e.l + e.r) / 2, (e.t + e.b) / 2); return x; };
+        return { row: R(row), h3: R(h3), img: R(img), btn: br, text: h3.textContent.trim(), noOverlay: getComputedStyle(row, '::after').content === 'none', glass: /\/location-card\.jpg$/.test(img.currentSrc || img.src), overflow: getComputedStyle(row).overflowX,
+          hitBtn: !!hit(br) && !!hit(br).closest('.btn') && hit(br).closest('.btn') === btn, hitH3: !!hit(R(h3)) && !!hit(R(h3)).closest('h3'),
+          order: [...row.children].map(x => x.tagName + (x.classList.contains('btn') ? '.btn' : '')).join(), scrollLeft: row.scrollLeft };
+      }, i);
+      assert(c.order === 'H3,IMG,A.btn', `${t}: children are label, photo, button in DOM order (${c.order})`);
+      assert(Math.abs(c.img.w - c.row.w) <= 1 && Math.abs(c.img.h - c.row.h) <= 1, `${t}: the photo fills the card (${c.img.w.toFixed(0)}x${c.img.h.toFixed(0)} in ${c.row.w.toFixed(0)}x${c.row.h.toFixed(0)})`);
+      assert(c.glass && c.noOverlay, `${t}: the photo is the baked Figma glass render with no second overlay on it (${c.glass}/${c.noOverlay})`);
+      assert(c.overflow === 'clip', `${t}: overflow is clip, so the label and button can stick (${c.overflow})`);
+      assert(Math.abs((c.h3.l + c.h3.r) / 2 - (c.row.l + c.row.r) / 2) <= 2 && Math.abs((c.h3.t + c.h3.b) / 2 - (c.row.t + c.row.b) / 2) <= 2, `${t}: the salon name is centred on the card`);
+      assert(c.btn.b <= c.row.b + 0.5 && c.btn.t > (c.row.t + c.row.b) / 2 && Math.abs((c.btn.l + c.btn.r) / 2 - (c.row.l + c.row.r) / 2) <= 2, `${t}: the Planity button sits at the bottom edge, centred, inside the card`);
+      assert(c.hitBtn && c.hitH3, `${t}: name and button paint above the photo (hit test ${c.hitH3}/${c.hitBtn})`);
+      if (width >= 1200) {
+        assert(Math.abs(c.row.w - 1400) <= 1 && Math.abs(c.row.h - 787) <= 1, `${t}: 1400x787 at 1440 (${c.row.w.toFixed(1)}x${c.row.h.toFixed(1)})`);
+        assert(Math.abs(c.row.l - 20) <= 1, `${t}: x=20 (${c.row.l.toFixed(1)})`);
       }
-
-      // Pinning zones. Desktop: label stuck once the photo top passes topLine; button stuck while the photo bottom is below botLine.
-      // A 644px photo in a 900px viewport cannot satisfy both at once, so each is sampled in its own zone; in a viewport shorter than the photo both are sampled together.
-      const zones = [];
-      if (mobile) {
-        zones.push({ what: 'bar', lo: rowTop - navH + 0.1 * (imgH + 0), hi: rowBottom - 0.09 * height - navH - 0.1 * imgH, label: true, btn: true });
-      } else if (short) {
-        zones.push({ what: 'label+button', lo: rowTop - topLine + 5, hi: rowBottom - botLine - 5, label: true, btn: true });
-      } else {
-        zones.push({ what: 'label (photo leaving)', lo: rowTop - topLine + 0.1 * imgH, hi: rowBottom - topLine - 0.35 * imgH, label: true, btn: false });
-        zones.push({ what: 'button (photo entering)', lo: rowTop - 0.78 * height, hi: rowTop - 0.44 * height, label: false, btn: true });
-      }
-      for (const z of zones) {
-        assert(z.hi - z.lo > 100, `${t} ${z.what}: sampling range is long enough (${Math.round(z.hi - z.lo)}px)`);
-        const ys = [z.lo, (z.lo + z.hi) / 2, z.hi].map(Math.round);
-        const S = [];
-        for (let k = 0; k < 3; k++) {
-          await goTo(page, ys[k], k === 1, width, height);   // middle sample uses the real wheel
-          S.push((await rowsInfo(page))[i]);
-        }
-        if (z.label) {
-          const tops = S.map(x => +x.label.top.toFixed(1));
-          assert(spread(tops) <= 2, `${t} ${z.what}: label rect.top constant ${JSON.stringify(tops)} (stuck line ${topLine.toFixed(1)})`);
-          assert(Math.abs(tops[1] - topLine) <= 2, `${t} ${z.what}: label sits at ${mobile ? 'nav' : 'nav + 2vh'} (${tops[1]} vs ${topLine.toFixed(1)})`);
-        }
-        if (z.btn) {
-          if (mobile) {
-            const tops = S.map(x => +x.btn.top.toFixed(1));
-            assert(spread(tops) <= 2 && Math.abs(tops[1] - navH) <= 2, `${t} bar: button rect.top constant under the nav ${JSON.stringify(tops)}`);
-          } else {
-            const bots = S.map(x => +x.btn.bottom.toFixed(1));
-            assert(spread(bots) <= 2, `${t} ${z.what}: button rect.bottom constant ${JSON.stringify(bots)}`);
-            assert(Math.abs(bots[1] - botLine) <= 2, `${t} ${z.what}: button sits 2vh above the viewport bottom (${bots[1]} vs ${botLine})`);
-          }
-        }
-        const moved = Math.abs(S[2].img.top - S[0].img.top);
-        const rowVp = S.map(x => x.top - x.y);   // the row's viewport top: constant while it is pinned (the photo itself shifts a few px as the row scales)
-        if (i === 0 && !reducedMotion && !short && (mobile || z.label)) {
-          // the Nümbrecht row is itself pinned here (location stack, js/stack.js): label, button and photo all stand still
-          assert(spread(rowVp) <= 2, `${t} ${z.what}: the row is pinned, so it stands still with its label and button ${JSON.stringify(rowVp.map(Math.round))}`);
-        } else {
-          assert(moved > 100, `${t} ${z.what}: photo moves under the pinned items (${Math.round(moved)}px)`);
-        }
-        assert(Math.abs(S[1].y - ys[1]) < 40, `${t} ${z.what}: real wheel scroll landed near its target (${S[1].y} vs ${ys[1]})`);
-        if (!reducedMotion && (width === 1440 && !short || mobile)) await shot(page, `${width}-row${i + 1}-${z.label ? (mobile ? 'bar' : 'leaving') : 'entering'}.png`);
-      }
-
-      if (mobile) {
-        const bar = await page.evaluate(i => {
-          const row = document.querySelectorAll('.location-info')[i];
-          const h = row.querySelector('h3').getBoundingClientRect(), b = row.querySelector('.btn').getBoundingClientRect();
-          // the pinned Nümbrecht row is scaled once Waldbröl is rising, so measure from the bar's own edges
-          const cover = [[h.left + 2, h.top + 2], [h.right - 2, h.bottom - 2], [b.right - 2, b.top + 2], [b.right - 2, b.bottom - 2], [(h.left + b.right) / 2, h.top + 2]]
-            .map(([x, y]) => { const e = document.elementFromPoint(x, y); return !!e && (e.closest('h3') === row.querySelector('h3') || e.closest('.btn') === row.querySelector('.btn')); });
-          return { h: Math.max(h.bottom, b.bottom) - Math.min(h.top, b.top), btnIn: b.left >= 0 && b.right <= innerWidth && b.width > 40, cover, full: h.left <= 0.5 && b.right >= innerWidth - 0.5 };
-        }, i);
-        assert(bar.h <= 0.22 * height, `${t}: bar is <= 22vh (${Math.round(bar.h)} <= ${Math.round(0.22 * height)})`);
-        assert(bar.btnIn, `${t}: button fully inside the viewport`);
-        assert(bar.cover.every(Boolean), `${t}: bar paints above the photo ${JSON.stringify(bar.cover)}`);
-        if (i === 1) assert(bar.full, `${t}: bar spans the full width`);   // (the Nümbrecht row is scaled down while Waldbröl rises over it)
-      }
+      assert(Math.abs(c.row.w / c.row.h - 1400 / 787) <= 0.01, `${t}: aspect 1400:787 (${(c.row.w / c.row.h).toFixed(3)})`);
+      if (!reducedMotion && width === 1440) await shot(page, `${width}-card${i + 1}.png`);
     }
-
-    // handoff sweep: scroll through the whole handoff range in ~8px steps and read both rows' items at every step
-    const infos0 = await rowsInfo(page);
-    // the sweep runs on past the point where the Waldbröl row has covered the (pinned) Nümbrecht row
-    const y0 = Math.max(0, Math.round(infos0[1].top - height - 50)), y1 = Math.round(infos0[1].top - (mobile ? navH : topLine) + 0.5 * height);
-    const sweep = await page.evaluate(([y0, y1]) => {
-      const rows = [...document.querySelectorAll('.location-info')];
-      const out = [];
-      for (let y = y0; y <= y1; y += 8) {
-        scrollTo({ top: y, behavior: 'instant' });
-        const g = r => rows[r].querySelector.bind(rows[r]);
-        const R = e => e.getBoundingClientRect();
-        const nb = R(g(0)('.btn')), nl = R(g(0)('h3'));
-        const onTop = (r) => { const e = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2); return !!e && rows[0].contains(e); };
-        out.push({
-          y, nueLabelTop: nl.top, nueBtnTop: nb.top, nueBtnBottom: nb.bottom,
-          walLabelTop: R(g(1)('h3')).top, walBtnTop: R(g(1)('.btn')).top, rowBottom: R(rows[0]).bottom, walRowTop: R(rows[1]).top,
-          nueBtnOnTop: onTop(nb), nueLabelOnTop: onTop(nl), nueLabelMid: (nl.top + nl.bottom) / 2, nueBtnMid: (nb.top + nb.bottom) / 2, nueBtnVisible: nb.top > 60 && nb.bottom < innerHeight, nueLabelVisible: nl.top > 60 && nl.bottom < innerHeight,
-        });
-      }
-      return out;
-    }, [y0, y1]);
-    assert(sweep.length > 40, `${tag} handoff sweep: enough steps (${sweep.length})`);
-    if (!mobile) {
-      // The Waldbröl row now rises OVER the pinned Nümbrecht row (location stack), so their rects overlap by design. What must
-      // hold instead: whenever the Waldbröl row's top edge is above the Nümbrecht button, the button is not hit-testable on top.
-      const covered = sweep.filter(x => x.walRowTop < x.nueBtnTop && x.nueBtnVisible);
-      assert(covered.length >= 1 && covered.every(x => !x.nueBtnOnTop), `${tag} handoff sweep: Waldbröl covers the Nümbrecht button, which is never hit-testable above it (${covered.length} covered steps, ${covered.filter(x => x.nueBtnOnTop).length} leaking)`);
-      // the Nümbrecht button holds still with its pinned row for several steps (a free-moving one moves every step), then leaves with it
-      const plateau = {};
-      for (const x of sweep) { const k = Math.round(x.nueBtnBottom); plateau[k] = (plateau[k] || 0) + 1; }
-      const stuck = Math.max(...Object.values(plateau));
-      assert(stuck >= 3, `${tag} handoff sweep: the Nümbrecht button stood still for at least 3 steps while its row was pinned (${stuck} steps)`);
-      const left = sweep.filter(x => x.nueBtnBottom < botLine - 2).length;
-      assert(left > 0, `${tag} handoff sweep: the Nümbrecht button then left with its row (${left} steps)`);
-    } else {
-      const barH = 0.09 * height, lo = navH - 2, hi = navH + barH;
-      // the Waldbröl bar now slides over the pinned Nümbrecht bar, so both can share the nav band: then Waldbröl must be the one on top
-      const both = sweep.filter(x => x.nueLabelTop >= lo && x.nueLabelTop < hi && x.walLabelTop >= lo && x.walLabelTop < hi);
-      // (the centre of the Nümbrecht bar is covered once Waldbröl's top edge has passed it)
-      const leak = both.filter(x => (x.walRowTop <= x.nueLabelMid && x.nueLabelOnTop) || (x.walRowTop <= x.nueBtnMid && x.nueBtnOnTop));
-      assert(both.length >= 1 && leak.length === 0, `${tag} handoff sweep: whenever the Waldbröl bar's edge has passed the Nümbrecht bar it is on top of it (${both.length} steps share the band, ${leak.length} leaking)`);
-      const nueStuck = sweep.filter(x => Math.abs(x.nueLabelTop - navH) <= 2).length, walStuck = sweep.filter(x => Math.abs(x.walLabelTop - navH) <= 2).length;
-      assert(nueStuck >= 3 && walStuck >= 3, `${tag} handoff sweep: each bar was stuck under the nav at some step (${nueStuck}, ${walStuck})`);
-    }
-    const hy = Math.round(infos0[1].top - 0.45 * height);
-    await goTo(page, hy, false, width, height);
-    if (!reducedMotion && !short) await shot(page, `${width}-handoff.png`);
-
+    const names = await page.evaluate(() => [...document.querySelectorAll('.location-info h3')].map(h => h.textContent.trim()));
+    assert(JSON.stringify(names) === JSON.stringify(['Nümbrecht.', 'Waldbröl']), `${tag}: names as in Figma ${JSON.stringify(names)}`);
+    // header row: title left, one Termin Buchen button right
+    const head = await page.evaluate(() => {
+      const R = e => { const b = e.getBoundingClientRect(); return { l: b.left, t: b.top + scrollY, r: b.right, w: b.width, h: b.height }; };
+      const h = document.querySelector('.locations__head h2'), b = document.querySelector('.locations__head .btn');
+      return { h: R(h), b: R(b), fs: getComputedStyle(h).fontSize, href: b.getAttribute('href'), n: document.querySelectorAll('.locations__head .btn').length };
+    });
+    assert(head.n === 1 && head.href === '#standorte', `${tag}: one generic Termin Buchen button in the header row (${head.n}, ${head.href})`);
+    if (width >= 1200) assert(Math.abs(head.h.l - 20) <= 1 && Math.abs(head.b.r - 1420) <= 1 && Math.abs(head.b.t - head.h.t) <= 1 && Math.abs(parseFloat(head.fs) - 52) <= 0.1, `${tag}: title x=20, button ends at x=1420, same top, 52px (${head.h.l}, ${head.b.r}, ${head.fs})`);
     const sw = await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
     assert(sw[0] <= sw[1], `${tag}: no horizontal overflow (${sw[0]} <= ${sw[1]})`);
     assert(errors.length === 0, `${tag}: no console errors ${errors.join('|')}`);
   } finally { await close(); }
 }
 
-await stickyRun(1440, 900);
-await stickyRun(1440, 520, { short: true });
-await stickyRun(375, 812);
-// reduced motion: the label and button are plain flow, not sticky (spec: "stack/sticky become plain flow")
+await cardRun(1440, 900);
+await cardRun(768, 1024);
+await cardRun(375, 812);
+// While a card is taller than the space left, its name stays under the nav and its button at the bottom of the viewport (ported from the live site)
+for (const [width, height] of [[1440, 900], [1920, 1080], [375, 812]]) {
+  const tag = `@${width}x${height} sticky label`;
+  const { page, errors, close } = await openPage({ width, height });
+  try {
+    await page.evaluate(() => window.mtmReady);
+    await page.waitForTimeout(300);
+    const read = () => page.evaluate(() => {
+      const rows = [...document.querySelectorAll('.location-info')], R = e => { const b = e.getBoundingClientRect(); return { t: b.top, b: b.bottom }; };
+      return { rows: rows.map(R), h3: rows.map(r => R(r.querySelector('h3'))), btn: rows.map(r => R(r.querySelector('.btn'))),
+        pos: rows.flatMap(r => [getComputedStyle(r.querySelector('h3')).position, getComputedStyle(r.querySelector('.btn')).position]),
+        h3Top: rows.map(r => parseFloat(getComputedStyle(r.querySelector('h3')).top)), btnBottom: parseFloat(getComputedStyle(rows[0].querySelector('.btn')).bottom),
+        hold: parseFloat(getComputedStyle(rows[1]).marginTop), ih: innerHeight, y: scrollY };
+    });
+    const s0 = await read();
+    // name and button share a grid cell: across both cards' whole passage they never touch
+    const pageY = s0.rows[0].t + s0.y, span = s0.rows[1].b - s0.rows[0].t + height;
+    let touched = null, both = 0;
+    for (let y = pageY - height; y <= pageY + span; y += Math.max(24, Math.round(height / 24))) {
+      await page.evaluate(v => window.scrollTo({ top: v, behavior: 'instant' }), y);
+      await page.waitForTimeout(25);
+      const r = await read();
+      for (const i of [0, 1]) {
+        const onScreen = r.h3[i].b > 0 && r.h3[i].t < height && r.btn[i].b > 0 && r.btn[i].t < height;
+        if (onScreen) both++;
+        if (onScreen && r.h3[i].b > r.btn[i].t - 2 && r.btn[i].b > r.h3[i].t - 2 && !touched) touched = `y=${y} card ${i + 1} name ${r.h3[i].t.toFixed(1)}..${r.h3[i].b.toFixed(1)} button ${r.btn[i].t.toFixed(1)}..${r.btn[i].b.toFixed(1)}`;
+      }
+    }
+    assert(both > 10, `${tag}: the sweep saw name and button on screen together (${both} samples)`);
+    assert(!touched, `${tag}: name and button never touch${touched ? ' - ' + touched : ''}`);
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    await page.waitForTimeout(200);
+    assert(s0.pos.every(v => v === 'sticky'), `${tag}: names and buttons are position:sticky ${JSON.stringify(s0.pos)}`);
+    assert(Math.abs(s0.hold - 0.2 * height) <= 1, `${tag}: the pinned card stands alone for 20vh before the next rises (${s0.hold.toFixed(1)})`);
+    // card 1 entering from below: its bottom is past the viewport, so the button holds the viewport's bottom edge
+    const docTop = s0.rows[0].t + s0.y, cardH = s0.rows[0].b - s0.rows[0].t;
+    if (cardH > height * 0.5) {
+      await page.evaluate(y => window.scrollTo({ top: y, behavior: 'instant' }), docTop - height + cardH * 0.6);
+      await page.waitForTimeout(250);
+      const a = await read();
+      assert(a.rows[0].b > height + 20, `${tag}: card 1 still runs past the viewport (bottom ${a.rows[0].b.toFixed(1)})`);
+      assert(Math.abs(a.btn[0].b - (height - s0.btnBottom)) <= 1.5, `${tag}: the button holds 2vh above the viewport bottom (${a.btn[0].b.toFixed(1)}, expected ${(height - s0.btnBottom).toFixed(1)})`);
+      // card 2 past its middle: the name holds under the nav. Pin card 2 by scrolling its middle above the line
+      const wal = (await read()).rows[1];
+      const walDoc = wal.t + (await read()).y, line = s0.h3Top[1], h3H = s0.h3[1].b - s0.h3[1].t;
+      await page.evaluate(y => window.scrollTo({ top: y, behavior: 'instant' }), walDoc + cardH * 0.5 + 60 - line);
+      await page.waitForTimeout(250);
+      const b = await read();
+      assert(b.rows[1].t < line - cardH * 0.5 && b.rows[1].b > line + h3H, `${tag}: card 2's middle is above the line and its bottom below it (${b.rows[1].t.toFixed(1)}..${b.rows[1].b.toFixed(1)})`);
+      assert(Math.abs(b.h3[1].t - line) <= 1.5, `${tag}: the name holds at nav + 2vh (${b.h3[1].t.toFixed(1)}, expected ${line.toFixed(1)})`);
+    }
+    assert(errors.length === 0, `${tag}: no console errors ${errors.join('|')}`);
+  } finally { await close(); }
+}
+
+// reduced motion: the cards are plain flow, not sticky (spec: "stack/sticky become plain flow")
 for (const [width, height] of [[1440, 900], [375, 812]]) {
   const tag = `@${width}x${height} reduced-motion`;
   const { page, errors, close } = await openPage({ width, height, reducedMotion: true });
   try {
-    const pos = await page.evaluate(() => [...document.querySelectorAll('.location-info')].flatMap(row => [row.querySelector('h3'), row.querySelector('.btn')].map(e => getComputedStyle(e).position)));
-    assert(pos.length === 4 && pos.every(v => v === 'static'), `${tag}: both labels and both buttons are position:static ${JSON.stringify(pos)}`);
+    const pos = await page.evaluate(() => [...document.querySelectorAll('.location-info')].map(row => getComputedStyle(row).position));
+    assert(pos.length === 2 && pos.every(v => v === 'relative'), `${tag}: both cards are plain flow, not sticky ${JSON.stringify(pos)}`);
+    const inner = await page.evaluate(() => [...document.querySelectorAll('.location-info h3, .location-info .btn')].map(e => getComputedStyle(e).position));
+    assert(inner.length === 4 && inner.every(v => v === 'relative'), `${tag}: names and buttons are plain flow ${JSON.stringify(inner)}`);
+    const off = await page.evaluate(() => [...document.querySelectorAll('.location-info')].map(r => { const c = r.getBoundingClientRect(), h = r.querySelector('h3').getBoundingClientRect(); return (h.top + h.bottom) / 2 - (c.top + c.bottom) / 2; }));
+    assert(off.every(v => Math.abs(v) <= 1), `${tag}: the name sits at the card's centre (Figma), no sticky offset left on it ${JSON.stringify(off.map(v => +v.toFixed(1)))}`);
     const sw = await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
     assert(sw[0] <= sw[1], `${tag}: no horizontal overflow (${sw[0]} <= ${sw[1]})`);
     assert(errors.length === 0, `${tag}: no console errors ${errors.join('|')}`);
@@ -297,8 +241,6 @@ for (const [p, url, name] of [['locations/nuembrecht.html', NUE, 'Nümbrecht'], 
 }
 
 // ---- sources
-const menu = fs.readFileSync(path.join(ROOT, 'js/menu.js'), 'utf8');
-assert(/label: 'Termin buchen', href: to\('#standorte'\)/.test(menu) && /function to\(hash\)\{ return HOME \? hash : ROOT \+ 'index\.html' \+ hash; \}/.test(menu), 'menu.js: Termin buchen item stays on #standorte (in-page on the home page, ROOT + index.html# elsewhere)');
 const files = [];
 (function walk(d) {
   for (const f of fs.readdirSync(d, { withFileTypes: true })) {

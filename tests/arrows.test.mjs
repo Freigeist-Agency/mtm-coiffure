@@ -13,7 +13,7 @@ const want = k => !process.env.ARROWS_ONLY || process.env.ARROWS_ONLY.split(',')
 const mod = (a, n) => ((a % n) + n) % n;
 
 const CASES = {
-  social: { prev: 'Vorheriger Beitrag', next: 'Nächster Beitrag', word: 'Beitrag', n: 4, colour: 'rgb(0, 0, 0)' },
+  social: { prev: 'Vorheriger Beitrag', next: 'Nächster Beitrag', word: 'Beitrag', n: 6, colour: 'rgb(0, 0, 0)' },
 };
 const sel = name => `.carousel[data-carousel="${name}"]`;
 const arrow = (page, name, which) => page.locator(`${sel(name)} ~ .carousel__arrow--${which}`);

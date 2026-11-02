@@ -5,7 +5,7 @@
 .loader { display: none; }
 html.js.is-loading .loader {
   display: block;
-  position: fixed; inset: 0 0 auto 0; z-index: 10000;    /* above the menu overlay (9998) */
+  position: fixed; inset: 0 0 auto 0; z-index: 10000;    /* above everything */
   height: 100vh; height: 100lvh;
   overflow: hidden; pointer-events: none;
   color: #fff; font-family: var(--font);

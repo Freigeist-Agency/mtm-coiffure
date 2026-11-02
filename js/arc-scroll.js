@@ -1,5 +1,6 @@
-/* Scroll-driven depth of the three curved section edges on the home page: the white ellipse over the top of About, the curve
-   under Locations (before Social), and the black dome of the footer.
+/* Scroll-driven depth of the four curved section edges on the home page: the white ellipse over the top of Standorte (.locations),
+   the curve under Standorte (before Social), the white ellipse over the top of the full-width image (.finale), and the black dome
+   of the footer.
    Reference: "Arc Scroll Transition" (Freigeist/references/hover-gallery-make/ScrollAnim.mp4, 1440x900 at 30fps), measured frame by
    frame (every edge sampled across the width, parabola fitted, sagitta = apex minus corners). Findings the mapping is built on:
      - the edge is a parabola; its depth (sagitta) is LINEAR in the position of the section boundary (the corner line), with no extra easing.
@@ -9,7 +10,7 @@
      - K is a per-transition setting in the reference (0.195 / 0.423 W for the two covers, 0.156 / 0.085 W for the two reveals).
    Here K is fixed so the moving depth meets the designed one at the end of the travel where the section settles:
      dome   (Locations curve, footer):  depth = D * p          p = 0 when the edge enters at the bottom, 1 when it has settled
-     smile  (About top):                depth = D * (1 - p)    p = 0 when the edge enters, 1 when it reaches the top
+     smile  (Standorte and image tops): depth = D * (1 - p)    p = 0 when the edge enters, 1 when it reaches the top
    D is the designed (Figma) depth, so s = depth / D is the factor applied to the ellipse. For the footer, p runs from the dome's
    centre line entering at the bottom to the end of the document, because the page ends before that line can reach the top.
 
@@ -17,14 +18,15 @@
    A gate g in 0..1 rises to 1 within ~90ms of scrolling and falls back to 0 over ~500ms after it stops; the shown factor is
    s = 1 + g * (mapping(p) - 1). So a visitor sees the reference's shape while moving and the Figma shape when stopped.
 
-   Mechanism: three ScrollTriggers (progress only, no pinning), one passive scroll listener (stamps the time) and one gsap.ticker
-   callback that runs only while the gate is open or closing. Rendering is a CSS variable (About, footer: scaleY of the ellipse
+   Mechanism: four ScrollTriggers (progress only, no pinning), one passive scroll listener (stamps the time) and one gsap.ticker
+   callback that runs only while the gate is open or closing. Rendering is a CSS variable (smile curves, footer: scaleY of the ellipse
    pseudo-element about its own centre line, so the section edge stays put and only the apex moves) and the ry attribute (the
    inlined curve SVG). No layout reads in any callback; the footer's centre-line offset is read inside ScrollTrigger's own refresh.
    Under prefers-reduced-motion, or without GSAP, nothing here runs and the static curves stay. */
 (function () {
   'use strict';
   var MIN_S = 0.04;          // never a razor-flat edge: below ~0.016 the footer dome would leave a hairline gap above its black rect
+  var CURVE_MIN_S = 0.5;     // the Social title sits on the white inside the curve: flatter and its ends land on the black above (needs 0.35 at 1440, 0.48 at 2560)
   var HOLD = 140;            // ms after the last scroll event during which the gate stays open
   var RISE = 90, FALL = 500; // ms for the gate to open / close
   var EPS = 0.0005;
@@ -32,7 +34,7 @@
   function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
 
   // A curve: where its progress comes from, how progress maps to the depth factor, how a factor is drawn.
-  function varCurve(name, el, trigger, kind, start, end) {   // About / footer: the ellipse is a ::before, depth = a CSS variable
+  function varCurve(name, el, trigger, kind, start, end) {   // smile curves / footer: the ellipse is a ::before, depth = a CSS variable
     return {
       name: name, el: el, trigger: trigger, kind: kind, start: start, end: end,
       draw: function (s) { el.style.setProperty('--arc-s', s.toFixed(4)); el.classList.add('arc-live'); },
@@ -44,6 +46,7 @@
     var ry0 = dome.getAttribute('ry'), base = parseFloat(ry0);
     return {
       name: 'curve', el: svg, trigger: svg, kind: kind, start: 'bottom bottom', end: 'bottom top',
+      min: CURVE_MIN_S,
       draw: function (s) { dome.setAttribute('ry', (base * s).toFixed(2)); },
       clear: function () { dome.setAttribute('ry', ry0); }
     };
@@ -52,23 +55,25 @@
   // depth factor the reference's mapping gives at progress p
   function target(c, p) {
     var m = c.kind === 'smile' ? 1 - p : p;
-    return m < MIN_S ? MIN_S : m;
+    var min = c.min || MIN_S;
+    return m < min ? min : m;
   }
 
   function init() {
     var gsap = window.gsap, ST = window.ScrollTrigger;
     if (!gsap || !ST) return;
-    var about = document.querySelector('.about');
+    var about = document.querySelector('.locations');
+    var photo = document.querySelector('.finale');
     var curve = document.querySelector('svg.curve');
     var footer = document.querySelector('.footer-body');
-    if (!about && !curve && !footer) return;
+    if (!about && !photo && !curve && !footer) return;
     gsap.registerPlugin(ST);
 
     var mm = gsap.matchMedia();
     mm.add('(prefers-reduced-motion: no-preference)', function () {
       var curves = [], triggers = [], g = 0, lastScroll = -1e9, ticking = false, held = false;
 
-      if (about) curves.push(varCurve('about', about, about, 'smile', 'top bottom', 'top top'));
+      if (about) curves.push(varCurve('about', about, about, 'smile', 'top bottom', 'top top'));   // name kept: index 0 is the Standorte top
       if (curve) curves.push(svgCurve(curve, 'dome'));
       if (footer) {
         // the dome's centre line (where its corners sit) is the footer's moving edge: read once per refresh, not per frame
@@ -77,6 +82,7 @@
           return 'top+=' + (parseFloat(cs.top) + parseFloat(cs.height) / 2) + ' bottom';
         }, 'max'));
       }
+      if (photo) curves.push(varCurve('photo', photo, photo, 'smile', 'top bottom', 'top top'));
 
       curves.forEach(function (c) {
         c.p = 0; c.last = 1; c.live = false;
