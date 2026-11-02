@@ -25,7 +25,7 @@ const settle = async (page, y) => {
 
 const shot = (page, name) => page.screenshot({ path: path.join(OUT, name) });
 
-// Standorte cards (Figma 64:2): photo + 50% black overlay + the salon name centred, Planity link at the bottom edge, one generic button in the header row.
+// Standorte cards (Figma 64:2): Figma's Glass render of the photo + the salon name centred, Planity link at the bottom edge, one generic button in the header row.
 async function cardRun(width, height, { reducedMotion = false } = {}) {
   const tag = `@${width}x${height}${reducedMotion ? ' reduced-motion' : ''}`;
   const { page, errors, close } = await openPage({ width, height, reducedMotion });
@@ -54,18 +54,19 @@ async function cardRun(width, height, { reducedMotion = false } = {}) {
         const row = document.querySelectorAll('.location-info')[i];
         const R = e => { const b = e.getBoundingClientRect(); return { l: b.left, t: b.top, r: b.right, b: b.bottom, w: b.width, h: b.height }; };
         const h3 = row.querySelector('h3'), img = row.querySelector('.location-img'), btn = row.querySelector('.btn');
-        const after = getComputedStyle(row, '::after'), br = R(btn);
+        const br = R(btn);
         const hit = e => { const x = document.elementFromPoint((e.l + e.r) / 2, (e.t + e.b) / 2); return x; };
-        return { row: R(row), h3: R(h3), img: R(img), btn: br, text: h3.textContent.trim(), overlay: after.backgroundColor, overlayBox: [after.position, after.inset],
+        return { row: R(row), h3: R(h3), img: R(img), btn: br, text: h3.textContent.trim(), noOverlay: getComputedStyle(row, '::after').content === 'none', glass: /\/location-card\.jpg$/.test(img.currentSrc || img.src), overflow: getComputedStyle(row).overflowX,
           hitBtn: !!hit(br) && !!hit(br).closest('.btn') && hit(br).closest('.btn') === btn, hitH3: !!hit(R(h3)) && !!hit(R(h3)).closest('h3'),
           order: [...row.children].map(x => x.tagName + (x.classList.contains('btn') ? '.btn' : '')).join(), scrollLeft: row.scrollLeft };
       }, i);
       assert(c.order === 'H3,IMG,A.btn', `${t}: children are label, photo, button in DOM order (${c.order})`);
       assert(Math.abs(c.img.w - c.row.w) <= 1 && Math.abs(c.img.h - c.row.h) <= 1, `${t}: the photo fills the card (${c.img.w.toFixed(0)}x${c.img.h.toFixed(0)} in ${c.row.w.toFixed(0)}x${c.row.h.toFixed(0)})`);
-      assert(c.overlay === 'rgba(0, 0, 0, 0.5)', `${t}: overlay is 50% black (${c.overlay})`);
+      assert(c.glass && c.noOverlay, `${t}: the photo is the baked Figma glass render with no second overlay on it (${c.glass}/${c.noOverlay})`);
+      assert(c.overflow === 'clip', `${t}: overflow is clip, so the label and button can stick (${c.overflow})`);
       assert(Math.abs((c.h3.l + c.h3.r) / 2 - (c.row.l + c.row.r) / 2) <= 2 && Math.abs((c.h3.t + c.h3.b) / 2 - (c.row.t + c.row.b) / 2) <= 2, `${t}: the salon name is centred on the card`);
       assert(c.btn.b <= c.row.b + 0.5 && c.btn.t > (c.row.t + c.row.b) / 2 && Math.abs((c.btn.l + c.btn.r) / 2 - (c.row.l + c.row.r) / 2) <= 2, `${t}: the Planity button sits at the bottom edge, centred, inside the card`);
-      assert(c.hitBtn && c.hitH3, `${t}: name and button paint above the overlay (hit test ${c.hitH3}/${c.hitBtn})`);
+      assert(c.hitBtn && c.hitH3, `${t}: name and button paint above the photo (hit test ${c.hitH3}/${c.hitBtn})`);
       if (width >= 1200) {
         assert(Math.abs(c.row.w - 1400) <= 1 && Math.abs(c.row.h - 787) <= 1, `${t}: 1400x787 at 1440 (${c.row.w.toFixed(1)}x${c.row.h.toFixed(1)})`);
         assert(Math.abs(c.row.l - 20) <= 1, `${t}: x=20 (${c.row.l.toFixed(1)})`);
@@ -92,6 +93,61 @@ async function cardRun(width, height, { reducedMotion = false } = {}) {
 await cardRun(1440, 900);
 await cardRun(768, 1024);
 await cardRun(375, 812);
+// While a card is taller than the space left, its name stays under the nav and its button at the bottom of the viewport (ported from the live site)
+for (const [width, height] of [[1440, 900], [1920, 1080], [375, 812]]) {
+  const tag = `@${width}x${height} sticky label`;
+  const { page, errors, close } = await openPage({ width, height });
+  try {
+    await page.evaluate(() => window.mtmReady);
+    await page.waitForTimeout(300);
+    const read = () => page.evaluate(() => {
+      const rows = [...document.querySelectorAll('.location-info')], R = e => { const b = e.getBoundingClientRect(); return { t: b.top, b: b.bottom }; };
+      return { rows: rows.map(R), h3: rows.map(r => R(r.querySelector('h3'))), btn: rows.map(r => R(r.querySelector('.btn'))),
+        pos: rows.flatMap(r => [getComputedStyle(r.querySelector('h3')).position, getComputedStyle(r.querySelector('.btn')).position]),
+        h3Top: rows.map(r => parseFloat(getComputedStyle(r.querySelector('h3')).top)), btnBottom: parseFloat(getComputedStyle(rows[0].querySelector('.btn')).bottom),
+        hold: parseFloat(getComputedStyle(rows[1]).marginTop), ih: innerHeight, y: scrollY };
+    });
+    const s0 = await read();
+    // name and button share a grid cell: across both cards' whole passage they never touch
+    const pageY = s0.rows[0].t + s0.y, span = s0.rows[1].b - s0.rows[0].t + height;
+    let touched = null, both = 0;
+    for (let y = pageY - height; y <= pageY + span; y += Math.max(24, Math.round(height / 24))) {
+      await page.evaluate(v => window.scrollTo({ top: v, behavior: 'instant' }), y);
+      await page.waitForTimeout(25);
+      const r = await read();
+      for (const i of [0, 1]) {
+        const onScreen = r.h3[i].b > 0 && r.h3[i].t < height && r.btn[i].b > 0 && r.btn[i].t < height;
+        if (onScreen) both++;
+        if (onScreen && r.h3[i].b > r.btn[i].t - 2 && r.btn[i].b > r.h3[i].t - 2 && !touched) touched = `y=${y} card ${i + 1} name ${r.h3[i].t.toFixed(1)}..${r.h3[i].b.toFixed(1)} button ${r.btn[i].t.toFixed(1)}..${r.btn[i].b.toFixed(1)}`;
+      }
+    }
+    assert(both > 10, `${tag}: the sweep saw name and button on screen together (${both} samples)`);
+    assert(!touched, `${tag}: name and button never touch${touched ? ' - ' + touched : ''}`);
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    await page.waitForTimeout(200);
+    assert(s0.pos.every(v => v === 'sticky'), `${tag}: names and buttons are position:sticky ${JSON.stringify(s0.pos)}`);
+    assert(Math.abs(s0.hold - 0.2 * height) <= 1, `${tag}: the pinned card stands alone for 20vh before the next rises (${s0.hold.toFixed(1)})`);
+    // card 1 entering from below: its bottom is past the viewport, so the button holds the viewport's bottom edge
+    const docTop = s0.rows[0].t + s0.y, cardH = s0.rows[0].b - s0.rows[0].t;
+    if (cardH > height * 0.5) {
+      await page.evaluate(y => window.scrollTo({ top: y, behavior: 'instant' }), docTop - height + cardH * 0.6);
+      await page.waitForTimeout(250);
+      const a = await read();
+      assert(a.rows[0].b > height + 20, `${tag}: card 1 still runs past the viewport (bottom ${a.rows[0].b.toFixed(1)})`);
+      assert(Math.abs(a.btn[0].b - (height - s0.btnBottom)) <= 1.5, `${tag}: the button holds 2vh above the viewport bottom (${a.btn[0].b.toFixed(1)}, expected ${(height - s0.btnBottom).toFixed(1)})`);
+      // card 2 past its middle: the name holds under the nav. Pin card 2 by scrolling its middle above the line
+      const wal = (await read()).rows[1];
+      const walDoc = wal.t + (await read()).y, line = s0.h3Top[1], h3H = s0.h3[1].b - s0.h3[1].t;
+      await page.evaluate(y => window.scrollTo({ top: y, behavior: 'instant' }), walDoc + cardH * 0.5 + 60 - line);
+      await page.waitForTimeout(250);
+      const b = await read();
+      assert(b.rows[1].t < line - cardH * 0.5 && b.rows[1].b > line + h3H, `${tag}: card 2's middle is above the line and its bottom below it (${b.rows[1].t.toFixed(1)}..${b.rows[1].b.toFixed(1)})`);
+      assert(Math.abs(b.h3[1].t - line) <= 1.5, `${tag}: the name holds at nav + 2vh (${b.h3[1].t.toFixed(1)}, expected ${line.toFixed(1)})`);
+    }
+    assert(errors.length === 0, `${tag}: no console errors ${errors.join('|')}`);
+  } finally { await close(); }
+}
+
 // reduced motion: the cards are plain flow, not sticky (spec: "stack/sticky become plain flow")
 for (const [width, height] of [[1440, 900], [375, 812]]) {
   const tag = `@${width}x${height} reduced-motion`;
@@ -99,6 +155,10 @@ for (const [width, height] of [[1440, 900], [375, 812]]) {
   try {
     const pos = await page.evaluate(() => [...document.querySelectorAll('.location-info')].map(row => getComputedStyle(row).position));
     assert(pos.length === 2 && pos.every(v => v === 'relative'), `${tag}: both cards are plain flow, not sticky ${JSON.stringify(pos)}`);
+    const inner = await page.evaluate(() => [...document.querySelectorAll('.location-info h3, .location-info .btn')].map(e => getComputedStyle(e).position));
+    assert(inner.length === 4 && inner.every(v => v === 'relative'), `${tag}: names and buttons are plain flow ${JSON.stringify(inner)}`);
+    const off = await page.evaluate(() => [...document.querySelectorAll('.location-info')].map(r => { const c = r.getBoundingClientRect(), h = r.querySelector('h3').getBoundingClientRect(); return (h.top + h.bottom) / 2 - (c.top + c.bottom) / 2; }));
+    assert(off.every(v => Math.abs(v) <= 1), `${tag}: the name sits at the card's centre (Figma), no sticky offset left on it ${JSON.stringify(off.map(v => +v.toFixed(1)))}`);
     const sw = await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
     assert(sw[0] <= sw[1], `${tag}: no horizontal overflow (${sw[0]} <= ${sw[1]})`);
     assert(errors.length === 0, `${tag}: no console errors ${errors.join('|')}`);

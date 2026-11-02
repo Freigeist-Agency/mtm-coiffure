@@ -180,25 +180,42 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .locations__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 14.0278vw; } /* cards start 202px below the title */
 .locations__head .btn img { width: 186px; height: 39px; }
 .locations__head h2 { font-size: var(--fs-title); line-height: 1.25; }
-/* A card is the photo with a 50% black overlay and the salon name centred on it. DOM order stays label, photo, button; the
-   photo fills the card, the overlay is ::after, the Planity link sits at the bottom edge (Figma has no button on the cards). */
+/* A card is the photo with the salon name centred on it. DOM order stays label, photo, button; the photo fills the card, the
+   Planity link sits at the bottom edge (Figma has no button on the cards). assets/location-card.jpg is Figma's own render of
+   the photo under the Glass effect on 50% black, so a new salon photo means exporting that card again.
+   overflow is clip, not hidden: hidden would make the card a scroll container and kill the sticky label and button. */
 .locations__main { display: grid; gap: 12px; }
-.location-info { position: relative; display: grid; place-items: center; aspect-ratio: 1400 / 787; overflow: hidden; }
+.location-info {
+  --loc-btn-w: min(12.9167cqw, 186px); --loc-btn-h: calc(var(--loc-btn-w) * 39 / 186); --loc-btn-end: 2.7778vw;
+  --loc-clear: calc(var(--loc-btn-end) + var(--loc-btn-h) + 12px);   /* room the button takes at the card's bottom edge */
+  position: relative; display: grid; place-items: center; aspect-ratio: 1400 / 787; overflow: clip;
+}
 .location-info .location-img { position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; }
-.location-info::after { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, .5); }
 .location-info h3 { grid-area: 1 / 1; position: relative; z-index: 1; font-size: var(--fs-body); font-weight: 400; line-height: 1.25; text-align: center; }
 .location-info h3 a { text-decoration: none; }
 .location-info h3 a:hover { text-decoration: underline; text-underline-offset: 4px; }
-.location-info .btn { grid-area: 1 / 1; position: relative; z-index: 1; align-self: end; justify-self: center; margin-bottom: 2.7778vw; max-width: 100%; }
-.location-info .btn img { width: min(12.9167cqw, 186px); height: auto; aspect-ratio: 186 / 39; }
+.location-info .btn { grid-area: 1 / 1; position: relative; z-index: 1; align-self: end; justify-self: center; margin-bottom: var(--loc-btn-end); max-width: 100%; }
+/* While a card is taller than the space left, the name stays under the nav and the button at the bottom of the viewport.
+   The name and button share one grid cell (on the live site they had separate columns), so they must never meet: the name
+   also holds above the stuck button, and the margins stop a sticky item before it reaches the other's zone at either card end.
+   The margins are symmetric on the name and ignored by the button's end alignment, so the static layout does not move. */
+.location-info h3 { margin-block: var(--loc-clear); }
+.location-info .btn { margin-top: calc(var(--loc-clear) + 32px); }
+@media (prefers-reduced-motion: no-preference) {   /* the offsets live here too: on a position: relative element they would shift the static layout */
+  .location-info h3, .location-info .btn { position: sticky; }
+  .location-info h3 { top: calc(var(--nav-h) + 2vh); bottom: calc(2vh + var(--loc-btn-h) + 12px); }
+  .location-info .btn { bottom: 2vh; }
+}
+.location-info .btn img { width: var(--loc-btn-w); height: auto; aspect-ratio: 186 / 39; }
 /* Locations stack. The Nümbrecht card pins under the nav and the Waldbröl card scrolls up over it and covers it, like the
    news cards used to. Needs html.js and no-preference; without JS or under reduced motion both cards are plain flow.
    --stack-row-h is the first card's measured height (js/stack.js, on refresh, never per frame); the pin line is nav + 2vh
-   unless that would push the photo's bottom out of view, then the card is pinned bottom-aligned. --stack-hold is the gap
-   between the cards (Figma: 12px). Waldbröl is opaque black above the pinned card. js/stack.js scrubs the covered card to
+   unless that would push the photo's bottom out of view, then the card is pinned bottom-aligned. --stack-hold is the run
+   where the pinned card stands alone before Waldbröl starts to rise (static layout: Figma's 12px gap). Waldbröl is opaque
+   black above the pinned card. js/stack.js scrubs the covered card to
    scale 0.92 and its content to opacity 0.35. No ancestor may be a scroll container. */
 @media (prefers-reduced-motion: no-preference) {
-  html.js .locations__main { gap: 0; --stack-hold: 12px; }
+  html.js .locations__main { gap: 0; --stack-hold: 20vh; }
   html.js .location-info:nth-child(1) {
     position: sticky; top: min(var(--nav-h) + 2vh, 100svh - var(--stack-row-h, 0px));
     transform-origin: center top; will-change: transform;
@@ -226,16 +243,15 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   background: var(--placeholder); border-radius: var(--radius);
 }
 
-/* ---------- Review card (Figma Image Card 975x667 at y=7798: photo, 50% black overlay, a 452x274 review card in the middle) ---------- */
+/* ---------- Review card (Figma Image Card 975x667 at y=7798: photo under the Glass effect on 50% black, a 452x274 review card in the middle) ---------- */
 .reviews { padding: 13.1597vw 0 12.1528vw; }   /* 189.5px above the card, 175px below */
 .reviews__card {
   position: relative; display: grid; place-items: center; overflow: hidden;
-  width: min(67.7083vw, 975px); aspect-ratio: 975 / 667; margin-inline: auto;
-  border-radius: var(--radius); border: 2px solid rgba(0, 0, 0, .04);
+  width: min(67.7083vw, 975px); aspect-ratio: 975 / 667; margin-inline: auto; left: .3819vw;   /* Figma x=238, 5.5px right of centre */
+  border-radius: var(--radius);   /* the 2px stroke is in the baked assets/review-card.jpg */
   box-shadow: 0 4px 11px -1px rgba(165, 115, 45, .25); color: var(--paper);
 }
 .reviews__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.reviews__card::after { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, .5); }
 .reviews__quote {
   grid-area: 1 / 1; position: relative; z-index: 1; margin: 0; text-align: left;
   width: 31.3889vw; min-height: 19.0278vw; padding: 2.9167vw 1.1111vw 1.8vw;   /* 452x274; the text starts 42px down, 16px in */
@@ -245,20 +261,45 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .reviews__quote figcaption { margin-top: 17px; font-size: 10px; line-height: 1.25; }
 
 /* ---------- News (Figma Content Section 8640: title, description, two cards side by side) ---------- */
-.news { padding: 73.4px 0 104px; text-align: center; }
+.news { padding: 73.4px 0 0; text-align: center; }
 .news-head { display: grid; gap: 23px; justify-items: center; margin-bottom: 28px; padding-inline: var(--pad); }
 .news-head p { max-width: 992px; }
-/* Cards side by side (460 each at x=255 and x=725). Below 768px they stack and pin (see the mobile block) */
-.stack { display: grid; grid-template-columns: 1fr repeat(2, minmax(0, 460px)) 1fr; column-gap: var(--gap); }
+/* Static layout: cards side by side (460 each at x=255 and x=725), the full-width image 104px below. "Stacked mode" stacks these. */
+.stack { display: grid; grid-template-columns: 1fr repeat(2, minmax(0, 460px)) 1fr; column-gap: var(--gap); row-gap: 104px; }
 .stack__layer:nth-child(1) { grid-column: 2; }
 .stack__layer:nth-child(2) { grid-column: 3; }
+.stack__layer:nth-child(3) { grid-column: 1 / -1; }
 .news-card { background: var(--paper); border-radius: var(--radius); box-shadow: var(--shadow-card); padding: 81px 20px; text-align: left; min-height: 337px; }
 .news-card p { line-height: 1.25; }
 
-/* ---------- Full-width image (Figma Gallery Image 1440x834 at y=9362, white ellipse over its top edge; the footer overlaps its bottom) ---------- */
+/* Full-width image, the stack's third layer (Figma Gallery Image 1440x834 at y=9362, white ellipse over its top edge; the footer overlaps its bottom) */
 .finale { --smile-top: -21.18vw; --smile-h: 42.2917vw; position: relative; overflow: clip; height: 57.9vw; }
 .finale img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 0; }
 .finale::before { z-index: 1; }
+
+/* Stacked mode: layers stick one after another, each a little lower than the last so the top edge of a covered card
+   peeks out above the one in front, and the image rises over both. Gated in CSS (not JS) so there is no layout shift: without
+   JS, or under prefers-reduced-motion, none of this applies and the side-by-side layout above is the page. js/stack.js only
+   adds the scrubbed scale (layer) and opacity (card content) on layers 1 and 2. No ancestor may be a scroll container
+   (that would kill sticky).
+   --gap-scroll is the empty run before layers 2 and 3 (margin-top, so a card's margin box is just the card); with the
+   card's own height it sets about one viewport of scroll per layer.
+   A sticky card must stay inside .stack, and the stack ends at the image's bottom. When the image is shorter than a card
+   (mobile) the card would be pushed up before the image reached it, so ::after adds a tail that keeps the cards stuck
+   until the image has arrived; the image simply stays put over them for that run. */
+@media (prefers-reduced-motion: no-preference) {
+  html.js .stack { display: block; padding-inline: 0; --gap-scroll: 60vh; }
+  html.js .stack::after { content: ""; display: block; height: max(0px, calc(420px - 58vw)); }
+  html.js .stack__layer { position: sticky; top: calc(var(--nav-h) + 4vh + var(--i) * 2.5vh); margin-inline: auto; transform-origin: center top; }
+  html.js .stack__layer:nth-child(1) { --i: 0; will-change: transform; }
+  html.js .stack__layer:nth-child(2) { --i: 1; will-change: transform; margin-top: var(--gap-scroll); }
+  html.js .stack__layer:nth-child(3) { --i: 2; margin-top: var(--gap-scroll); }
+  html.js .news-card { width: clamp(360px, 32vw, 620px); } /* Figma 460px at 1440; about 360 at 768; 614 at 1920 */
+  html.js .finale { margin-inline: 0; overflow: visible; }   /* the whole ellipse shows, so its curve wipes the stuck cards; the image's flat top edge would slice them */
+}
+@media (prefers-reduced-motion: no-preference) and (max-width: 767px) {
+  html.js .news-card { width: calc(100% - 2 * var(--pad)); }
+}
 
 /* ---------- Footer (Figma 103:14, 1440x891: logo + button on white, black dome over a sand radial, 3 columns, legal strip) ---------- */
 .site-footer { background: var(--paper); color: var(--paper); overflow: hidden; }
@@ -268,7 +309,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .footer-body {
   position: relative; isolation: isolate; min-height: 38.6806vw; /* 557px at 1440 */
   padding: 3.1vw var(--pad) 0;
-  background: radial-gradient(ellipse 100% 100% at 50% 100%, var(--sand) 0%, var(--paper) 96%);
+  background: radial-gradient(ellipse 90.505% 90.505% at 50% 100%, var(--sand) 0%, var(--paper) 96.154%);   /* Figma handles */
 }
 .footer-body::before { /* black dome: ellipse 1440x572 from y=130 of the 557px block */
   content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 9vw; height: 39.72vw;
@@ -282,19 +323,19 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   display: grid; grid-template-columns: repeat(3, 24.35vw); /* 351px pitch, first column at x=342 */
   margin: calc(11.8vw - 19px) 0 0 calc(23.72vw - var(--pad)); /* the first heading sits at y=575 of 891 (measured on the Figma render) */
 }
-.footer-col h3 { font-size: var(--fs-body); font-weight: 400; margin-bottom: 14px; }
-.footer-col p, .footer-col li { font-size: clamp(14px, 1.11vw, 16px); line-height: 1.45; opacity: .8; }
+.footer-col h3 { font-size: clamp(15px, 1.2153vw, 17.5px); font-weight: 400; margin-bottom: 14px; }   /* the text blocks are images in Figma: sizes measured on its render */
+.footer-col p, .footer-col li { font-size: clamp(13px, 1.0069vw, 14.5px); line-height: 1.6; opacity: .8; }
 .footer-col ul { list-style: none; margin: 0; padding: 0; }
 .footer-col a { text-decoration: none; }
 .footer-col a:hover { text-decoration: underline; text-underline-offset: 4px; }
 .footer-fred { width: 47px; height: 53px; margin-top: 14px; }
 .footer-bottom {
-  position: absolute; left: 2.08vw; right: 2.08vw; bottom: 0.7vw;
+  position: absolute; left: 2.08vw; right: 2.08vw; bottom: 1.33vw;
   display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap;
   padding-top: 14px; border-top: .5px solid rgba(255,255,255,.25);
-  font-size: 14px; opacity: .7;
+  font-size: 10px; opacity: .7;
 }
-.footer-bottom nav { display: flex; gap: 20px; }
+.footer-bottom nav { display: flex; gap: 13px; }
 
 /* Home page: the footer's top 248px lie over the bottom of the full-width image (Figma: footer at y=9948, image ends 10196), with a
    white ellipse 1440x572 (its top 48px into the footer) carrying the logo. Subpages have no image above, so no overlap there. */
@@ -389,8 +430,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   .locations { --smile-top: -31.78vw; --smile-h: 63.56vw; padding: 50.5vw var(--pad) 0; }   /* ellipse 450x286 */
   .locations__head { flex-wrap: wrap; margin-bottom: 46px; }
   .locations__main { gap: var(--gap); }
-  .location-info .btn img { width: min(40vw, 186px); }
-  .location-info .btn { margin-bottom: 4vw; }
+  .location-info { --loc-btn-w: min(40vw, 186px); --loc-btn-end: 4vw; }
   .curve { height: 74.1vw; }
 
   /* Social (frame 76:297) */
@@ -402,42 +442,30 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 
   /* Review card: fills the width, text centred over the photo */
   .reviews { padding: 60px var(--pad); }
-  .reviews__card { width: 100%; aspect-ratio: auto; min-height: 420px; }
+  .reviews__card { left: 0; width: 100%; aspect-ratio: auto; min-height: 420px; }
   .reviews__quote { width: 100%; min-height: 0; padding: 24px; }
 
   /* News (frame 76:320): cards 410x316, 20px apart; they stack and pin as before */
-  .news { padding: 124px 0 60px; }
+  .news { padding: 124px 0 0; }
   .news-head { gap: 0; margin-bottom: 61px; }
   .stack { grid-template-columns: minmax(0, 1fr); padding-inline: var(--pad); row-gap: 20px; }
   .stack__layer:nth-child(n) { grid-column: 1; }
   .news-card { padding: 58px 20px; min-height: 316px; }
-
-  .finale { --smile-top: -31.78vw; --smile-h: 63.56vw; height: 70vw; }
+  .finale { --smile-top: -31.78vw; --smile-h: 63.56vw; height: 70vw; margin: 40px calc(-1 * var(--pad)) 0; }
 
   .footer-body { min-height: 0; padding-bottom: 80px; }
   .footer-body::before { top: 20vw; }
   .footer-body::after { top: 40vw; height: auto; } /* below the dome's midline everything is black */
   .footer-cta { margin-top: 4vw; }
   .footer-cols { grid-template-columns: 1fr; gap: 28px; width: auto; margin: 22vw 0 0; padding-inline: 4.5vw; }
-  .footer-col p, .footer-col li { font-size: 16px; }
-  .footer-bottom { bottom: 14px; left: var(--pad); right: var(--pad); }
+  .footer-col h3 { font-size: var(--fs-body); }
+  .footer-col p, .footer-col li { font-size: 16px; line-height: 1.45; }
+  .footer-bottom { bottom: 14px; left: var(--pad); right: var(--pad); font-size: 14px; }
   .loc-detail { grid-template-columns: 1fr; }
   .team { grid-template-columns: repeat(2, 1fr); }
 }
 /* Locations stack on mobile: the card pins right under the nav (bottom-aligned if it is taller than the viewport) */
 @media (prefers-reduced-motion: no-preference) and (max-width: 767px) {
-  html.js .locations__main { --stack-hold: 20vh; }   /* phones keep the short run where the pinned card stands alone */
   html.js .location-info:nth-child(1) { top: min(var(--nav-h), 100svh - var(--stack-row-h, 0px)); }
 }
-/* News stack, phones only (at 768 and up the two cards sit side by side, Figma). Layers stick one after another, each a little
-   lower than the last so the top edge of a covered card peeks out above the one in front. Gated in CSS (not JS) so there is no
-   layout shift: without JS, or under prefers-reduced-motion, the plain layout above is the page. js/stack.js only adds the
-   scrubbed scale (layer) and opacity (card content) on layer 1. No ancestor may be a scroll container (that would kill sticky).
-   --gap-scroll is the empty run before layer 2 (margin-top), which with the card's own height sets about one viewport of scroll. */
-@media (prefers-reduced-motion: no-preference) and (max-width: 767px) {
-  html.js .stack { display: block; padding-inline: 0; --gap-scroll: 60vh; }
-  html.js .stack__layer { position: sticky; top: calc(var(--nav-h) + 4vh + var(--i) * 2.5vh); margin-inline: auto; transform-origin: center top; }
-  html.js .stack__layer:nth-child(1) { --i: 0; will-change: transform; }
-  html.js .stack__layer:nth-child(2) { --i: 1; margin-top: var(--gap-scroll); }
-  html.js .news-card { width: calc(100% - 2 * var(--pad)); }
 }

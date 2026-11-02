@@ -3,7 +3,8 @@
 // Real wheel scrolling (page.mouse.wheel) through each curve at 1440x900, 768x1024 and 375x812. Every sample reads the
 // rendered state (computed transform of the ::before ellipse / the ry of the inlined SVG ellipse) and the geometry of the
 // section edge, derives the expected depth factor from the reference mapping on its own, and compares.
-//   dome  (Locations curve, footer):  s = max(0.04, p)        p = 0 when the edge enters at the bottom, 1 when it has settled
+//   dome  (Locations curve, footer):  s = max(floor, p)       p = 0 when the edge enters at the bottom, 1 when it has settled; floor 0.5 on the
+//                                                             Locations curve (the Social title stays on its white), 0.04 on the footer
 //   smile (Standorte top, image top): s = max(0.04, 1 - p)    p = 0 when the edge enters, 1 when it reaches the top
 //   s = rendered depth / designed depth. The footer's p ends where the document ends (the page cannot scroll the dome higher).
 // At rest (scrolling stopped, edge anywhere in view) s must be exactly 1 and the geometry the Figma one from css/site.css.
@@ -18,6 +19,7 @@ fs.mkdirSync(OUT, { recursive: true });
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 const MIN_S = 0.04;
+const FLOOR = { curve: 0.5 };
 const TOL = 0.15;            // |rendered s - expected s| while moving: one frame of lag plus the gate's 90ms rise
 const NAMES = ['about', 'curve', 'footer', 'photo'];   // 'about' = .locations (the old About smile moved to the Standorte top)
 const KIND = { about: 'smile', curve: 'dome', footer: 'dome', photo: 'smile' };
@@ -53,7 +55,7 @@ function progress(name, r) {
   const cornerEnd = c - (r.max - r.y);                     // where the dome's centre line sits at the end of the document
   return clamp01((r.H - c) / (r.H - cornerEnd));
 }
-const expected = (name, p) => Math.max(MIN_S, KIND[name] === 'smile' ? 1 - p : p);
+const expected = (name, p) => Math.max(FLOOR[name] ?? MIN_S, KIND[name] === 'smile' ? 1 - p : p);
 
 // the resting geometry from css/site.css (Figma), per breakpoint; the same numbers main renders
 function restGeometry(iw) {
@@ -123,7 +125,7 @@ async function pass(w, h, mobile) {
       assert(early.length && late.length && avg(early) - avg(late) > 0.3, `${tag} ${name}: deepest while entering, flattening as it rises (s ${avg(early).toFixed(2)} at p<=0.3 -> ${avg(late).toFixed(2)} at p>=0.7)`);
       assert(Math.max(...fwd.map(x => x.s)) <= 1.02 && avg(early) > 0.7, `${tag} ${name}: the entering depth is the designed one, never deeper (max s ${Math.max(...fwd.map(x => x.s)).toFixed(2)})`);
     } else {
-      assert(early.length && late.length && avg(late) - avg(early) > 0.3, `${tag} ${name}: flat while entering, deepening as it rises (s ${avg(early).toFixed(2)} at p<=0.3 -> ${avg(late).toFixed(2)} at p>=0.7)`);
+      assert(early.length && late.length && avg(late) - avg(early) > (FLOOR[name] ? 0.2 : 0.3), `${tag} ${name}: flat while entering, deepening as it rises (s ${avg(early).toFixed(2)} at p<=0.3 -> ${avg(late).toFixed(2)} at p>=0.7)`);
       assert(Math.max(...fwd.map(x => x.s)) <= 1.02, `${tag} ${name}: never deeper than designed (max s ${Math.max(...fwd.map(x => x.s)).toFixed(2)})`);
     }
     assert(Math.min(...mid.map(x => x.s)) < 0.75, `${tag} ${name}: leaves the resting shape while travelling (min s ${Math.min(...mid.map(x => x.s)).toFixed(2)})`);
@@ -218,6 +220,40 @@ async function reduced(w, h, mobile) {
   await close();
 }
 
+// The Social title sits inside the white of the curve. While the page moves the curve flattens, and without its floor the top of the
+// title would land on the black above it. Desktop widths: the phone frame has its own curve and comes with the mobile pass.
+async function titleOnWhite(w, h) {
+  const tag = `@${w}x${h} social title`;
+  const { page, errors, close } = await openPage({ width: w, height: h });
+  await page.evaluate(() => window.mtmReady);
+  await page.waitForTimeout(300);
+  await page.evaluate(() => window.arcScroll.hold(true));
+  const start = await page.evaluate(() => { const b = document.querySelector('svg.curve').getBoundingClientRect(); return b.bottom + scrollY - innerHeight; });
+  const seen = [];
+  for (const q of [0, 0.1, 0.2, 0.3, 0.45, 0.6]) {
+    await page.evaluate(y => window.scrollTo({ top: y, behavior: 'instant' }), start + q * h);
+    await page.waitForTimeout(260);
+    seen.push(await page.evaluate(() => {
+      const title = document.querySelector('.social h2'), range = document.createRange();
+      range.selectNodeContents(title);
+      const b = range.getBoundingClientRect();
+      const white = (x, y) => document.elementsFromPoint(x, y).some(e => e.classList && e.classList.contains('curve__dome'));
+      const top = b.top + 1;
+      return { s: window.arcScroll.factor(1), visible: top >= 0 && top < innerHeight, ok: [b.left + 1, (b.left + b.right) / 2, b.right - 1].map(x => white(x, top)) };
+    }));
+  }
+  const lowest = Math.min(...seen.map(r => r.s)), checked = seen.filter(r => r.visible);
+  assert(lowest <= 0.51, `${tag}: the sweep reaches a flattened curve (lowest factor ${lowest.toFixed(3)})`);
+  assert(checked.length >= 3, `${tag}: the title was on screen for enough samples (${checked.length})`);
+  assert(checked.every(r => r.ok.every(Boolean)), `${tag}: the top of the title stays on the white at every depth ${JSON.stringify(checked.map(r => [+r.s.toFixed(3), ...r.ok]))}`);
+  assert(errors.length === 0, `${tag}: 0 console/page errors (${errors.join(' | ')})`);
+  await close();
+}
+
+await titleOnWhite(1440, 900);
+await titleOnWhite(1280, 720);
+await titleOnWhite(1920, 1080);
+await titleOnWhite(2560, 1440);
 await pass(1440, 900, false);
 await pass(768, 1024, false);
 await pass(375, 812, true);

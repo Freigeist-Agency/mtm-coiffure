@@ -26,6 +26,7 @@
 (function () {
   'use strict';
   var MIN_S = 0.04;          // never a razor-flat edge: below ~0.016 the footer dome would leave a hairline gap above its black rect
+  var CURVE_MIN_S = 0.5;     // the Social title sits on the white inside the curve: flatter and its ends land on the black above (needs 0.35 at 1440, 0.48 at 2560)
   var HOLD = 140;            // ms after the last scroll event during which the gate stays open
   var RISE = 90, FALL = 500; // ms for the gate to open / close
   var EPS = 0.0005;
@@ -45,6 +46,7 @@
     var ry0 = dome.getAttribute('ry'), base = parseFloat(ry0);
     return {
       name: 'curve', el: svg, trigger: svg, kind: kind, start: 'bottom bottom', end: 'bottom top',
+      min: CURVE_MIN_S,
       draw: function (s) { dome.setAttribute('ry', (base * s).toFixed(2)); },
       clear: function () { dome.setAttribute('ry', ry0); }
     };
@@ -53,7 +55,8 @@
   // depth factor the reference's mapping gives at progress p
   function target(c, p) {
     var m = c.kind === 'smile' ? 1 - p : p;
-    return m < MIN_S ? MIN_S : m;
+    var min = c.min || MIN_S;
+    return m < min ? min : m;
   }
 
   function init() {

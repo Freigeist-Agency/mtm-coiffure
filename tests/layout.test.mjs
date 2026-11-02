@@ -163,7 +163,7 @@ for (const width of WIDTHS) {
     assert(h.social && h.socialItems === 6, `${tag}: .social carousel[data-carousel=social] has 6 .carousel__item (${h.socialItems})`);
     assert(h.rows === 2 && h.rowOrder, `${tag}: locations has 2 .location-info rows, each h3 -> img -> a.btn in DOM order (${h.rows})`);
     assert(h.mediaImgs.length === 2 && h.mediaImgs.every(r => Math.abs(r - 16 / 9) <= 0.03), `${tag}: locations rows have two 16:9 images ${JSON.stringify(h.mediaImgs.map(r => +r.toFixed(2)))}`);
-    assert(h.stack && h.layers === 2 && h.finaleImg, `${tag}: .news .stack has 2 .stack__layer and the full-width image is its own section (${h.layers})`);
+    assert(h.stack && h.layers === 3 && h.finaleImg, `${tag}: .news .stack has 3 .stack__layer, the full-width image is the third (${h.layers})`);
     assert(h.sw <= h.iw, `${tag}: no horizontal overflow (${h.sw} <= ${h.iw})`);
   } finally { await close(); }
 }
