@@ -87,7 +87,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 /* ---------- About: "Wir sind MTM Coiffure." (Figma Section Content, 1440x416 at y=1080) then the team gallery (1400x460 at y=1522) ---------- */
 .about { position: relative; padding-bottom: 13.8194vw; }   /* 199px between the gallery and the Introduction */
 .about-copy {
-  display: grid; grid-template-columns: 44.4444vw 1fr; grid-template-rows: auto 10.625vw; column-gap: 0; row-gap: 1.5972vw;
+  display: grid; grid-template-columns: 44.4444vw 1fr; grid-template-rows: auto auto; column-gap: 0; row-gap: 1.5972vw;   /* the second row is 80px of margin + 3 lines - 2px = 153px at 1440 */
   padding: 1.4583vw 1.5972vw;                 /* 21px / 23px */
 }
 .about-copy h2 {
@@ -153,6 +153,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   grid-area: 1 / 1; position: relative; text-align: center;
   width: 36.5vw; max-width: 460px; display: grid; gap: 29px; justify-items: center;
 }
+.services-copy { margin-bottom: .9028vw; }   /* Figma: the copy block's centre is 6.5px above the ring's centre */
 .services-copy h2 { font-size: var(--fs-lead); line-height: 1.25; }
 .services-copy p { max-width: 424px; line-height: 1.25; }
 
@@ -237,7 +238,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .reviews__card::after { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, .5); }
 .reviews__quote {
   grid-area: 1 / 1; position: relative; z-index: 1; margin: 0; text-align: left;
-  width: 31.3889vw; height: 19.0278vw; padding: 2.9167vw 1.1111vw 0;   /* 452x274; the text starts 42px down, 16px in */
+  width: 31.3889vw; min-height: 19.0278vw; padding: 2.9167vw 1.1111vw 1.8vw;   /* 452x274; the text starts 42px down, 16px in */
 }
 .reviews__quote blockquote { margin: 0; }
 .reviews__quote p { line-height: 1.25; }
@@ -371,7 +372,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   .orbit__item--bl { --x: 7.1%;   --y: calc(100% - 31.7vw); }
   .orbit__item--b  { --x: 50%;    --y: calc(100% - 15.42vw); }
   .orbit__item--br { --x: 92.9%;  --y: calc(100% - 31.7vw); }
-  .services-copy { width: auto; max-width: none; padding-inline: 13px; }
+  .services-copy { width: auto; max-width: none; padding-inline: 13px; margin-bottom: 0; }
   .services-copy p { max-width: 424px; }
 
   /* About (frame 76:261): copy boxes 170/155 tall in Figma */
@@ -402,7 +403,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   /* Review card: fills the width, text centred over the photo */
   .reviews { padding: 60px var(--pad); }
   .reviews__card { width: 100%; aspect-ratio: auto; min-height: 420px; }
-  .reviews__quote { width: 100%; height: auto; padding: 24px; }
+  .reviews__quote { width: 100%; min-height: 0; padding: 24px; }
 
   /* News (frame 76:320): cards 410x316, 20px apart; they stack and pin as before */
   .news { padding: 124px 0 60px; }
