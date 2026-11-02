@@ -17,7 +17,7 @@
   -webkit-tap-highlight-color: transparent;
 }
 .hover-gallery__card:first-child { flex-grow: 460; }
-.hover-gallery__card:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.hover-gallery__card:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 /* The visual is 72px wider than the card on each side so the edge-bend clip-path can bow outward into it.
    overflow: clip keeps the photo (wider than its card) from adding scrollable overflow in the phone scroller; the clip-path
    bows at most 56px, so nothing visible is cut. pointer-events: none as in Make: only the card box takes the pointer. */

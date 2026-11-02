@@ -11,12 +11,13 @@
   --placeholder: #d9d9d9;     /* social media cards, video block */
   --fade-black: linear-gradient(to bottom, #000 23%, rgba(0, 0, 0, 0) 100%); /* location photo scrim */
 
-  /* type: Geom (Google Fonts), weights 300 / 400. Figma uses 20 / 32 / 52 (mobile) / 85 (desktop). */
+  /* type: Geom (Google Fonts), weights 300 / 400. Figma desktop uses 20 / 32 / 52 / 85 / 138; the vw factors are size / 1440, so 1440 gives the Figma value exactly. */
   --font: 'Geom', system-ui, sans-serif;
-  --fs-display: clamp(40px, 5.9vw, 85px);   /* 85px at 1440 */
-  --fs-title: clamp(36px, 3.61vw, 52px);    /* legacy (hero title, wordmark); not used in the Figma specs */
-  --fs-lead: clamp(24px, 2.22vw, 32px);     /* 32px at 1440 */
-  --fs-body: clamp(16px, 1.39vw, 20px);     /* 20px at 1440 */
+  --fs-display: clamp(40px, 5.9028vw, 85px);   /* 85px at 1440 */
+  --fs-mega: clamp(56px, 9.5833vw, 138px);   /* 138px at 1440: "Wir sind MTM Coiffure." */
+  --fs-title: clamp(36px, 3.6111vw, 52px);    /* 52px at 1440: "Standorte." */
+  --fs-lead: clamp(24px, 2.2222vw, 32px);     /* 32px at 1440 */
+  --fs-body: clamp(16px, 1.3889vw, 20px);     /* 20px at 1440 */
 
   /* layout */
   --pad: 20px;
