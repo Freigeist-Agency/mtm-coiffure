@@ -236,8 +236,8 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 
 /* ---------- Social (Figma Social Media Section 6608: header, then 6 tiles 225x353 from x=20) ---------- */
 /* The section starts 111px above the end of the curve, so the title (42px in) sits inside the white dome. */
-.social { position: relative; background: linear-gradient(var(--paper), var(--paper)) 0 calc(7.7083vw - 1.5px) / 100% 100% no-repeat; /* white from the dome's last row down: hides the antialiased bottom row of the rotated curve */ margin-top: -7.7083vw; padding: 2.9167vw 0 11.1458vw; text-align: center; container-type: inline-size; }
-.social-head { display: grid; gap: 23px; justify-items: center; padding: 0 var(--pad) 14.0972vw; }  /* tiles start 203px below the buttons */
+.social { position: relative; background: linear-gradient(var(--paper), var(--paper)) 0 calc(7.7083vw - 1.5px) / 100% 100% no-repeat; /* white from the dome's last row down: hides the antialiased bottom row of the rotated curve */ margin-top: -7.7083vw; padding: 2.9167vw 0 2.6444vw; text-align: center; container-type: inline-size; }  /* client round 2: 12.145vw from the dots down to the section end cut by 70% (3.644vw = 2.6444vw + the 1cqw under the dots) */
+.social-head { display: grid; gap: 23px; justify-items: center; padding: 0 var(--pad) 4.9672vw; }  /* client round 2: buttons to the centre card halved, 18.26vw -> 9.13vw (was 14.0972vw of padding) */
 .social-head p, .news-head p { min-height: 54px; } /* Figma description box is 54px tall */
 .social-links { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
 /* tile width from the section's width (cqw), so it is 225px at 1440 whether or not js/carousel.js has taken the row's padding away */

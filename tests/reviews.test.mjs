@@ -69,23 +69,24 @@ const reveal = async page => {
 const noLag = page => page.evaluate(() => { window.gsap.ticker.lagSmoothing(0); });
 const speed = (page, k) => page.evaluate(k => { window.gsap.globalTimeline.timeScale(k); }, k);
 const api = page => page.evaluate(s => { const a = document.querySelector(s).__reviews; return a ? { i: a.index(), paused: a.paused(), r: a.reasons() } : null; }, LIST);
-// in-page recorder: every change of the shown index, with the list/card heights and every figure's opacity / ty sampled on each frame
+// in-page recorder (times are gsap time, ms: the script's holds and tweens run on it, so a stalled loaded machine cannot skew them): every change of the shown index, with the list/card heights and every figure's opacity / ty sampled on each frame
 const startRecorder = page => page.evaluate(([L, C, Qs]) => {
   const list = document.querySelector(L), card = document.querySelector(C), items = [...document.querySelectorAll(Qs)];
-  const rec = { changes: [], heights: new Set(), cardHeights: new Set(), samples: [], stop: false, t0: performance.now() };
+  const rec = { changes: [], heights: new Set(), cardHeights: new Set(), samples: [], stop: false, t0: window.gsap.globalTimeline.time() * 1000, run0: null };
   let last = list.__reviews.index();
   rec.changes.push({ i: last, t: 0 });
   const ty = el => { const m = getComputedStyle(el).transform; if (m === 'none') return 0; return new DOMMatrix(m).m42; };
   (function tick() {
-    const t = performance.now() - rec.t0, now = list.__reviews.index();
+    const t = window.gsap.globalTimeline.time() * 1000 - rec.t0, now = list.__reviews.index();
     if (now !== last) { rec.changes.push({ i: now, t }); last = now; }
+    if (rec.run0 === null && !list.__reviews.paused()) rec.run0 = t;   // the first hold only runs from the moment the card counts as on screen
     rec.heights.add(list.getBoundingClientRect().height); rec.cardHeights.add(card.getBoundingClientRect().height);
     rec.samples.push({ t, op: items.map(e => parseFloat(getComputedStyle(e).opacity)), ty: items.map(ty), tr: items.map(e => getComputedStyle(e).transform), inl: items.map(e => e.style.transform) });
     if (!rec.stop) requestAnimationFrame(tick);
   })();
   window.__rec = rec;
 }, [LIST, CARD, Q]);
-const stopRecorder = page => page.evaluate(() => { window.__rec.stop = true; const r = window.__rec; return { changes: r.changes, heights: [...r.heights], cardHeights: [...r.cardHeights], samples: r.samples }; });
+const stopRecorder = page => page.evaluate(() => { window.__rec.stop = true; const r = window.__rec; return { run0: r.run0, changes: r.changes, heights: [...r.heights], cardHeights: [...r.cardHeights], samples: r.samples }; });
 const waitChanges = async (page, n, ms) => {
   const t0 = Date.now();
   while (Date.now() - t0 < ms) { if ((await page.evaluate(() => window.__rec.changes.length)) >= n) return true; await sleep(100); }
@@ -198,9 +199,9 @@ if (want('motion')) {
     assert(ok, `two swaps recorded at real speed (${r.changes.length - 1})`);
     const [c0, c1, c2] = r.changes;
     const len = i => EXPECTED[i].text.length;   // astral emoji count as 2, the same as in JS
-    const hold = i => Math.min(10, 4 + 0.04 * len(i)) * 1000;
-    // hold of review 0 (capped at 10 s) runs from the start; the next hold starts after the 0.75 s swap
-    assert(Math.abs(c1.t - hold(0)) < 350, `hold of review 1: swap at ${Math.round(c1.t)} ms, expected ${hold(0)} (capped at 10 s)`);
+    const hold = i => Math.min(6, 2.5 + 0.02 * len(i)) * 1000;
+    // hold of review 0 (capped at 6 s) runs from the start; the next hold starts after the 0.75 s swap
+    assert(r.run0 !== null && Math.abs((c1.t - r.run0) - hold(0)) < 350, `hold of review 1: swap ${Math.round(c1.t - r.run0)} ms after it started running, expected ${hold(0)} (capped at 6 s)`);
     assert(Math.abs((c2.t - c1.t) - (750 + hold(c1.i))) < 350, `hold of review ${c1.i + 1} (${len(c1.i)} chars): ${Math.round(c2.t - c1.t)} ms between swaps, expected ${Math.round(750 + hold(c1.i))}`);
     // transition 1: outgoing = c0.i, incoming = c1.i
     const win = r.samples.filter(s => s.t >= c1.t - 30 && s.t <= c1.t + 1000);
@@ -216,6 +217,32 @@ if (want('motion')) {
     assert(Math.max(...tyIn) > 6 && Math.max(...tyIn) <= 8.001 && Math.min(...tyIn) >= -0.001, `incoming moves 8px -> 0 (max ${Math.max(...tyIn).toFixed(2)})`);
     const settled = r.samples.filter(s => s.t >= c1.t + 900 && s.t <= c2.t - 100);
     assert(settled.length > 10 && settled.every(s => s.tr.every(t => t === 'none')), 'at rest no figure carries a transform');
+  } catch (e) { console.log("ERR", e.message); assert(false, "block threw: " + e.message.split("\n")[0]); } finally { try { await close(); } catch {} }
+}
+
+// ---- 4b. hold formula, deterministic: every review's hold read from the delayedCall the script schedules ----
+if (want('holds')) {
+  const { page, close } = await openPage({ width: 1440 });
+  try {
+    await reveal(page);
+    await page.evaluate(() => {
+      const g = window.gsap, orig = g.delayedCall.bind(g), list = document.querySelector('.reviews__list');
+      window.__holds = [];
+      g.delayedCall = function (d, fn) { window.__holds.push({ d, i: list.__reviews.index() }); return orig.apply(null, arguments); };
+    });
+    await speed(page, 150);
+    const t0 = Date.now();
+    let n = 0;
+    while (Date.now() - t0 < 30000) { n = await page.evaluate(() => window.__holds.length); if (n >= 33) break; await sleep(100); }
+    const holds = await page.evaluate(() => window.__holds);
+    assert(holds.length >= 33, `recorded ${holds.length} holds (3 cycles) (precondition)`);
+    const seen = new Set();
+    let bad = [];
+    for (const h of holds) { seen.add(h.i); const e = Math.min(6, 2.5 + 0.02 * EXPECTED[h.i].text.length); if (Math.abs(h.d - e) > 1e-9) bad.push(`#${h.i + 1}: ${h.d} vs ${e}`); }
+    assert(seen.size === 11, `every one of the 11 reviews had its hold recorded (${seen.size})`);
+    assert(bad.length === 0, `hold = min(6, 2.5 + 0.02 * chars) for every scheduled hold (${bad.slice(0, 3).join('; ')})`);
+    const ds = holds.map(h => h.d);
+    assert(Math.max(...ds) === 6 && Math.min(...ds) > 4 && Math.min(...ds) < 5, `holds span ${Math.min(...ds).toFixed(2)} s (shortest) to ${Math.max(...ds)} s (cap)`);
   } catch (e) { console.log("ERR", e.message); assert(false, "block threw: " + e.message.split("\n")[0]); } finally { try { await close(); } catch {} }
 }
 
@@ -280,8 +307,8 @@ if (want('reduced')) {
     assert(ok, `two swaps at real speed (${r.changes.length - 1})`);
     assert(r.samples.every(s => s.tr.every(t => t === 'none') && s.inl.every(t => t === '')), `no transform on any figure in ${r.samples.length} frames`);
     assert(r.samples.every(s => s.op.every(o => o === 0 || o === 1)), 'opacity is only ever 0 or 1 (instant swap)');
-    const hold = i => Math.min(10, 4 + 0.04 * EXPECTED[i].text.length) * 1000;
-    assert(Math.abs(r.changes[1].t - hold(0)) < 350, `same hold: first swap at ${Math.round(r.changes[1].t)} ms, expected ${hold(0)}`);
+    const hold = i => Math.min(6, 2.5 + 0.02 * EXPECTED[i].text.length) * 1000;
+    assert(r.run0 !== null && Math.abs((r.changes[1].t - r.run0) - hold(0)) < 350, `same hold: first swap ${Math.round(r.changes[1].t - r.run0)} ms after it started running, expected ${hold(0)}`);
     assert(Math.abs((r.changes[2].t - r.changes[1].t) - hold(r.changes[1].i)) < 350, `same hold, no swap time added: ${Math.round(r.changes[2].t - r.changes[1].t)} ms, expected ${Math.round(hold(r.changes[1].i))}`);
   } catch (e) { console.log("ERR", e.message); assert(false, "block threw: " + e.message.split("\n")[0]); } finally { try { await close(); } catch {} }
 }

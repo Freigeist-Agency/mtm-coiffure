@@ -1,5 +1,11 @@
 // Curved video-card slider (Social section, js/radial-slider.js): geometry, infinite wrap, input, touch, reduced motion, media slots.
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { openPage, assert, report } from './harness.mjs';
+
+const OUT = path.join(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), 'tests/out/r2-tune');
+fs.mkdirSync(OUT, { recursive: true });
 
 const settle = page => page.waitForFunction(() => !document.querySelector('.radial-slider').__radialSlider.busy(), null, { timeout: 5000 });
 const cards = page => page.evaluate(() => {
@@ -273,9 +279,87 @@ async function noJs() {
   } finally { await close(); }
 }
 
+// Client round 2: buttons -> middle card halved, dots -> section end cut by 70%, 768px and up only. Targets are the a7769df
+// measurements (gap1 18.26vw, gap2 12.145vw) times 0.5 and 0.3, in document px.
+const GAPS = {
+  768:  { gap1: 70.1, gap2: 28.0 },
+  1440: { gap1: 131.5, gap2: 52.5 },
+  2560: { gap1: 233.8, gap2: 93.3 },
+};
+const measureGaps = page => page.evaluate(() => {
+  const sy = scrollY, top = e => e.getBoundingClientRect().top + sy, bot = e => e.getBoundingClientRect().bottom + sy;
+  const btns = [...document.querySelectorAll('.btn--social')], cx = innerWidth / 2;
+  const cards = [...document.querySelectorAll('.radial-slider__card')].filter(c => getComputedStyle(c).visibility === 'visible' && getComputedStyle(c).opacity !== '0');
+  const mid = cards.reduce((a, c) => { const b = c.getBoundingClientRect(), d = Math.abs((b.left + b.right) / 2 - cx); return !a || d < a.d ? { c, d } : a; }, null).c;
+  const ctlBottom = Math.max(...[...document.querySelectorAll('.radial-slider__btn, .radial-slider__dot')].map(bot)), btnBottom = Math.max(...btns.map(bot));
+  const sb = bot(document.querySelector('.social')), rt = top(document.querySelector('.reviews'));
+  return { gap1: top(mid) - btnBottom, gap2: sb - ctlBottom, sbEqRev: Math.abs(sb - rt) < 0.01, n: cards.length,
+    clear: Math.min(...cards.map(top)) - btnBottom, pad: [getComputedStyle(document.querySelector('.social-head')).paddingBottom, getComputedStyle(document.querySelector('.social')).paddingBottom] };
+});
+
+async function gaps() {
+  for (const [w, h] of [[375, 812], [768, 1024], [1440, 900], [2560, 1300]]) {
+    const { page, close } = await openPage({ width: w, height: h, isMobile: w === 375, hasTouch: w === 375 });
+    try {
+      await page.waitForSelector('.radial-slider.is-enhanced');
+      await page.locator('.radial-slider').scrollIntoViewIfNeeded(); await page.waitForTimeout(400);
+      assert(await page.evaluate(() => innerWidth) === w, `gaps ${w}: viewport really is ${w} wide`);
+      const m = await measureGaps(page);
+      assert(m.n === 7 && m.sbEqRev, `gaps ${w}: 7 cards placed, .social ends where .reviews starts (${m.n}, ${m.sbEqRev})`);
+      if (w === 375) {
+        assert(Math.abs(m.gap1 - 80.5) < 0.6 && Math.abs(m.gap2 - 63.75) < 0.6, `gaps 375: below 768 unchanged, ${m.gap1.toFixed(2)} / ${m.gap2.toFixed(2)} (a7769df: 80.50 / 63.75)`);
+        assert(m.pad[0] === '136px' && m.pad[1] === '60px', `gaps 375: mobile paddings still 136px / 60px (${m.pad})`);
+      } else {
+        const t = GAPS[w];
+        assert(Math.abs(m.gap1 - t.gap1) <= 3, `gaps ${w}: buttons -> middle card ${m.gap1.toFixed(1)}px, target ${t.gap1} +-3`);
+        assert(Math.abs(m.gap2 - t.gap2) <= 3, `gaps ${w}: dots -> section end ${m.gap2.toFixed(1)}px, target ${t.gap2} +-3`);
+        // clearance between the text block (heading, paragraph, buttons) and every visible card: vertical-only, and true 2D rectangle distance.
+        // Outer cards ride higher on the arc than the middle one, so both are read at rest, mid-drag and on every frame of the snap.
+        await page.evaluate(() => {
+          const R = e => { const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top + scrollY, b: b.bottom + scrollY }; };
+          window.__clr = () => {
+            const bl = ['.social-head h2', '.social-head p', ...[...document.querySelectorAll('.btn--social')].map((_, i) => `.btn--social:nth-child(${i + 1})`)].map(s => R(document.querySelector(s)));
+            const btnB = Math.max(...bl.slice(2).map(b => b.b));
+            let vert = 1e9, d2 = 1e9, over = 0;
+            document.querySelectorAll('.radial-slider__card').forEach(c => {
+              const cs = getComputedStyle(c); if (cs.visibility !== 'visible' || cs.opacity === '0') return;
+              const r = R(c); vert = Math.min(vert, r.t - btnB);
+              bl.forEach(B => { const dx = Math.max(0, B.l - r.r, r.l - B.r), dy = Math.max(0, r.t - B.b, B.t - r.b); if (dx === 0 && dy === 0) over++; d2 = Math.min(d2, Math.hypot(dx, dy)); });
+            });
+            return { vert, d2, over };
+          };
+        });
+        const rest = await page.evaluate(() => window.__clr());
+        assert(rest.vert > 10 && rest.over === 0, `gaps ${w}: at rest the highest visible card is ${rest.vert.toFixed(1)}px below the buttons (needs > 10), nothing overlaps`);
+        const box = await page.locator('.radial-slider__stage').boundingBox(), cx = box.x + box.width / 2, cy = box.y + box.height / 2;
+        const card = box.width * 0.1384;   // card pitch at the centre
+        let lowV = rest.vert, low2 = rest.d2, over = 0; const seen = [rest.vert.toFixed(1)];
+        await page.mouse.move(cx, cy); await page.mouse.down(); await page.mouse.move(cx - 8, cy);
+        for (const f of [0.25, 0.5, 0.75, 1]) {
+          await page.mouse.move(cx - 8 - card * f * 1.44, cy, { steps: 3 }); await page.waitForTimeout(80);
+          const d = await page.evaluate(() => window.__clr()); lowV = Math.min(lowV, d.vert); low2 = Math.min(low2, d.d2); over += d.over; seen.push(d.vert.toFixed(1));
+        }
+        assert(await page.evaluate(() => document.querySelector('.radial-slider').classList.contains('is-dragging')), `gaps ${w}: drag really in progress (precondition)`);
+        await page.screenshot({ path: path.join(OUT, `slider-middrag-${w}.png`) });
+        await page.mouse.up();
+        await page.evaluate(() => { window.__lo = { vert: 1e9, d2: 1e9, over: 0, frames: 0 }; (function f() { const d = window.__clr(), l = window.__lo; l.vert = Math.min(l.vert, d.vert); l.d2 = Math.min(l.d2, d.d2); l.over += d.over; l.frames++; window.__raf = requestAnimationFrame(f); })(); });
+        await settle(page); await page.waitForTimeout(100);
+        const snap = await page.evaluate(() => { cancelAnimationFrame(window.__raf); return window.__lo; });
+        lowV = Math.min(lowV, snap.vert); low2 = Math.min(low2, snap.d2); over += snap.over;
+        console.log(`  @${w}: vertical clearance buttons -> highest visible card: rest ${rest.vert.toFixed(1)}px, drag samples [${seen.join(', ')}], snap min ${snap.vert.toFixed(1)}px over ${snap.frames} frames; smallest 2D distance to heading/paragraph/buttons ${low2.toFixed(1)}px`);
+        assert(snap.frames > 5, `gaps ${w}: the snap recorder really ran (${snap.frames} frames)`);
+        assert(over === 0 && low2 > 40, `gaps ${w}: no visible card overlaps or comes within 40px (2D) of the heading, paragraph or buttons, at rest, mid-drag or through the snap (min ${low2.toFixed(1)}px, overlaps ${over})`);
+      }
+      await page.locator('.social').scrollIntoViewIfNeeded();
+      await page.screenshot({ path: path.join(OUT, `slider-gaps-${w}.png`) });
+    } finally { await close(); }
+  }
+}
+
 await desktop();
 await sizes();
 await touch();
 await reduced();
 await noJs();
+await gaps();
 await report();
