@@ -182,7 +182,11 @@ async function finaleCurve(w, h) {
   assert(rdErr < 0.6, `${tag}: the mask's ellipse is 21.1458vw * s deep at every sample (max error ${rdErr.toFixed(2)}px over ${seq.length})`);
 
   // the rendered apex: the first non-white row below the photo's top edge in the middle column, at mid and near full depth
-  for (const [level, p] of [['floor', 0.97], ['mid', 0.6], ['deep', 0.3]]) {   // deeper than s 0.7 the apex is below the bottom of the viewport; the mask value itself is checked at every sample above
+  for (const [level, p0] of [['floor', 0.97], ['mid', 0.6], ['deep', 0.3]]) {   // the apex must be on screen to be read: 'deep' moves p up until it is (at 2560 x 1440 p 0.3 puts it 0.8px below the viewport); the mask value itself is checked at every sample above
+    let p = p0;
+    const apexRow = q => info0.H - q * (info0.H - info0.stuck) + 21.1458 * w / 100 * Math.max(0.04, 1 - q);   // expected viewport y of the apex at progress q
+    while (apexRow(p) > h - 6 && p < 0.9) p += 0.01;
+    assert(apexRow(p) <= h - 6, `${tag} ${level}: precondition: the apex is expected at viewport y ${apexRow(p).toFixed(1)}, on screen (${h} tall; progress ${p.toFixed(2)})`);
     await page.evaluate(([y, H, stuck, p]) => window.scrollTo({ top: y - (H - p * (H - stuck)), behavior: 'instant' }), [top0, h, info0.stuck, p]);
     await sleep(300);
     const info = await page.evaluate(finaleInfo);
@@ -256,8 +260,8 @@ async function footerRide(w, h, mobile) {
       const logo = document.querySelector('.footer-logo'), cta = document.querySelector('.footer-cta'), ftp = document.querySelector('.footer-top');
       const r = e => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; };
       const fr = ftp.getBoundingClientRect();
-      const lb = logo.getBoundingClientRect(), py = lb.bottom - 3, hit = py >= 0 && py < innerHeight ? document.elementFromPoint((lb.left + lb.right) / 2, py) : null;
-      return { y: scrollY, max: document.documentElement.scrollHeight - innerHeight, logoOnTop: !(py >= 0 && py < innerHeight) || !!(hit && hit.closest('.footer-logo')), hitTag: hit ? hit.className || hit.tagName : null, logo: r(logo), cta: r(cta), rest: [fr.left + logo.offsetLeft, fr.top + logo.offsetTop, fr.left + logo.offsetLeft + logo.offsetWidth, fr.top + logo.offsetTop + logo.offsetHeight], s: window.arcScroll ? window.arcScroll.factor('footer') : null, tf: logo.style.transform };
+      const lb = logo.getBoundingClientRect(), py = lb.bottom - 3, hit = py >= 0 && py < innerHeight - 0.5 ? document.elementFromPoint((lb.left + lb.right) / 2, py) : null;
+      return { y: scrollY, max: document.documentElement.scrollHeight - innerHeight, logoOnTop: !(py >= 0 && py < innerHeight - 0.5) || !!(hit && hit.closest('.footer-logo')), hitTag: hit ? hit.className || hit.tagName : null, logo: r(logo), cta: r(cta), rest: [fr.left + logo.offsetLeft, fr.top + logo.offsetTop, fr.left + logo.offsetLeft + logo.offsetWidth, fr.top + logo.offsetTop + logo.offsetHeight], s: window.arcScroll ? window.arcScroll.factor('footer') : null, tf: logo.style.transform };
     });
     const img = decode(await page.screenshot());
     const dark = ([l, t, r, b]) => {                                   // pixels under the element that are the (black) photo
