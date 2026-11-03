@@ -79,8 +79,8 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   font-size: var(--fs-body); line-height: 1.25;
 }
 .hero-title { display: contents; font-size: inherit; }
-.hero-title small { grid-column: 2; grid-row: 1; display: block; font-size: inherit; }
-.hero-title span { grid-column: 2; grid-row: 2; display: block; font-size: inherit; line-height: inherit; text-transform: uppercase; }
+.hero-title small { grid-column: 2; grid-row: 1; display: block; font-size: inherit; text-align: center; }
+.hero-title span { grid-column: 2; grid-row: 2; display: block; font-size: inherit; line-height: inherit; text-transform: uppercase; text-align: center; } /* the column is as wide as the subtitle, so the name needs its own centring */
 .hero-hello { grid-column: 1; grid-row: 2; }
 .hero-arabic { grid-column: 3; grid-row: 2; justify-self: end; width: 5.5556vw; height: 1.6667vw; mix-blend-mode: multiply; } /* 80x24; the SVG ships with an off-white ground */
 
@@ -113,14 +113,17 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 /* ---------- Introduction (Figma 73:60, 1440x915 at y=2181): 85px/150px weight 400, centred, three 145px portraits in the text ---------- */
 .intro { padding: .5208vw var(--pad); margin-bottom: 13.1944vw; }   /* 7.5px above and below the text; the Services start 190px after the section's end */
 .intro-text { font-size: var(--fs-display); font-weight: 400; line-height: 1.7647; text-align: center; }
-/* Portraits are inline, so they rewrap with the words. In Figma the first and the last one hang outside the centred text (the
-   words stay on the centre line), so each of those two gets an invisible twin of the same width (.intro-gap) on the other side. */
+/* Portraits are inline, so they rewrap with the words. In Figma the first and the last one hang outside the centred text (the words
+   stay on the centre line), so each of those two gets an invisible twin of the same width (.intro-gap) on the other side: after
+   "Wir sind" and at the start of the last line. "fünfte Generation." always starts a new line (the <br class="intro-break"> in the
+   markup), so the tail spacer is the first thing on its line and can never leave a hole between two words. Phones hide the spacers. */
 .intro-pic { display: inline-block; width: 1.7059em; height: 1.7059em; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-block: -.4em; position: relative; top: -.08em; } /* negative margins: the 145px photo must not grow the 150px line */
 .intro-text > .intro-pic { margin-inline: .25em; }
 .intro-lead, .intro-tail { white-space: nowrap; }
 .intro-lead .intro-pic { margin-right: .35em; }
-.intro-tail .intro-pic { margin-left: .28em; }
+.intro-tail .intro-pic { margin-left: .26em; }
 .intro-gap { display: inline-block; width: 2.05em; }
+.intro-tail .intro-gap { width: 2em; }   /* last line: the text ink starts at x=366 and the portrait ends at x=1242 at 1440 (Figma 73:60) */
 
 /* ---------- Services (Figma 73:3: 788x788 orbit centred in a 1440x1000 section; the 8 photos keep their Figma tilt) ---------- */
 .services {
@@ -157,8 +160,8 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .services-copy h2 { font-size: var(--fs-lead); line-height: 1.25; }
 .services-copy p { max-width: 424px; line-height: 1.25; }
 
-/* Smile edges (js/arc-scroll.js drives --arc-s): a white ellipse centred on the top edge of the section, clipped to it. */
-.locations::before, .finale::before {
+/* Smile edge (js/arc-scroll.js drives --arc-s): a white ellipse centred on the top edge of the section, clipped to it. */
+.locations::before {
   content: ""; position: absolute; left: 0; right: 0; top: var(--smile-top); height: var(--smile-h);
   background: var(--paper); border-radius: 50%;
 }
@@ -249,13 +252,15 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   position: relative; display: grid; place-items: center; overflow: hidden;
   width: min(67.7083vw, 975px); aspect-ratio: 975 / 667; margin-inline: auto; left: .3819vw;   /* Figma x=238, 5.5px right of centre */
   border-radius: var(--radius);   /* the 2px stroke is in the baked assets/review-card.jpg */
-  box-shadow: 0 4px 11px -1px rgba(165, 115, 45, .25); color: var(--paper);
+  box-shadow: 0 4px 11px -1px rgba(165, 115, 45, .25); color: var(--paper); container-type: inline-size;
 }
 .reviews__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.reviews__quote {
-  grid-area: 1 / 1; position: relative; z-index: 1; margin: 0; text-align: left;
-  width: 31.3889vw; min-height: 19.0278vw; padding: 2.9167vw 1.1111vw 1.8vw;   /* 452x274; the text starts 42px down, 16px in */
+/* the box is sized from the card (cqw) so it stays 452x274 on the 975px card at 1440 and wider; every review sits in the same grid cell, so the tallest one sets the height */
+.reviews__list {
+  grid-area: 1 / 1; position: relative; z-index: 1; display: grid; text-align: left;
+  width: 46.359cqw; min-height: 28.1cqw; padding: 4.308cqw 1.641cqw 2.667cqw;   /* 452x274; the text starts 42px down, 16px in */
 }
+.reviews__quote { grid-area: 1 / 1; margin: 0; }
 .reviews__quote blockquote { margin: 0; }
 .reviews__quote p { line-height: 1.25; }
 .reviews__quote figcaption { margin-top: 17px; font-size: 10px; line-height: 1.25; }
@@ -272,10 +277,13 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .news-card { background: var(--paper); border-radius: var(--radius); box-shadow: var(--shadow-card); padding: 81px 20px; text-align: left; min-height: 337px; }
 .news-card p { line-height: 1.25; }
 
-/* Full-width image, the stack's third layer (Figma Gallery Image 1440x834 at y=9362, white ellipse over its top edge; the footer overlaps its bottom) */
-.finale { --smile-top: -21.18vw; --smile-h: 42.2917vw; position: relative; overflow: clip; height: 57.9vw; }
-.finale img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 0; }
-.finale::before { z-index: 1; }
+/* Full-width image, the stack's third layer (Figma Gallery Image 1440x834 at y=9345, a flat top edge; the footer overlaps its bottom).
+   Figma places the photo (222:52) 1728x1152 at x -180 from the section's top: 120% wide, centred, top-aligned, cropped below. */
+.finale { position: relative; overflow: clip; height: 57.9vw; }
+.finale img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 0; }
+@media (min-width: 768px) {
+  .finale img { width: 120%; max-width: none; height: auto; margin-left: -10%; }
+}
 
 /* Stacked mode: layers stick one after another, each a little lower than the last so the top edge of a covered card
    peeks out above the one in front, and the image rises over both. Gated in CSS (not JS) so there is no layout shift: without
@@ -295,7 +303,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   html.js .stack__layer:nth-child(2) { --i: 1; will-change: transform; margin-top: var(--gap-scroll); }
   html.js .stack__layer:nth-child(3) { --i: 2; margin-top: var(--gap-scroll); }
   html.js .news-card { width: clamp(360px, 32vw, 620px); } /* Figma 460px at 1440; about 360 at 768; 614 at 1920 */
-  html.js .finale { margin-inline: 0; overflow: visible; }   /* the whole ellipse shows, so its curve wipes the stuck cards; the image's flat top edge would slice them */
+  html.js .finale { margin-inline: 0; }
 }
 @media (prefers-reduced-motion: no-preference) and (max-width: 767px) {
   html.js .news-card { width: calc(100% - 2 * var(--pad)); }
@@ -344,6 +352,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   html[data-home] .footer-top { position: relative; }
   html[data-home] .footer-top::before { content: ""; position: absolute; left: 0; right: 0; top: 3.3333vw; height: 39.7222vw; background: var(--paper); border-radius: 50%; }
   html[data-home] .footer-logo { position: relative; }
+  html[data-home] .footer-logo img { mix-blend-mode: multiply; }   /* the logo file has an opaque white ground: while the white dome (js/arc-scroll.js) is still shallow it would show as a box over the photo */
 }
 
 /* ---------- Location + legal pages ---------- */
@@ -390,7 +399,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   .hero-arabic { order: 1; width: 160px; height: auto; }
   .hero-title { display: block; order: 2; }
   .hero-title small { font-size: var(--fs-body); }
-  .hero-title span { font-size: var(--fs-title); line-height: 1; text-transform: none; }
+  .hero-title span { font-size: var(--fs-display); line-height: 1.15; text-transform: none; } /* Figma 76:223: 52px at 450 wide; 1.15 puts the subtitle ink on Figma's rows (1.0 leaves it 8px low) */
   .hero-hello { order: 3; }
 
   /* the DOM order changed (Wir sind, gallery, Introduction come before the Services): plain stacked flow on a phone */
@@ -443,7 +452,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   /* Review card: fills the width, text centred over the photo */
   .reviews { padding: 60px var(--pad); }
   .reviews__card { left: 0; width: 100%; aspect-ratio: auto; min-height: 420px; }
-  .reviews__quote { width: 100%; min-height: 0; padding: 24px; }
+  .reviews__list { width: 100%; min-height: 0; padding: 24px; }
 
   /* News (frame 76:320): cards 410x316, 20px apart; they stack and pin as before */
   .news { padding: 124px 0 0; }
@@ -451,7 +460,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   .stack { grid-template-columns: minmax(0, 1fr); padding-inline: var(--pad); row-gap: 20px; }
   .stack__layer:nth-child(n) { grid-column: 1; }
   .news-card { padding: 58px 20px; min-height: 316px; }
-  .finale { --smile-top: -31.78vw; --smile-h: 63.56vw; height: 70vw; margin: 40px calc(-1 * var(--pad)) 0; }
+  .finale { height: 70vw; margin: 40px calc(-1 * var(--pad)) 0; }
 
   .footer-body { min-height: 0; padding-bottom: 80px; }
   .footer-body::before { top: 20vw; }
@@ -467,5 +476,4 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 /* Locations stack on mobile: the card pins right under the nav (bottom-aligned if it is taller than the viewport) */
 @media (prefers-reduced-motion: no-preference) and (max-width: 767px) {
   html.js .location-info:nth-child(1) { top: min(var(--nav-h), 100svh - var(--stack-row-h, 0px)); }
-}
 }

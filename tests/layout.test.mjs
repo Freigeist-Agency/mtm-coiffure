@@ -6,7 +6,7 @@ const PAGES = ['index.html', 'impressum.html', 'datenschutz.html', '404.html',
 const ORDER = ['.hero', '.about', '.gallery', '.intro', '.services', '.locations', '.social', '.reviews', '.news', '.finale', 'footer'];   // Figma 64:2, top to bottom
 
 
-// Lazy images that sit off-axis (carousel items, hidden mobile orbit items) never load from a vertical scroll;
+// Lazy images that sit off-axis (hidden mobile orbit items) never load from a vertical scroll;
 // force them to load so "all images loaded" still catches missing files.
 async function loadAllImages(page) {
   await page.evaluate(async () => {
@@ -110,7 +110,7 @@ for (const width of WIDTHS) {
       const galCards = gal ? q('button.hover-gallery__card', gal) : [];
       const galImgs = galCards.map(c => c.querySelector('img'));
       const oldTeam = q('.about .carousel[data-carousel="team"]').length;
-      const social = q('.social .carousel[data-carousel="social"]')[0];
+      const social = q('.social .radial-slider[data-radial-slider]')[0];
       const rows = q('.locations .location-info');
       const stack = q('.news .stack')[0];
       const layers = stack ? q('.stack__layer', stack) : [];
@@ -124,7 +124,7 @@ for (const width of WIDTHS) {
         galAlt: galImgs.every(i => i && (i.getAttribute('alt') || '').trim().length > 3),
         galAttrs: galImgs.every(i => i && i.getAttribute('width') && i.getAttribute('height')),
         galLabels: galCards.every(c => (c.getAttribute('aria-label') || '').trim().length > 3),
-        social: !!social, socialItems: social ? q('.carousel__item:not([data-clone])', social).length : 0,
+        social: !!social, socialItems: social ? q('.radial-slider__card:not([data-clone])', social).length : 0,
         rows: rows.length,
         rowOrder: rows.every(r => [...r.children].map(c => c.tagName + (c.classList.contains('btn') ? '.btn' : '')).join() === 'H3,IMG,A.btn'),
         mediaImgs: rows.flatMap(r => q('.location-img', r)).map(i => { const b = i.getBoundingClientRect(); return b.width / b.height; }),
@@ -160,7 +160,7 @@ for (const width of WIDTHS) {
       }
     }
     // Part B hooks (not built yet: expected to fail until part B)
-    assert(h.social && h.socialItems === 6, `${tag}: .social carousel[data-carousel=social] has 6 .carousel__item (${h.socialItems})`);
+    assert(h.social && h.socialItems === 6, `${tag}: .social .radial-slider has 6 .radial-slider__card (${h.socialItems})`);
     assert(h.rows === 2 && h.rowOrder, `${tag}: locations has 2 .location-info rows, each h3 -> img -> a.btn in DOM order (${h.rows})`);
     assert(h.mediaImgs.length === 2 && h.mediaImgs.every(r => Math.abs(r - 16 / 9) <= 0.03), `${tag}: locations rows have two 16:9 images ${JSON.stringify(h.mediaImgs.map(r => +r.toFixed(2)))}`);
     assert(h.stack && h.layers === 3 && h.finaleImg, `${tag}: .news .stack has 3 .stack__layer, the full-width image is the third (${h.layers})`);

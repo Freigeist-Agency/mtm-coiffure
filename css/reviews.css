@@ -1,0 +1,16 @@
+/* Review rotator (js/reviews.js). The size and stacking of the box live in site.css (.reviews__list); this file is the rest. */
+
+/* Without JS only the first review shows. visibility keeps the hidden ones in the grid cell, so the box is as tall as the tallest review either way. js/reviews.js takes over with inline autoAlpha. */
+.reviews__quote:not(:first-child) { visibility: hidden; }
+
+.reviews__list:focus-visible { outline: 2px solid var(--paper); outline-offset: 6px; }
+
+.reviews__name { margin-right: 10px; }
+
+/* Five stars drawn with a mask so they take the text colour; the sr-only text inside carries "5 von 5 Sternen". Not in the Figma frame. */
+.reviews__stars {
+  position: relative; display: inline-block; vertical-align: -1px;
+  width: 60px; height: 10px; color: var(--sand-light); background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M6 .3l1.6 3.3 3.6.5-2.6 2.5.6 3.6L6 8.5 2.8 10.2l.6-3.6L.8 4.1l3.6-.5z'/%3E%3C/svg%3E") 0 0 / 12px 10px repeat-x;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M6 .3l1.6 3.3 3.6.5-2.6 2.5.6 3.6L6 8.5 2.8 10.2l.6-3.6L.8 4.1l3.6-.5z'/%3E%3C/svg%3E") 0 0 / 12px 10px repeat-x;
+}

@@ -43,10 +43,13 @@
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/site.css">
 <link rel="stylesheet" href="css/loader.css">
-<link rel="stylesheet" href="css/carousel.css">
 <link rel="stylesheet" href="css/hover-gallery.css">
 <link rel="stylesheet" href="css/orbit.css">
 <link rel="stylesheet" href="css/arc-scroll.css">
+<link rel="stylesheet" href="css/nav-hide.css">
+<link rel="stylesheet" href="css/word-reveal.css">
+<link rel="stylesheet" href="css/radial-slider.css">
+<link rel="stylesheet" href="css/reviews.css">
 </head>
 <body>
 <div class="loader" aria-hidden="true"><div class="loader__panel"></div><div class="loader__dome"></div><div class="loader__count"><span class="loader__num">0</span></div></div>
@@ -91,7 +94,7 @@
   <section class="intro" aria-label="Über den Betrieb">
     <p class="intro-text">
       <span class="intro-lead"><img class="intro-pic" src="assets/portrait-dsc00483.jpg" alt="" width="145" height="145" loading="lazy">Wir sind</span><span class="intro-gap" aria-hidden="true"></span><br>
-      ein Familienfriseur-betrieb aus dem Oberbergischen Kreis in der vierten Generation <img class="intro-pic" src="assets/portrait-dsc00512.jpg" alt="" width="145" height="145" loading="lazy"> mit Blick auf die Zukunft bereits auf dem Weg in die <span class="intro-tail"><span class="intro-gap" aria-hidden="true"></span>fünfte Generation.<img class="intro-pic" src="assets/portrait-dsc00540.jpg" alt="" width="145" height="144" loading="lazy"></span>
+      ein Familienfriseur-betrieb aus dem Oberbergischen Kreis in der vierten Generation <img class="intro-pic" src="assets/portrait-dsc00512.jpg" alt="" width="145" height="145" loading="lazy"> mit Blick auf die Zukunft bereits auf dem Weg in die <br class="intro-break"><span class="intro-tail"><span class="intro-gap" aria-hidden="true"></span>fünfte Generation.<img class="intro-pic" src="assets/portrait-dsc00540.jpg" alt="" width="145" height="144" loading="lazy"></span>
     </p>
   </section>
 
@@ -162,25 +165,69 @@
         <a class="btn btn--social" href="https://www.tiktok.com/" rel="noopener" aria-label="TikTok"><img src="assets/social-tiktok.svg" alt="" width="113" height="39"></a><!-- TODO(content): MTM TikTok URL -->
       </div>
     </div>
-    <!-- TODO(content): social posts / embeds go in these six cards -->
-    <div class="carousel" data-carousel="social" role="region" aria-roledescription="Karussell" aria-label="Beiträge auf Social Media" tabindex="0">
-      <div class="carousel__item"></div>
-      <div class="carousel__item"></div>
-      <div class="carousel__item"></div>
-      <div class="carousel__item"></div>
-      <div class="carousel__item"></div>
-      <div class="carousel__item"></div>
+    <!-- TODO(content): one portrait video per card (9:16). Drop <video muted loop playsinline preload="metadata" src="..."></video> into the data-video-slot of each card; the slot already crops it with object-fit: cover and js/radial-slider.js plays and pauses it. -->
+    <div class="radial-slider" data-radial-slider role="region" aria-roledescription="Karussell" aria-label="Beiträge auf Social Media" tabindex="0">
+      <div class="radial-slider__stage">
+        <div class="radial-slider__card"><div class="radial-slider__media" data-video-slot></div></div>
+        <div class="radial-slider__card"><div class="radial-slider__media" data-video-slot></div></div>
+        <div class="radial-slider__card"><div class="radial-slider__media" data-video-slot></div></div>
+        <div class="radial-slider__card"><div class="radial-slider__media" data-video-slot></div></div>
+        <div class="radial-slider__card"><div class="radial-slider__media" data-video-slot></div></div>
+        <div class="radial-slider__card"><div class="radial-slider__media" data-video-slot></div></div>
+      </div>
     </div>
   </section>
 
   <section class="reviews" aria-label="Google-Bewertungen">
     <div class="reviews__card">
       <img class="reviews__bg" src="assets/review-card.jpg" alt="" width="1950" height="1334" loading="lazy">
-      <figure class="reviews__quote">
-        <!-- TODO(content): Google-Reviews widget; the review text and name rotate at random. The Figma note "(google review texts playing at random)" is a designer note, not copy, and is left out. -->
-        <blockquote><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare, eros dolor interdum nulla, ut commodo diam libero vitae erat. Aenean faucibus nibh et justo cursus id rutrum lorem imperdiet. Nunc ut sem vitae risus tristique posuere.</p></blockquote>
-        <figcaption>reviewer name</figcaption>
-      </figure>
+      <!-- Real 5-star Google reviews, provisional. To remove one, delete its whole <figure>; js/reviews.js rotates whatever is here at random. The first one shows without JS. The Figma note "(google review texts playing at random)" is a designer note, not copy, and is left out. -->
+      <div class="reviews__list">
+        <figure class="reviews__quote">
+          <blockquote><p>Meiner Meinung nach ist der Chef Abdul ein Künstler. Auch wenn ich mit meinem Neffen dorthin gehe wird sich wunderbar um die Kundschaft gekümmert und ich bin eigentlich nie unzufrieden wieder heraus gegangen.</p></blockquote>
+          <figcaption><span class="reviews__name">Stefan Teichrib</span><span class="reviews__stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
+        </figure>
+        <figure class="reviews__quote">
+          <blockquote><p>Es gibt immer einen tadellosen Service, eine freundliche Atmosphäre und vor allem vorhersehbar hervorragende Ergebnisse. Sie verlassen den Friseursalon nicht nur mit einem perfekten Haarschnitt, sondern auch mit bester Laune. Ich wünsche Ihrem Familienunternehmen Wohlstand und noch mehr dankbare Kunden!</p></blockquote>
+          <figcaption><span class="reviews__name">Nikolaj Penner</span><span class="reviews__stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
+        </figure>
+        <figure class="reviews__quote">
+          <blockquote><p>Ich war heute erst zum 2. Mal dort und bin mal wieder vollkommen zufrieden. Auch diesmal wieder ohne Voranmeldung keine Wartezeit. Im Salon herrscht eine entspannte Atmosphäre und das gesamte Team ist ausgesprochen freundlich und arbeitet professionell. Ich kann "mtm" nur empfehlen.</p></blockquote>
+          <figcaption><span class="reviews__name">Günter Heck</span><span class="reviews__stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
+        </figure>
+        <figure class="reviews__quote">
+          <blockquote><p>Es herrscht eine super nette Atmosphäre, auf meine speziellen Wünsche wurde geduldig eingegangen und ich bin happy mit meinem Haarschnitt! Herzlichen Dank!</p></blockquote>
+          <figcaption><span class="reviews__name">Freudensprung- Jetzt</span><span class="reviews__stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
+        </figure>
+        <figure class="reviews__quote">
+          <blockquote><p>Heute das erstemal spontan mit Junior dort gewesen. Super nettes Team, toller Haarschnitt und sehr Kinderfreundlich .Wir kommen gerne wieder.</p></blockquote>
+          <figcaption><span class="reviews__name">Martina Giesen</span><span class="reviews__stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
+        </figure>
+        <figure class="reviews__quote">
+          <blockquote><p>Bester Friseur bei dem ich jemals war, der Chef lässt dich erst gehen wenn dein Kopf perfekt aussieht und du zufrieden bist👌</p></blockquote>
+          <figcaption><span class="reviews__name">Lars Rütjes</span><span class="reviews__stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
+        </figure>
+        <figure class="reviews__quote">
+          <blockquote><p>Ich bin sehr zufrieden mit dem Friseur. Ich war heute das erste mal dort und mir wurde direkt etwas zu trinken angeboten und auf meine Wünsche, was die Frisur betrifft, wurde komplett eingegangen. Ich werde definitiv wieder dorthin gehen.</p></blockquote>
+          <figcaption><span class="reviews__name">Stefan Teichrib</span><span class="reviews__stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
+        </figure>
+        <figure class="reviews__quote">
+          <blockquote><p>Seit Jahren ein wunderschöner Laden und immer gut gelaunte Mitarbeiter. Ich liebe euren Friseurladen.❤️</p></blockquote>
+          <figcaption><span class="reviews__name">Anonym</span><span class="reviews__stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
+        </figure>
+        <figure class="reviews__quote">
+          <blockquote><p>Schneiden sehr gut wenig Wartezeiten und qualität top außerdem sind sie sehr höflich und man fühlt sich willkommen</p></blockquote>
+          <figcaption><span class="reviews__name">Amy Groffner</span><span class="reviews__stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
+        </figure>
+        <figure class="reviews__quote">
+          <blockquote><p>Ich gehe schon seit 3 Jahren bei Mohamad Haarschneiden und bin sehr zufrieden wirklich top Preise und top Qualität 👍🏻</p></blockquote>
+          <figcaption><span class="reviews__name">viel Mühe</span><span class="reviews__stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
+        </figure>
+        <figure class="reviews__quote">
+          <blockquote><p>Echt ein sehr guter Frisör der beste in der ganzen Gegend, er versteht sein Handwerk, war heute Haare schneiden alles sehr gut drauf sehr herzlich bedient worden er ist auf jeden Fall zu empfehlen der Besuch lohnt sich 100%</p></blockquote>
+          <figcaption><span class="reviews__name">Michael Beck</span><span class="reviews__stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
+        </figure>
+      </div>
     </div>
   </section>
 
@@ -192,7 +239,7 @@
     <div class="stack">
       <article class="stack__layer news-card"><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare, eros dolor interdum nulla, ut commodo diam libero vitae erat. Aenean faucibus nibh et justo cursus id rutrum lorem imperdiet. Nunc ut sem vitae risus tristique posuere.</p></article><!-- TODO(content): announcement -->
       <article class="stack__layer news-card"><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare, eros dolor interdum nulla, ut commodo diam libero vitae erat. Aenean faucibus nibh et justo cursus id rutrum lorem imperdiet. Nunc ut sem vitae risus tristique posuere.</p></article><!-- TODO(content): announcement -->
-      <div class="stack__layer finale"><img src="assets/video-poster.jpg" alt="Das Team von MTM Coiffure im Salon" width="976" height="651" loading="lazy"></div><!-- TODO(content): Figma "Social Media Image" (same photo as the old news video placeholder) -->
+      <div class="stack__layer finale"><img src="assets/team-2400.jpg" srcset="assets/team-1200.jpg 1200w, assets/team-2400.jpg 2400w" sizes="(min-width: 768px) 120vw, 100vw" alt="Das Team von MTM Coiffure im Salon" width="2400" height="1600" loading="lazy"></div><!-- Figma 222:52 "DSC00651 4" -->
     </div>
   </section>
 </main>
@@ -239,8 +286,11 @@
 <script src="js/loader.js"></script>
 <script src="js/orbit.js"></script>
 <script src="js/stack.js"></script>
-<script src="js/carousel.js"></script>
 <script src="js/hover-gallery.js"></script>
 <script src="js/arc-scroll.js"></script>
+<script src="js/nav-hide.js"></script>
+<script src="js/word-reveal.js"></script>
+<script src="js/radial-slider.js"></script>
+<script src="js/reviews.js"></script>
 </body>
 </html>

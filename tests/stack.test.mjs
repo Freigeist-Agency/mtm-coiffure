@@ -24,7 +24,7 @@ const layerInfo = page => page.evaluate(() => {
     };
   });
   const footerEl = document.querySelector('.site-footer'), footer = footerEl.getBoundingClientRect();
-  return { footerOverlap: -parseFloat(getComputedStyle(footerEl).marginTop) || 0 /* Figma: the footer overlaps the image's bottom */, layers, stack: { top: sr.top, bottom: sr.bottom, h: sr.height, docTop: sr.top + scrollY }, footerTop: footer.top, y: scrollY, ih: innerHeight, st: window.ScrollTrigger ? window.ScrollTrigger.getAll().filter(t => t.trigger !== document.querySelector('.services') && t.vars.id !== 'stack-locations' && !/^arc-/.test(t.vars.id || '')).length : -1   /* the services orbit owns one more, the Standorte stack another (tests/location-stack.test.mjs), js/arc-scroll.js three (ids arc-*) */ };
+  return { footerOverlap: -parseFloat(getComputedStyle(footerEl).marginTop) || 0 /* Figma: the footer overlaps the image's bottom */, layers, stack: { top: sr.top, bottom: sr.bottom, h: sr.height, docTop: sr.top + scrollY }, footerTop: footer.top, y: scrollY, ih: innerHeight, st: window.ScrollTrigger ? window.ScrollTrigger.getAll().filter(t => t.trigger !== document.querySelector('.services') && t.vars.id !== 'stack-locations' && !/^(arc|word-reveal)/.test(t.vars.id || '')).length : -1   /* the services orbit owns one more, the Standorte stack another (tests/location-stack.test.mjs), js/arc-scroll.js up to four (ids arc-*), js/word-reveal.js one per word (ids word-reveal-*) */ };
 });
 
 // scroll so that layer `idx` sits at its sticky top (it is still unstuck at the start of the search)
@@ -113,13 +113,21 @@ const stacked = async (width, height) => {
     await page.evaluate(d => window.scrollBy({ top: -d, behavior: 'instant' }), back);
     await settle(page);
     await page.screenshot({ path: path.join(OUT, `image-half-covers-card2-${width}.png`) });
-    // the curve is what wipes the card, not the image's flat top edge: just above that edge, on the card, the ellipse is already in front
-    const wipe = await page.evaluate(() => {
+    // no white ellipse on the image any more: its flat top edge is what covers the card. Just above that edge the card is still
+    // on top of everything else (nothing of the image's), just below it the image is; and the image has no ::before shape.
+    const edge = await page.evaluate(() => {
       const f = document.querySelector('.finale').getBoundingClientRect(), c = document.querySelectorAll('.news-card')[1].getBoundingClientRect();
-      const x = (c.left + c.right) / 2, y = f.top - 12, el = document.elementFromPoint(x, y);
-      return { inCard: y > c.top && y < c.bottom, finale: !!el && !!el.closest('.finale'), hit: el && (el.className || el.tagName) };
+      const x = (c.left + c.right) / 2;
+      const above = document.elementFromPoint(x, f.top - 12), below = document.elementFromPoint(x, f.top + 12);
+      const before = getComputedStyle(document.querySelector('.finale'), '::before').content;
+      return {
+        yAbove: f.top - 12, cardTop: c.top, cardBottom: c.bottom,
+        aboveCard: !!above && !!above.closest('.news-card'), aboveFinale: !!above && !!above.closest('.finale'),
+        belowFinale: !!below && !!below.closest('.finale'), before,
+      };
     });
-    assert(wipe.inCard && wipe.finale, `${tag}: the ellipse wipes the card above the image's top edge (${JSON.stringify(wipe)})`);
+    assert(edge.yAbove > edge.cardTop && edge.yAbove < edge.cardBottom && edge.aboveCard && !edge.aboveFinale && edge.belowFinale, `${tag}: the image's flat top edge covers the card, with nothing of the image above it (${JSON.stringify(edge)})`);
+    assert(edge.before === 'none', `${tag}: the image layer has no ::before ellipse (content ${edge.before})`);
     await page.evaluate(d => window.scrollBy({ top: d, behavior: 'instant' }), back);
     await settle(page);
 
