@@ -24,7 +24,7 @@ const layerInfo = page => page.evaluate(() => {
     };
   });
   const footerEl = document.querySelector('.site-footer'), footer = footerEl.getBoundingClientRect();
-  return { footerOverlap: -parseFloat(getComputedStyle(footerEl).marginTop) || 0 /* Figma: the footer overlaps the image's bottom */, layers, stack: { top: sr.top, bottom: sr.bottom, h: sr.height, docTop: sr.top + scrollY }, footerTop: footer.top, y: scrollY, ih: innerHeight, st: window.ScrollTrigger ? window.ScrollTrigger.getAll().filter(t => t.trigger !== document.querySelector('.services') && t.vars.id !== 'stack-locations' && !/^(arc|word-reveal)/.test(t.vars.id || '')).length : -1   /* the services orbit owns one more, the Standorte stack another (tests/location-stack.test.mjs), js/arc-scroll.js up to four (ids arc-*), js/word-reveal.js one per word (ids word-reveal-*) */ };
+  return { footerOverlap: -parseFloat(getComputedStyle(footerEl).marginTop) || 0 /* Figma: the footer overlaps the image's bottom */, layers, pinTail: document.documentElement.classList.contains('photo-pin') ? parseFloat(getComputedStyle(stack, '::after').height) : 0 /* js/photo-pin.js: the footer's height + 70vh of pinned scroll, not travel between layers */, stack: { top: sr.top, bottom: sr.bottom, h: sr.height, docTop: sr.top + scrollY }, footerTop: footer.top, y: scrollY, ih: innerHeight, st: window.ScrollTrigger ? window.ScrollTrigger.getAll().filter(t => t.trigger !== document.querySelector('.services') && t.vars.id !== 'stack-locations' && !/^(arc|word-reveal|pan$)/.test(t.vars.id || '')).length : -1   /* the services orbit owns one more, the Standorte stack another (tests/location-stack.test.mjs), js/arc-scroll.js up to four (ids arc-*), js/word-reveal.js one per word (ids word-reveal-*) */ };
 });
 
 // scroll so that layer `idx` sits at its sticky top (it is still unstuck at the start of the search)
@@ -53,9 +53,11 @@ const stacked = async (width, height) => {
     const navH = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--nav-h')));
     assert(s0.layers.length === 3, `${tag}: three stack layers`);
     assert(s0.layers.every(l => l.position === 'sticky'), `${tag}: every layer is position:sticky (${s0.layers.map(l => l.position)})`);
-    const exp = i => navH + 0.04 * height + i * 0.025 * height;
+    const imgH = s0.layers[2].rect.bottom - s0.layers[2].rect.top;
+    // from 768px the photo pins lower so its whole box fits in view (js/photo-pin.js, css/photo-pin.css; tests/photo-pin.test.mjs)
+    const exp = i => { const v = navH + 0.04 * height + i * 0.025 * height; return i === 2 && width >= 768 ? Math.max(navH, Math.min(v, height - imgH)) : v; };
     assert(s0.layers.every((l, i) => near(l.top, exp(i), 1)), `${tag}: sticky tops are nav + 4vh + i*2.5vh (${s0.layers.map(l => l.top.toFixed(1))} vs ${[0, 1, 2].map(i => exp(i).toFixed(1))})`);
-    const travel = s0.stack.h - (s0.layers[2].rect.bottom - s0.layers[2].rect.top);
+    const travel = s0.stack.h - (s0.layers[2].rect.bottom - s0.layers[2].rect.top) - s0.pinTail;
     assert(travel <= 2.5 * height, `${tag}: sticky travel (stack ${s0.stack.h.toFixed(0)} - image) ${travel.toFixed(0)} <= 2.5*innerHeight (${2.5 * height})`);
     assert(travel >= 1.5 * height, `${tag}: sticky travel ${travel.toFixed(0)} >= 1.5*innerHeight (about a viewport per layer)`);
     assert(s0.st === 2, `${tag}: exactly 2 ScrollTriggers (one per covered layer) (${s0.st})`);
@@ -197,7 +199,7 @@ for (const [w, h] of [[1440, 789], [1366, 768], [1440, 600], [1920, 1080]]) {
     await page.evaluate(() => window.mtmReady);
     await settle(page);
     const s = await layerInfo(page);
-    const travel = s.stack.h - (s.layers[2].rect.bottom - s.layers[2].rect.top);
+    const travel = s.stack.h - (s.layers[2].rect.bottom - s.layers[2].rect.top) - s.pinTail;
     assert(travel <= 2.5 * h && travel >= 1.5 * h, `${w}x${h}: sticky travel ${travel.toFixed(0)} within [1.5, 2.5] x innerHeight (${1.5 * h}..${2.5 * h})`);
     if (w === 1920) { const cw = s.layers[0].rect.right - s.layers[0].rect.left; assert(cw <= 625, `${w}x${h}: card width capped (${cw.toFixed(1)})`); }
   } finally { await close(); }
