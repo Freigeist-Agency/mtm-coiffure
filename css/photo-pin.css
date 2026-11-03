@@ -1,0 +1,15 @@
+/* The team photo stays pinned with its whole box in view while the footer slides up over it (js/photo-pin.js adds html.photo-pin and
+   pans the image inside its box). 768px and up, motion allowed; below that, and under prefers-reduced-motion, none of this applies and the
+   photo is the stack's last layer as before. --fh is the footer's measured height and --box-h the photo box's (set by the script before every
+   refresh). The footer is pulled up by exactly its own height and the stack gets a tail of --fh plus --pre, so the stack ends where the page
+   ends: its end cannot push the photo up before the footer has covered it. --pre is the run of scroll the photo stays pinned before the
+   footer arrives (the pan starts inside it). The pin line is the lower of the stack's own and "the whole box fits under the header". */
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  html.photo-pin { --pre: 70vh; }
+  html.photo-pin .finale {
+    top: max(var(--nav-h), min(calc(var(--nav-h) + 4vh + 5vh), calc(100svh - var(--box-h, 57.9vw))));
+  }
+  html.photo-pin .finale img { will-change: transform; }
+  html.photo-pin .stack::after { height: calc(var(--fh, 0px) + var(--pre)); }
+  html.photo-pin[data-home] .site-footer { margin-top: calc(-1 * var(--fh, 0px)); }
+}

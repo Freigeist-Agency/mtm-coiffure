@@ -70,9 +70,9 @@ const GEO = ([name, p]) => {
   } else if (name === 'curve') {
     edge = q('svg.curve').getBoundingClientRect().bottom; y2 = y + edge - H * (1 - p); row = Math.floor(edge) - 3;   // 3px up: the section below paints its own white over the last 1.5px
   } else {
-    const ft = q('html[data-home] .footer-top'), E = -(parseFloat(getComputedStyle(ft.parentElement).marginTop) || 0);
+    const ft = q('html[data-home] .footer-top'), ds = getComputedStyle(ft, '::before'), E = parseFloat(ds.top) + parseFloat(ds.height);   // the dome's base, 17.2222vw into the footer (it was the footer's overlap on the photo before the photo was pinned)
     const corner = ft.getBoundingClientRect().bottom, cornerEnd = corner - (max - y);
-    edge = ft.getBoundingClientRect().top + E - 1;                             // the photo's bottom edge (the footer's white starts 1px early): the only edge this dome has
+    edge = ft.getBoundingClientRect().top + E - 1;                             // the dome's base (the footer's white starts 1px early): the only edge this dome has
     y2 = y + corner - (H - p * (H - cornerEnd)); row = Math.floor(edge) - 1;
   }
   return { y: Math.max(0, Math.min(max, y2)), edge, row, H, scrollY: y };
@@ -243,8 +243,8 @@ async function finaleCurve(w, h) {
 }
 
 // ---- 4. footer logo and button inside the white ---------------------------------------------------------------------------------------
-async function footerRide(w, h, mobile) {
-  const tag = `@${w} footer`;
+async function footerRide(w, h, mobile, noOverlap) {
+  const tag = `@${w}x${h} footer`;
   const { page, errors, close } = await openPage({ width: w, height: h, ...(mobile ? { isMobile: true, hasTouch: true } : {}) });
   await page.addStyleTag({ content: PROBE_CSS + '.footer-logo,.footer-cta{opacity:0!important}' });   // invisible but still hit-testable: the pixels under them are what we look at
   await page.mouse.move(w / 2, h / 2);
@@ -283,7 +283,9 @@ async function footerRide(w, h, mobile) {
   assert(end >= max - 1 && steps >= 12, `${tag}: swept the scroll through the footer's entry to the end of the page (${steps} steps, scrollY ${end} of ${max})`);
   assert(logoSeen >= 8 && ctaSeen >= 8, `${tag}: logo and button were on screen for ${logoSeen} / ${ctaSeen} steps`);
   if (w >= 768) {
-    assert(restOver >= 3, `${tag}: precondition: at ${restOver} steps the logo's resting rect (no motion) would lie over the photo, so the sweep reaches the bug`);
+    // noOverlap: the pinned photo (js/photo-pin.js) ends 38px into a footer that is only 475px tall in a 1024px viewport, so the logo never reaches it there; the shorter 768 run below does
+    if (noOverlap) console.log(`INFO ${tag}: the logo's resting rect lies over the photo at ${restOver} steps: this viewport never brings the footer up far enough (the checks below pass vacuously here)`);
+    else assert(restOver >= 3, `${tag}: precondition: at ${restOver} steps the logo's resting rect (no motion) would lie over the photo, so the sweep reaches the bug`);
     assert(ks.some(Boolean) && ks.some(k => !k), `${tag}: the script moves the logo during the sweep and leaves it alone at rest`);
     assert(logoCovered === 0, `${tag}: the logo is never cut off by the footer body painting over it (${logoCovered} of ${steps} steps where the element at its lower edge is not the logo${worstCover ? ': ' + worstCover : ''})`);
     assert(logoOver === 0, `${tag}: no pixel of the logo's rect lies over the photo at any step (${logoOver} of ${steps} steps over${worst && logoOver ? '; ' + worst : ''})`);
@@ -299,7 +301,7 @@ async function footerRide(w, h, mobile) {
 for (const [w, h, m] of [[1440, 900, false], [768, 1024, false], [375, 812, true], [2560, 1440, false]]) await seams(w, h, m);
 for (const [w, h, m] of [[1440, 900, false], [768, 1024, false], [375, 812, true], [2560, 1440, false]]) await heroAtLoad(w, h, m);
 for (const [w, h] of [[1440, 900], [768, 1024], [2560, 1440]]) await finaleCurve(w, h);
-for (const [w, h, m] of [[1440, 900, false], [768, 1024, false], [2560, 1440, false], [375, 812, true]]) await footerRide(w, h, m);
+for (const [w, h, m, no] of [[1440, 900, false], [768, 1024, false, true], [768, 700, false], [2560, 1440, false], [375, 812, true]]) await footerRide(w, h, m, no);
 {
   const { page, close } = await openPage({ width: 375, height: 812, isMobile: true, hasTouch: true });
   assert(await page.evaluate(() => { const cs = getComputedStyle(document.querySelector('.finale')); return (cs.maskImage || 'none') === 'none' && (cs.webkitMaskImage || 'none') === 'none'; }), '@375: no photo ellipse below 768px (the mobile Figma frame has none)');
