@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 import { openPage, assert, report } from './harness.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -90,11 +91,23 @@ for (const mode of ['plain', 'js']) {
       const isPhone = w === 375;     // phones wrap "fünfte Generation." normally (white-space: normal), so it may take two lines there
       assert(isPhone || Math.abs(ws[iF].top - ws[iF + 1].top) < 3, `${tag}: "fünfte Generation." share one line${isPhone ? ' (not required on a phone)' : ''}`);
       assert(ws[iF - 1].t === 'die', `${tag}: the line before it ends with "die"`);
-      // the last line (… Generation. + portrait) is centred as one piece: no invisible spacer pushing it sideways
-      const last = r.items.slice(r.items.findIndex(i => i === ws[iF + (isPhone && Math.abs(ws[iF].top - ws[iF + 1].top) > 3 ? 1 : 0)]));
-      const l0 = Math.min(...last.map(i => i.l)), r1 = Math.max(...last.map(i => i.r));
-      assert(last[last.length - 1].t === '<img>' && last.length >= 2, `${tag}: last line ends with the portrait`);
-      assert(Math.abs((l0 + r1) / 2 - r.w / 2) < 3, `${tag}: last line is centred (centre ${((l0 + r1) / 2).toFixed(1)} vs ${(r.w / 2).toFixed(1)})`);
+      // last line: the TEXT "fünfte Generation." is centred (the invisible twin spacer balances the hanging portrait); phones hide the spacer, so there the line incl. portrait is centred
+      const iG = isPhone && Math.abs(ws[iF].top - ws[iF + 1].top) > 3 ? iF + 1 : iF;
+      const lastItems = r.items.slice(r.items.findIndex(i => i === ws[iG]));
+      assert(lastItems[lastItems.length - 1].t === '<img>' && lastItems.length >= 2, `${tag}: last line ends with the portrait`);
+      if (!isPhone) {
+        const t0 = ws[iF].l, t1 = ws[iF + 1].r;
+        assert(Math.abs((t0 + t1) / 2 - r.w / 2) < 3, `${tag}: "fünfte Generation." (text only) is centred (centre ${((t0 + t1) / 2).toFixed(1)} vs ${(r.w / 2).toFixed(1)})`);
+        assert(lastItems[lastItems.length - 1].l > t1, `${tag}: the portrait hangs outside the centred text, on its right`);
+      } else {
+        const l0 = Math.min(...lastItems.map(i => i.l)), r1 = Math.max(...lastItems.map(i => i.r));
+        assert(Math.abs((l0 + r1) / 2 - r.w / 2) < 3, `${tag}: last line (no spacer on a phone) is centred as a whole (centre ${((l0 + r1) / 2).toFixed(1)} vs ${(r.w / 2).toFixed(1)})`);
+      }
+      // no hole before the break: "die" is one normal space away from the word before it
+      const sameLine = Math.abs(ws[iF - 1].top - ws[iF - 2].top) < 3, gapDie = ws[iF - 1].l - ws[iF - 2].r;
+      assert(sameLine ? Math.abs(gapDie - r.spaceW) < 1.5 : ws[iF - 1].l < r.w / 2, sameLine
+        ? `${tag}: gap between "${ws[iF - 2].t}" and "die" is a normal space (${gapDie.toFixed(1)}px vs ${r.spaceW.toFixed(1)}px)`
+        : `${tag}: "die" starts its own line here, so no gap can open next to it`);
       // "die" line: no hole inside it, and it is centred too
       const dieLine = ws.filter(i => Math.abs(i.top - ws[iF - 1].top) < 10);
       const dl = Math.min(...dieLine.map(i => i.l)), dr = Math.max(...dieLine.map(i => i.r));
@@ -110,6 +123,27 @@ for (const mode of ['plain', 'js']) {
       if (mode === 'js') await page.locator('.intro').screenshot({ path: path.join(OUT, `${w}.png`) });
     } finally { await close(); }
   }
+}
+
+// ---- 1b. line 6 against Figma 73:60 at 1440: ink box of "fünfte Generation. [portrait]" is x 366-1223 (measured on the Figma render, dark pixels < 140) ----
+{
+  const { page, close } = await openPage({ width: 1440, height: 1000, js: false });
+  try {
+    await page.evaluate(() => document.querySelectorAll('header').forEach(h => { h.style.visibility = 'hidden'; }));
+    await page.locator('.intro').scrollIntoViewIfNeeded(); await sleep(400);
+    const r = await read(page);
+    const ws = r.items.filter(i => i.t !== '<img>'), iF = ws.findIndex(i => i.t === 'fünfte');
+    const box = await page.evaluate(() => document.querySelector('.intro').getBoundingClientRect());
+    const png = path.join(OUT, 'line6-1440.png');
+    await page.locator('.intro').screenshot({ path: png });
+    const textTop = await page.evaluate(() => document.querySelector('.intro-text').getBoundingClientRect().top - document.querySelector('.intro').getBoundingClientRect().top);
+    const top = Math.round(textTop + ws[iF].top - 5);
+    const py = `import sys\nfrom PIL import Image\nim=Image.open(sys.argv[1]).convert('L')\nW,H=im.size\ng=im.crop((0,int(sys.argv[2]),W,H)).point(lambda v:255 if v<140 else 0)\nb=g.getbbox()\nprint(b[0],b[2])`;
+    const out = spawnSync('python3', ['-I', '-c', py, png, String(top)], { encoding: 'utf8' });
+    const [x0, x1] = out.stdout.trim().split(' ').map(Number);
+    assert(box.width === 1440 && Number.isFinite(x0), `1440: precondition, screenshot ${Math.round(box.width)}px wide, ink box measured (${out.stdout.trim()}) ${out.stderr}`);
+    assert(Math.abs(x0 - 366) <= 4 && Math.abs(x1 - 1223) <= 4, `1440: line 6 ink box x ${x0}-${x1} matches Figma 366-1223 within 4px (${x0 - 366}, ${x1 - 1223})`);
+  } finally { await close(); }
 }
 
 // ---- 2. the split does not change wrapping (and resizing afterwards still wraps like a fresh load) ------------------------

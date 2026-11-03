@@ -113,15 +113,17 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 /* ---------- Introduction (Figma 73:60, 1440x915 at y=2181): 85px/150px weight 400, centred, three 145px portraits in the text ---------- */
 .intro { padding: .5208vw var(--pad); margin-bottom: 13.1944vw; }   /* 7.5px above and below the text; the Services start 190px after the section's end */
 .intro-text { font-size: var(--fs-display); font-weight: 400; line-height: 1.7647; text-align: center; }
-/* Portraits are inline, so they rewrap with the words. In Figma the first one hangs outside the centred text (the words stay on the
-   centre line), so it gets an invisible twin of the same width (.intro-gap) after "Wir sind". "fünfte Generation." always starts a
-   new line (the <br class="intro-break"> in the markup), as in Figma; the last portrait sits in that line with a normal gap. */
+/* Portraits are inline, so they rewrap with the words. In Figma the first and the last one hang outside the centred text (the words
+   stay on the centre line), so each of those two gets an invisible twin of the same width (.intro-gap) on the other side: after
+   "Wir sind" and at the start of the last line. "fünfte Generation." always starts a new line (the <br class="intro-break"> in the
+   markup), so the tail spacer is the first thing on its line and can never leave a hole between two words. Phones hide the spacers. */
 .intro-pic { display: inline-block; width: 1.7059em; height: 1.7059em; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-block: -.4em; position: relative; top: -.08em; } /* negative margins: the 145px photo must not grow the 150px line */
 .intro-text > .intro-pic { margin-inline: .25em; }
 .intro-lead, .intro-tail { white-space: nowrap; }
 .intro-lead .intro-pic { margin-right: .35em; }
-.intro-tail .intro-pic { margin-left: .28em; }
+.intro-tail .intro-pic { margin-left: .26em; }
 .intro-gap { display: inline-block; width: 2.05em; }
+.intro-tail .intro-gap { width: 2em; }   /* last line: the text ink starts at x=366 and the portrait ends at x=1242 at 1440 (Figma 73:60) */
 
 /* ---------- Services (Figma 73:3: 788x788 orbit centred in a 1440x1000 section; the 8 photos keep their Figma tilt) ---------- */
 .services {
