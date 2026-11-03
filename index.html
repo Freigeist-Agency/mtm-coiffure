@@ -43,7 +43,6 @@
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/site.css">
 <link rel="stylesheet" href="css/loader.css">
-<link rel="stylesheet" href="css/carousel.css">
 <link rel="stylesheet" href="css/hover-gallery.css">
 <link rel="stylesheet" href="css/orbit.css">
 <link rel="stylesheet" href="css/arc-scroll.css">
@@ -166,14 +165,16 @@
         <a class="btn btn--social" href="https://www.tiktok.com/" rel="noopener" aria-label="TikTok"><img src="assets/social-tiktok.svg" alt="" width="113" height="39"></a><!-- TODO(content): MTM TikTok URL -->
       </div>
     </div>
-    <!-- TODO(content): social posts / embeds go in these six cards -->
-    <div class="carousel" data-carousel="social" role="region" aria-roledescription="Karussell" aria-label="Beiträge auf Social Media" tabindex="0">
-      <div class="carousel__item"></div>
-      <div class="carousel__item"></div>
-      <div class="carousel__item"></div>
-      <div class="carousel__item"></div>
-      <div class="carousel__item"></div>
-      <div class="carousel__item"></div>
+    <!-- TODO(content): one portrait video per card (9:16). Drop <video muted loop playsinline preload="metadata" src="..."></video> into the data-video-slot of each card; the slot already crops it with object-fit: cover and js/radial-slider.js plays and pauses it. -->
+    <div class="radial-slider" data-radial-slider role="region" aria-roledescription="Karussell" aria-label="Beiträge auf Social Media" tabindex="0">
+      <div class="radial-slider__stage">
+        <div class="radial-slider__card"><div class="radial-slider__media" data-video-slot></div></div>
+        <div class="radial-slider__card"><div class="radial-slider__media" data-video-slot></div></div>
+        <div class="radial-slider__card"><div class="radial-slider__media" data-video-slot></div></div>
+        <div class="radial-slider__card"><div class="radial-slider__media" data-video-slot></div></div>
+        <div class="radial-slider__card"><div class="radial-slider__media" data-video-slot></div></div>
+        <div class="radial-slider__card"><div class="radial-slider__media" data-video-slot></div></div>
+      </div>
     </div>
   </section>
 
@@ -243,7 +244,6 @@
 <script src="js/loader.js"></script>
 <script src="js/orbit.js"></script>
 <script src="js/stack.js"></script>
-<script src="js/carousel.js"></script>
 <script src="js/hover-gallery.js"></script>
 <script src="js/arc-scroll.js"></script>
 <script src="js/nav-hide.js"></script>
