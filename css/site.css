@@ -79,8 +79,8 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   font-size: var(--fs-body); line-height: 1.25;
 }
 .hero-title { display: contents; font-size: inherit; }
-.hero-title small { grid-column: 2; grid-row: 1; display: block; font-size: inherit; }
-.hero-title span { grid-column: 2; grid-row: 2; display: block; font-size: inherit; line-height: inherit; text-transform: uppercase; }
+.hero-title small { grid-column: 2; grid-row: 1; display: block; font-size: inherit; text-align: center; }
+.hero-title span { grid-column: 2; grid-row: 2; display: block; font-size: inherit; line-height: inherit; text-transform: uppercase; text-align: center; } /* the column is as wide as the subtitle, so the name needs its own centring */
 .hero-hello { grid-column: 1; grid-row: 2; }
 .hero-arabic { grid-column: 3; grid-row: 2; justify-self: end; width: 5.5556vw; height: 1.6667vw; mix-blend-mode: multiply; } /* 80x24; the SVG ships with an off-white ground */
 
@@ -390,7 +390,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   .hero-arabic { order: 1; width: 160px; height: auto; }
   .hero-title { display: block; order: 2; }
   .hero-title small { font-size: var(--fs-body); }
-  .hero-title span { font-size: var(--fs-title); line-height: 1; text-transform: none; }
+  .hero-title span { font-size: var(--fs-display); line-height: 1.15; text-transform: none; } /* Figma 76:223: 52px at 450 wide; 1.15 puts the subtitle ink on Figma's rows (1.0 leaves it 8px low) */
   .hero-hello { order: 3; }
 
   /* the DOM order changed (Wir sind, gallery, Introduction come before the Services): plain stacked flow on a phone */
