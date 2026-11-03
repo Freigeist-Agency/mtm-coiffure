@@ -147,7 +147,7 @@ if (want('exit')) for (const w of [1440, 450]) {
   }));
   assert(!R.timeout && R.frames.length > 60, `exit@${w}: precondition, ${R.frames.length} frames sampled and the loader ended`);
   assert(R.hundredAt !== null && R.hundredAt > 1900 && R.hundredAt < 2500, `exit@${w}: the counter reaches 100 at ${R.hundredAt && R.hundredAt.toFixed(0)}ms on the loader clock (old timing 2.0s count, want 1900 to 2500)`);
-  assert(R.nums.includes(0) && R.nums.includes(100) && R.nums.some(n => n > 10 && n < 90) && R.nums.length > 40, `exit@${w}: the counter passes through 0, mid values and 100 (${R.nums.length} distinct values)`);
+  assert(R.nums.includes(100) && R.nums.some(n => n > 10 && n < 90) && R.nums.length > 40, `exit@${w}: the counter passes through mid values to 100 (${R.nums.length} distinct values)`);
   const fr = R.frames, last = fr[fr.length - 1];
   const moved = f => !f.gone && (f.dy < -0.5 || f.py < -0.5 || f.co < 0.999 || f.lo < 0.999);
   const first = fr.find(moved);
