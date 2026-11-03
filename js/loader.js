@@ -32,6 +32,8 @@
   var FADE_MS = 300;    // hard stop while still running: fade the cover out instead of cutting to the page
   var KEY = 'mtm-transition';
   var COVER_S = 0.6;    // the cover coming down: the reveal's dome time, backwards
+  var EXIT_S = 0.7;     // the home loader's exit, from the first moved frame to the panel gone
+  var EXIT_EASE = 'power3.inOut';
   var SAFETY_MS = 3000; // navigation blocked or slow: uncover so the page is never left black
 
   function applyHash() {
@@ -80,6 +82,7 @@
     var count = loader.querySelector('.loader__count');   // absent on the subpages, hidden by CSS on a transition
     var dome = loader.querySelector('.loader__dome');
     var panel = loader.querySelector('.loader__panel');
+    var logo = loader.querySelector('.loader__logo');
     var ROLL = 0.18;
     var nums = [loader.querySelector('.loader__num')];
     var shown = 0, lastAt = 0;
@@ -153,15 +156,16 @@
       onComplete: function () { show(100); }
     });
     run.addLabel('hold', '+=0.15');
-    // the reveal waits for the webfont (capped), then plays: dome up, black panel up
+    // the reveal waits for the webfont (capped), then plays
     run.call(function () {
       run.pause();
       var go = function () { if (!done && !fading) run.play(); };
       fontsReady(850).then(go, go);   // a rejected fonts.ready must not strand the page on 100
     }, null, 'hold');
-    run.to(count, { yPercent: -40, opacity: 0, duration: 0.35 }, 'hold')
-       .to(dome, { yPercent: -100, duration: 0.6 }, 'hold')
-       .to(panel, { yPercent: -100, duration: 0.9 }, 'hold+=0.3')
+    // the exit takes EXIT_S in all, one ease: logo and number fade, the dome shrinks up, the panel lifts with its curved edge
+    run.to([count, logo].filter(Boolean), { opacity: 0, duration: 0.3, ease: EXIT_EASE }, 'hold')
+       .to(dome, { yPercent: -100, duration: EXIT_S, ease: EXIT_EASE }, 'hold')
+       .to(panel, { yPercent: -100, duration: EXIT_S - 0.03, ease: EXIT_EASE }, 'hold+=0.03')   // Figma FR2's mid-exit pose puts the panel 30ms behind the dome
        .call(finish);
   } catch (e) { finish(); }
   // ---- leaving: the cover comes down, then the browser navigates -------------------------------------------------
