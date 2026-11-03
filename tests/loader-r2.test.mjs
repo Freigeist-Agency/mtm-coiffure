@@ -132,16 +132,19 @@ if (want('exit')) for (const w of [1440, 450]) {
     const dome = document.querySelector('.loader__dome'), panel = document.querySelector('.loader__panel');
     const count = document.querySelector('.loader__count'), logo = document.querySelector('.loader__logo');
     const domeH = dome.offsetHeight, panelH = panel.offsetHeight;
+    const before = getComputedStyle(dome, '::before');
+    const white = { h: parseFloat(before.height), ry: parseFloat(before.borderBottomLeftRadius.split(' ')[1]), w: innerWidth };   // the white part of the dome
     (function tick() {
       const t = performance.now() - start;
-      if (!document.querySelector('.loader')) { frames.push({ t, gone: true }); return res({ frames, hundredAt, domeH, panelH, nums: [...nums] }); }
+      if (!document.querySelector('.loader')) { frames.push({ t, gone: true }); return res({ frames, hundredAt, domeH, panelH, white, nums: [...nums] }); }
       const n = [...document.querySelectorAll('.loader__num')].pop();
       if (n) { nums.add(+n.textContent); if (n.textContent === '100' && hundredAt === null) hundredAt = t; }
       frames.push({
         t, dy: new DOMMatrix(getComputedStyle(dome).transform).m42, py: new DOMMatrix(getComputedStyle(panel).transform).m42,
         co: parseFloat(getComputedStyle(count).opacity), lo: parseFloat(getComputedStyle(logo).opacity),
+        dt: dome.getBoundingClientRect().top, lr: (r => [r.left, r.top, r.width, r.height])(logo.getBoundingClientRect()),
       });
-      if (t > 9000) return res({ frames, hundredAt, domeH, panelH, nums: [...nums], timeout: true });
+      if (t > 9000) return res({ frames, hundredAt, domeH, panelH, white, nums: [...nums], timeout: true });
       requestAnimationFrame(tick);
     })();
   }));
@@ -149,7 +152,7 @@ if (want('exit')) for (const w of [1440, 450]) {
   assert(R.hundredAt !== null && R.hundredAt > 1900 && R.hundredAt < 2500, `exit@${w}: the counter reaches 100 at ${R.hundredAt && R.hundredAt.toFixed(0)}ms on the loader clock (old timing 2.0s count, want 1900 to 2500)`);
   assert(R.nums.includes(100) && R.nums.some(n => n > 10 && n < 90) && R.nums.length > 40, `exit@${w}: the counter passes through mid values to 100 (${R.nums.length} distinct values)`);
   const fr = R.frames, last = fr[fr.length - 1];
-  const moved = f => !f.gone && (f.dy < -0.5 || f.py < -0.5 || f.co < 0.999 || f.lo < 0.999);
+  const moved = f => !f.gone && (f.dy < -0.5 || f.py < -0.5 || f.co < 0.999);
   const first = fr.find(moved);
   assert(first && first.t > R.hundredAt, `exit@${w}: precondition, motion starts after 100 shows (${first && first.t.toFixed(0)} > ${R.hundredAt && R.hundredAt.toFixed(0)})`);
   const dur = last.t - first.t;
@@ -164,9 +167,31 @@ if (want('exit')) for (const w of [1440, 450]) {
   assert(r2 > 0.995 && near(slope * 1000, 1 / 0.7, 0.15), `exit@${w}: dome follows power3.inOut over 0.7s (linear fit of inverse progress: slope ${(slope * 1000).toFixed(2)}/s want 1.43, r2 ${r2.toFixed(4)})`);
   const pf = fr.find(f => !f.gone && f.py < -0.5);
   assert(pf && pf.t - first.t >= -1 && pf.t - first.t <= 80, `exit@${w}: the panel starts ${pf && (pf.t - first.t).toFixed(0)}ms after the first moved frame (want 0 to 80; it is set to 30)`);
-  // the panel's convex-down edge is the lowest thing on screen until it is gone: at mid exit the page shows below it
+  // the number fades in 0.3s; the logo does not fade, it rises with the dome
   const mid = fr.filter(f => !f.gone).find(f => f.t - first.t >= 350);
-  assert(mid && mid.co < 0.05 && mid.lo < 0.05, `exit@${w}: logo and number are gone by mid-exit (opacity ${mid && mid.lo.toFixed(2)}, ${mid && mid.co.toFixed(2)})`);
+  assert(mid && mid.co < 0.05, `exit@${w}: the number is gone by mid-exit (opacity ${mid && mid.co.toFixed(2)})`);
+  const live = fr.filter(f => !f.gone && f.t >= first.t - 1);
+  const lg = live.filter(f => f.lr[1] + f.lr[3] > 0);   // frames where any of the logo is still on screen
+  assert(live.length > 30 && lg.length > 8, `exit@${w}: precondition, ${live.length} exit frames sampled, the logo on screen in ${lg.length}`);
+  assert(live.every(f => f.lo === 1), `exit@${w}: logo opacity is 1 in every exit frame (min ${Math.min(...live.map(f => f.lo))})`);
+  let up = true, worst = 0;
+  for (let i = 1; i < live.length; i++) { const d = live[i].lr[1] - live[i - 1].lr[1]; if (d > 0.01) up = false; worst = Math.max(worst, d); }
+  assert(up, `exit@${w}: the logo's top never moves down between frames (largest step down ${worst.toFixed(2)}px)`);
+  const risen = live[0].lr[1] - live[live.length - 1].lr[1];
+  assert(risen > live[0].lr[3], `exit@${w}: the logo rises by more than its own height (${risen.toFixed(0)}px > ${live[0].lr[3].toFixed(0)}px) and ends above the viewport (bottom ${(live[live.length - 1].lr[1] + live[live.length - 1].lr[3]).toFixed(0)})`);
+  const ar = live.map(f => f.lr[2] / f.lr[3]), arMin = Math.min(...ar), arMax = Math.max(...ar);
+  assert(arMax - arMin < 0.002 && near(arMin, 708 / 422, 0.01), `exit@${w}: the logo's width/height is constant across the exit (${arMin.toFixed(4)} to ${arMax.toFixed(4)}, image is ${(708 / 422).toFixed(4)})`);
+  // inside the white: all four corners of the logo's box are within the dome's white shape (top part + ellipse) in every frame
+  const W = R.white, cx = W.w / 2;
+  let outside = 0, worstOut = 0;
+  for (const f of live) {
+    const [l, t, wd, ht] = f.lr, edge = x => f.dt + (W.h - W.ry) + W.ry * Math.sqrt(Math.max(0, 1 - ((x - cx) / cx) ** 2));
+    for (const [x, y] of [[l, t], [l + wd, t], [l, t + ht], [l + wd, t + ht]]) {
+      const over = y - Math.min(edge(x), f.dt + W.h);
+      if (y > f.dt + W.h - 0.5 || over > 0.5) { outside++; worstOut = Math.max(worstOut, over); }
+    }
+  }
+  assert(outside === 0, `exit@${w}: the logo's box stays inside the dome's white shape in every frame (${outside} corner samples outside, worst ${worstOut.toFixed(1)}px)`);
   // after: the page is usable
   await page.waitForFunction(() => document.documentElement.classList.contains('is-loaded'));
   const after = await page.evaluate(async () => {
