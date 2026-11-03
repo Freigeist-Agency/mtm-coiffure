@@ -178,7 +178,8 @@ for (const w of WIDTHS) {
       const fresh = await openPage({ width: w, height: h, js: false });
       const ref = await read(fresh.page); await fresh.close();
       assert(now.iw === w, `resize: viewport is ${w}`);
-      assert(JSON.stringify(lineIdx(ref.items, 'top')) === JSON.stringify(lineIdx(now.items, 'top')), `resize to ${w}: words wrap like a fresh load: ${lineIdx(now.items, 'top').join('')}`);
+      // offsetTop, not the bounding rect: words that have not played yet at this scroll position carry a 0.6em transform offset
+      assert(JSON.stringify(lineIdx(ref.items, 'top')) === JSON.stringify(lineIdx(now.items, 'ot')), `resize to ${w}: words wrap like a fresh load: ${lineIdx(now.items, 'ot').join('')}`);
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `resize to ${w}: no horizontal overflow`);
       await toDone(page);   // windows are re-measured for the new layout: past the centre point everything is in
       assert(await waitPlayed(page, 1500), `resize to ${w}: with the paragraph centre 100px above the viewport centre every word is in (windows re-measured)`);
@@ -283,11 +284,12 @@ for (const w of WIDTHS) {
     let growing = true, order = true;
     for (let k = 1; k < fwd.length; k++) {
       if (sum(fwd[k]) < sum(fwd[k - 1]) - 0.05) growing = false;
+      // per line: since the 12% line spread can exceed the line pitch, the next line's first word may start before this line's last one (js/word-reveal.js)
       const ws = fwd[k].items.filter(i => i.t !== '<img>');
-      for (let j = 1; j < ws.length; j++) if (ws[j].op > ws[j - 1].op + 0.02) order = false;
+      for (let j = 1; j < ws.length; j++) if (Math.abs(ws[j].restTop - ws[j - 1].restTop) < 10 && ws[j].op > ws[j - 1].op + 0.02) order = false;
     }
     assert(growing, `${tag}: total reveal never shrinks while scrolling down`);
-    if (!conflict) assert(order, `${tag}: words reveal in reading order (no word ahead of the one before it)`);
+    if (!conflict) assert(order, `${tag}: words reveal in reading order within a line (no word ahead of the one left of it)`);
     // (c) scrolling back up undoes it
     let shrinking = true;
     for (let k = 1; k < back.length; k++) if (sum(back[k]) > sum(back[k - 1]) + 0.05) shrinking = false;
