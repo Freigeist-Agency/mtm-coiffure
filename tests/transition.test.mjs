@@ -325,4 +325,50 @@ for (const p of ['impressum.html', 'datenschutz.html', '404.html', 'locations/nu
   await h.close();
 }
 
+// ---- the page-change reveal has the home exit's motion: 0.7s, power3.inOut, panel 30ms behind the dome; the cover-in stays 0.6s ----
+for (const [width, height] of [[1440, 900], [375, 812]]) {
+  const tag = `@${width}`;
+  const h = await openPage({ width, height, path: 'impressum.html', skipLoader: false });
+  const { page } = h;
+  await loaded(page, 3000);
+  // runs on both pages: the click time, and on the way out the time the browser really started leaving; on the arriving page,
+  // one sample per frame of the dome and panel transforms until the cover is gone
+  const CLICKS = () => {
+    addEventListener('click', () => { window.__clickAt = performance.now(); }, true);
+    addEventListener('beforeunload', () => { try { sessionStorage.setItem('cover-ms', String(performance.now() - window.__clickAt)); } catch (e) {} });
+  };
+  const SAMPLE = () => {
+    window.__rev = { frames: [], gone: null };
+    const ty = e => new DOMMatrix(getComputedStyle(e).transform).m42;
+    (function tick() {
+      const d = document.querySelector('.loader__dome'), p = document.querySelector('.loader__panel');
+      if (d && p) window.__rev.frames.push({ t: performance.now(), dy: ty(d), py: ty(p), dh: d.offsetHeight });
+      else if (window.__rev.frames.length && window.__rev.gone === null) window.__rev.gone = performance.now();
+      if (window.__rev.gone === null) requestAnimationFrame(tick);
+    })();
+  };
+  await page.context().addInitScript(CLICKS);
+  await page.context().addInitScript(SAMPLE);
+  await page.evaluate(CLICKS);   // the current page was loaded before the init scripts existed
+  await page.locator('header a.brand').click();
+  await page.waitForURL(/index\.html$/, { timeout: 5000 });
+  await page.waitForFunction(() => window.__rev && window.__rev.gone !== null, null, { timeout: 5000, polling: 20 });
+  const R = await page.evaluate(() => ({ rev: window.__rev, cover: +sessionStorage.getItem('cover-ms') }));
+  const fr = R.rev.frames, first = fr.find(f => f.dy < -0.5 || f.py < -0.5);
+  assert(fr.length > 20 && first && fr[0].dy === 0 && fr[0].py === 0, `${tag} reveal: precondition, ${fr.length} frames sampled from a cover at rest, then it moves`);
+  const inv = p => p < 0.5 ? (p / 8) ** 0.25 : 1 - ((1 - p) / 8) ** 0.25;   // gsap power3 is a quartic: p = 8x^4 up to the midpoint
+  const dm = fr.filter(f => f.dy < 0).map(f => ({ t: f.t, p: -f.dy / f.dh })).filter(s => s.p > 0.04 && s.p < 0.96).map(s => ({ t: s.t, x: inv(s.p) }));
+  const n = dm.length, mt = dm.reduce((a, s) => a + s.t, 0) / n, mx = dm.reduce((a, s) => a + s.x, 0) / n;
+  const sxy = dm.reduce((a, s) => a + (s.t - mt) * (s.x - mx), 0), sxx = dm.reduce((a, s) => a + (s.t - mt) ** 2, 0), syy = dm.reduce((a, s) => a + (s.x - mx) ** 2, 0);
+  const slope = sxy / sxx * 1000, r2 = sxy * sxy / (sxx * syy);
+  // the ease starts slowly (the first 0.5px takes ~65ms), so the start is taken from the fit: where the dome's x is 0
+  const start = mt - mx / (slope / 1000), dur = R.rev.gone - start;
+  assert(Math.abs(dur - 700) <= 60, `${tag} reveal: timeline start (from the fit) to cover gone = ${dur.toFixed(0)}ms (want 700 +- 60; was 1200)`);
+  assert(n >= 6 && r2 > 0.995 && Math.abs(slope - 1 / 0.7) <= 0.15, `${tag} reveal: dome follows power3.inOut over 0.7s (${n} frames, slope ${slope.toFixed(2)}/s want 1.43, r2 ${r2.toFixed(4)})`);
+  const pf = fr.find(f => f.py < -0.5);
+  assert(pf && pf.t - first.t >= -1 && pf.t - first.t <= 80, `${tag} reveal: the panel starts ${pf && (pf.t - first.t).toFixed(0)}ms after the dome (want 0 to 80; set to 30, was 300)`);
+  assert(R.cover >= 550 && R.cover <= 720, `${tag} cover-in: click to the browser leaving = ${R.cover.toFixed(0)}ms (cover-in stays 0.6s, want 550 to 720)`);
+  await h.close();
+}
+
 await report();

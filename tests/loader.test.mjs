@@ -167,7 +167,7 @@ const waitMs = (page, ms) => page.waitForFunction(m => performance.now() - perfo
 function delayLoader(ms, { instantFonts = false } = {}) {
   return async p => {
     if (instantFonts) {
-      // fonts.ready resolves at once, so the reveal end lands at a fixed time (loader.js start + 3.35s)
+      // fonts.ready resolves at once, so the reveal end lands at a fixed time (loader.js start + 2.85s)
       await p.addInitScript(() => {
         try { Object.defineProperty(document.fonts, 'ready', { get: () => Promise.resolve(document.fonts) }); } catch (e) {}
       });
@@ -213,11 +213,11 @@ if (want('late')) {
 
 // ---- the timeline's own finish() must not fire in the middle of the hard-stop fade ----
 if (want('finish')) {
-  // loader.js at ~2.8s with fonts.ready resolved: the reveal ends at start + 3.35s = ~6.15s, inside the 6.0 to 6.3s fade
-  const { page, close } = await begin({ width: 1440, noMark: true, before: delayLoader(2800, { instantFonts: true }) });
+  // loader.js at ~3.3s with fonts.ready resolved: the reveal ends at start + 2.85s (2.0 count + 0.15 hold + 0.7 exit) = ~6.15s, inside the 6.0 to 6.3s fade
+  const { page, close } = await begin({ width: 1440, noMark: true, before: delayLoader(3300, { instantFonts: true }) });
   const f = await fadeOf(page);
   const startedAt = await page.evaluate(() => performance.getEntriesByName('mtm-loader-start')[0].startTime);
-  assert(startedAt + 3350 > 6050 && startedAt + 3350 < 6250, `finishNotMidFade: precondition, the timeline's finish would land mid-fade (${(startedAt + 3350).toFixed(0)}ms)`);
+  assert(startedAt + 2850 > 6050 && startedAt + 2850 < 6250, `finishNotMidFade: precondition, the timeline's finish would land mid-fade (${(startedAt + 2850).toFixed(0)}ms)`);
   assert(f.lastOp !== null && f.lastOp < 0.05,
     `finishNotMidFade: the last visible frame before is-loaded is transparent (${f.lastOp}, want < 0.05)`);
   assert(f.loadedAt >= 6250, `finishNotMidFade: is-loaded not before the fade ends (${f.loadedAt.toFixed(0)}ms, want >= 6250)`);
