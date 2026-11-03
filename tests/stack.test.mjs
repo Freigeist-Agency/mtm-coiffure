@@ -24,7 +24,7 @@ const layerInfo = page => page.evaluate(() => {
     };
   });
   const footerEl = document.querySelector('.site-footer'), footer = footerEl.getBoundingClientRect();
-  return { footerOverlap: -parseFloat(getComputedStyle(footerEl).marginTop) || 0 /* Figma: the footer overlaps the image's bottom */, layers, stack: { top: sr.top, bottom: sr.bottom, h: sr.height, docTop: sr.top + scrollY }, footerTop: footer.top, y: scrollY, ih: innerHeight, st: window.ScrollTrigger ? window.ScrollTrigger.getAll().filter(t => t.trigger !== document.querySelector('.services') && t.vars.id !== 'stack-locations' && !/^arc-/.test(t.vars.id || '')).length : -1   /* the services orbit owns one more, the Standorte stack another (tests/location-stack.test.mjs), js/arc-scroll.js three (ids arc-*) */ };
+  return { footerOverlap: -parseFloat(getComputedStyle(footerEl).marginTop) || 0 /* Figma: the footer overlaps the image's bottom */, layers, stack: { top: sr.top, bottom: sr.bottom, h: sr.height, docTop: sr.top + scrollY }, footerTop: footer.top, y: scrollY, ih: innerHeight, st: window.ScrollTrigger ? window.ScrollTrigger.getAll().filter(t => t.trigger !== document.querySelector('.services') && t.vars.id !== 'stack-locations' && !/^(arc|word-reveal)/.test(t.vars.id || '')).length : -1   /* the services orbit owns one more, the Standorte stack another (tests/location-stack.test.mjs), js/arc-scroll.js three (ids arc-*), js/word-reveal.js one per word (ids word-reveal-*) */ };
 });
 
 // scroll so that layer `idx` sits at its sticky top (it is still unstuck at the start of the search)

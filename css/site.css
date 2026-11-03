@@ -113,8 +113,9 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 /* ---------- Introduction (Figma 73:60, 1440x915 at y=2181): 85px/150px weight 400, centred, three 145px portraits in the text ---------- */
 .intro { padding: .5208vw var(--pad); margin-bottom: 13.1944vw; }   /* 7.5px above and below the text; the Services start 190px after the section's end */
 .intro-text { font-size: var(--fs-display); font-weight: 400; line-height: 1.7647; text-align: center; }
-/* Portraits are inline, so they rewrap with the words. In Figma the first and the last one hang outside the centred text (the
-   words stay on the centre line), so each of those two gets an invisible twin of the same width (.intro-gap) on the other side. */
+/* Portraits are inline, so they rewrap with the words. In Figma the first one hangs outside the centred text (the words stay on the
+   centre line), so it gets an invisible twin of the same width (.intro-gap) after "Wir sind". "fünfte Generation." always starts a
+   new line (the <br class="intro-break"> in the markup), as in Figma; the last portrait sits in that line with a normal gap. */
 .intro-pic { display: inline-block; width: 1.7059em; height: 1.7059em; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-block: -.4em; position: relative; top: -.08em; } /* negative margins: the 145px photo must not grow the 150px line */
 .intro-text > .intro-pic { margin-inline: .25em; }
 .intro-lead, .intro-tail { white-space: nowrap; }
