@@ -1,12 +1,13 @@
 // Scroll-driven curved edges (js/arc-scroll.js): the white dome under the hero, the white ellipse over Standorte (.locations), the curve
-// before Social, and the white dome above the footer (.footer-top, from 768px up). The black footer dome (.footer-body::before) and the
-// team photo (.finale) have no moving edge.
+// before Social, and the white dome above the footer (.footer-top, from 768px up). The black footer dome (.footer-body::before) has no moving edge.
+// The team photo's mask ellipse (.finale) and the corner seams are covered by tests/curves-r2.test.mjs.
 // Real wheel scrolling (page.mouse.wheel) through each curve at 1440x900, 768x1024 and 375x812. Every sample reads the
 // rendered state (computed transform of the ellipse pseudo-element / the ry of the inlined SVG ellipse) and the geometry of the
 // section edge, derives the expected depth factor from the reference mapping on its own, and compares.
-//   dome  (hero, Locations curve, footer):  s = max(floor, p)       p = 0 when the edge enters at the bottom, 1 when it has settled; floor 0.5 on the
+//   dome  (Locations curve, footer):        s = max(floor, p)       p = 0 when the edge enters at the bottom, 1 when it has settled; floor 0.5 on the
 //                                                                   Locations curve (the Social title stays on its white), 0.04 elsewhere
-//   smile (Standorte top):                  s = max(0.04, 1 - p)    p = 0 when the edge enters, 1 when it reaches the top
+//   smile (hero, Standorte top):            s = max(0.04, 1 - p)    p = 0 when the edge enters, 1 when it reaches the top. The hero starts at
+//                                                                   scrollY 0 when it is shorter than the viewport, so it is curved at load.
 //   s = rendered depth / designed depth. The footer's p ends where the document ends (the page cannot scroll the dome higher).
 // There is no resting state: a stopped page shows the depth its position maps to (checked after a 900ms stop, mid-travel).
 import fs from 'node:fs';
@@ -23,7 +24,7 @@ const MIN_S = 0.04;
 const FLOOR = { curve: 0.5 };
 const TOL = 0.06;            // |rendered s - expected s|: the depth is drawn from the scroll position, so only a frame of lag
 const ALL = ['hero', 'about', 'curve', 'footer'];   // 'about' = .locations (the old About smile moved to the Standorte top)
-const KIND = { hero: 'dome', about: 'smile', curve: 'dome', footer: 'dome' };
+const KIND = { hero: 'smile', about: 'smile', curve: 'dome', footer: 'dome' };
 
 // everything a test needs to know, read in one evaluate (layout reads are fine here, this is the test)
 const READ = () => {
@@ -46,7 +47,7 @@ const READ = () => {
     curve: { s: parseFloat(dome.getAttribute('ry')) / 286, ry: dome.getAttribute('ry'), live: false, boxH: sr.height, boxW: sr.width, corner: sr.bottom },
     footer: { ...pseudo(ft, '::before'), corner: ft.getBoundingClientRect().bottom },     // the white dome's centre line is the bottom edge of .footer-top
     black: { ...pseudo(fb, '::before'), live: fb.classList.contains('arc-live'), hasVar: fb.style.getPropertyValue('--arc-s') !== '' },
-    finale: { before: getComputedStyle(fin, '::before').content, live: fin.classList.contains('arc-live') },
+    finale: { before: getComputedStyle(fin, '::before').content, live: fin.classList.contains('arc-live') || fin.style.getPropertyValue('--arc-s') !== '' },
   };
 };
 
@@ -54,6 +55,7 @@ const clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
 // progress of a curve's edge, derived from the geometry alone
 function progress(name, r) {
   const c = r[name].corner;
+  if (name === 'hero') { const doc = c + r.y, start = Math.max(0, doc - r.H); return clamp01((r.y - start) / (doc - start)); }   // starts at scrollY 0 when the hero is shorter than the viewport
   if (name !== 'footer') return clamp01(1 - c / r.H);
   const cornerEnd = c - (r.max - r.y);                     // where the dome's centre line sits at the end of the document
   return clamp01((r.H - c) / (r.H - cornerEnd));
@@ -66,7 +68,7 @@ function restGeometry(iw) {
   return {
     hero: { top: -19.8611 * iw / 100, height: 39.7222 * iw / 100 },   // top relative to the hero's bottom edge
     about: { top: -(mobile ? 31.78 : 20.2083) * iw / 100, height: (mobile ? 63.56 : 42.2917) * iw / 100 },
-    footer: { top: 3.3333 * iw / 100, height: 39.7222 * iw / 100 },
+    footer: { top: 3.3333 * iw / 100, height: 13.8889 * iw / 100 },   // a half-ellipse standing on the photo's bottom edge (17.2222vw)
     black: { top: (mobile ? 20 : 9) * iw / 100, height: 39.72 * iw / 100 },
     curveH: mobile ? 0.741 * iw : Math.min(628, Math.max(200, 0.436 * iw)),
   };
@@ -86,6 +88,7 @@ async function yForProgress(page, name, p) {
     else if (name === 'about') corner = document.querySelector(el).getBoundingClientRect().top;
     else corner = document.querySelector(el).getBoundingClientRect().bottom;
     let target;
+    if (name === 'hero') { const doc = corner + y, start = Math.max(0, doc - H); return Math.max(0, Math.min(max, start + p * (doc - start))); }
     if (name !== 'footer') target = H * (1 - p);
     else { const cornerEnd = corner - (max - y); target = H - p * (H - cornerEnd); }
     return Math.max(0, Math.min(max, y + corner - target));
@@ -190,7 +193,7 @@ async function pass(w, h, mobile) {
   assert(new Set(blacks.map(b => b.y)).size >= 6, `${tag}: the black-dome probe visited >= 6 distinct scroll positions (${new Set(blacks.map(b => b.y)).size})`);
   assert(blacks.every(b => b.transform === 'none' && !b.live && !b.hasVar && Math.abs(b.top - G.black.top) <= 1 && Math.abs(b.height - G.black.height) <= 1 && b.radius.startsWith('50%')),
     `${tag}: the black footer dome keeps one path/size at every scroll position (top ${blacks.map(b => b.top.toFixed(1))}, height ${blacks.map(b => b.height.toFixed(1))}, transforms ${[...new Set(blacks.map(b => b.transform))]})`);
-  assert(blacks.every(b => b.fin.before === 'none' && !b.fin.live), `${tag}: the team-photo layer has no ellipse and is never touched by the script (${[...new Set(blacks.map(b => b.fin.before))]})`);
+  assert(blacks.every(b => b.fin.before === 'none'), `${tag}: the team-photo layer has no ellipse element (its curve is a mask, tests/curves-r2.test.mjs) (${[...new Set(blacks.map(b => b.fin.before))]})`);
 
   assert(!overflowAt, `${tag}: no horizontal overflow at any sample${overflowAt ? ' - ' + overflowAt : ''}`);
   assert(errors.length === 0, `${tag}: 0 console/page errors (${errors.join(' | ')})`);
@@ -208,7 +211,7 @@ async function reduced(w, h, mobile) {
   const check = async () => {
     const r = await page.evaluate(READ);
     samples++;
-    const ok = ['hero', 'about', 'footer'].every(n => r[n].transform === 'none' && !r[n].live) && r.black.transform === 'none' && r.curve.ry === '286'
+    const ok = ['hero', 'about', 'footer'].every(n => r[n].transform === 'none' && !r[n].live) && !r.finale.live && r.black.transform === 'none' && r.curve.ry === '286'
       && Math.abs(r.hero.top - r.hero.top0 - G.hero.top) <= 1 && Math.abs(r.about.top - G.about.top) <= 1 && (r.iw < 768 || Math.abs(r.footer.top - G.footer.top) <= 1) && Math.abs(r.black.top - G.black.top) <= 1 && Math.abs(r.curve.boxH - G.curveH) <= 1;
     if (!ok && !bad) bad = `y=${r.y} hero ${r.hero.transform} about ${r.about.transform} footer ${r.footer.transform} ry ${r.curve.ry}`;
     return r;
