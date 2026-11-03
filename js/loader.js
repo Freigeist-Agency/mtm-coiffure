@@ -1,7 +1,7 @@
 /* The loader, on every page.
    Home, first visit of the session: the full loader, with the 0 to 100 counter.
    Any page reached through an internal link (the inline <head> script sets is-transition): the same cover and reveal, no counter.
-   Leaving a page by an internal link: the cover comes down first (the reveal played backwards), then the browser navigates.
+   Leaving a page by an internal link: the cover comes down first (a 0.6s sine.inOut cover-in), then the browser navigates.
    Produces window.mtmReady (resolves when the loader is done, or at once when it is skipped), and the
    html classes is-loading -> is-loaded ("js", "is-loading" and "is-transition" come from the inline <head> script,
    so there is no flash before the black screen). Later scripts wait on mtmReady. */
@@ -31,7 +31,10 @@
   var HARD_MS = 6000;   // measured from navigation start, so a slow CDN can not stretch it
   var FADE_MS = 300;    // hard stop while still running: fade the cover out instead of cutting to the page
   var KEY = 'mtm-transition';
-  var COVER_S = 0.6;    // the cover coming down: the reveal's dome time, backwards
+  var COVER_S = 0.6;    // the cover coming down (sine.inOut); not tied to the reveal's EXIT_S
+  var EXIT_S = 0.7;     // the home loader's exit and the page-change reveal, from the first moved frame to the panel gone
+  var EXIT_LAG = 0.03;  // the panel trails the dome by this much (Figma FR2's mid-exit pose)
+  var EXIT_EASE = 'power3.inOut';
   var SAFETY_MS = 3000; // navigation blocked or slow: uncover so the page is never left black
 
   function applyHash() {
@@ -135,11 +138,11 @@
     clearTimeout(window.mtmFallback);   // only now that our own hard stop is armed: the head's 6.6s net is no longer needed
 
     if (transition) {
-      // reveal only: dome up 0.6s, the panel curves away 0.9s starting 0.3s in. It waits for the webfont, capped at 400ms
-      // (the font is normally cached by the page that was just left).
-      run = gsap.timeline({ paused: true, defaults: { ease: 'sine.inOut' } });
-      run.to(dome, { yPercent: -100, duration: 0.6 }, 0)
-         .to(panel, { yPercent: -100, duration: 0.9 }, 0.3)
+      // reveal only, the same motion as the home exit (no logo or counter): dome up EXIT_S, the panel curves away 30ms behind it.
+      // It waits for the webfont, capped at 400ms (the font is normally cached by the page that was just left).
+      run = gsap.timeline({ paused: true });
+      run.to(dome, { yPercent: -100, duration: EXIT_S, ease: EXIT_EASE }, 0)
+         .to(panel, { yPercent: -100, duration: EXIT_S - EXIT_LAG, ease: EXIT_EASE }, EXIT_LAG)
          .call(finish);
       var play = function () { if (!done && !fading) run.play(); };
       fontsReady(400).then(play, play);
@@ -153,15 +156,17 @@
       onComplete: function () { show(100); }
     });
     run.addLabel('hold', '+=0.15');
-    // the reveal waits for the webfont (capped), then plays: dome up, black panel up
+    // the reveal waits for the webfont (capped), then plays
     run.call(function () {
       run.pause();
       var go = function () { if (!done && !fading) run.play(); };
       fontsReady(850).then(go, go);   // a rejected fonts.ready must not strand the page on 100
     }, null, 'hold');
-    run.to(count, { yPercent: -40, opacity: 0, duration: 0.35 }, 'hold')
-       .to(dome, { yPercent: -100, duration: 0.6 }, 'hold')
-       .to(panel, { yPercent: -100, duration: 0.9 }, 'hold+=0.3')
+    // the exit takes EXIT_S in all, one ease: the number fades, the dome (with the logo in it, at full opacity) shrinks up,
+    // the panel lifts with its curved edge
+    run.to(count, { opacity: 0, duration: 0.3, ease: EXIT_EASE }, 'hold')
+       .to(dome, { yPercent: -100, duration: EXIT_S, ease: EXIT_EASE }, 'hold')
+       .to(panel, { yPercent: -100, duration: EXIT_S - EXIT_LAG, ease: EXIT_EASE }, 'hold+=' + EXIT_LAG)
        .call(finish);
   } catch (e) { finish(); }
   // ---- leaving: the cover comes down, then the browser navigates -------------------------------------------------

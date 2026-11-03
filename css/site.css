@@ -65,7 +65,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
     var(--sand);
 }
 .hero::after { /* white ellipse 1440x572, its centre line on the hero's bottom edge */
-  content: ""; position: absolute; z-index: 1; left: 0; right: 0; bottom: -19.8611vw; height: 39.7222vw;
+  content: ""; position: absolute; z-index: 1; left: -1px; right: -1px; bottom: -19.8611vw; height: 39.7222vw;   /* 1px wider each side: the first row above the edge must reach the corners */
   background: var(--paper); border-radius: 50%;
 }
 .hero-media { position: absolute; inset: 0; overflow: hidden; }
@@ -162,8 +162,9 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 
 /* Smile edge (js/arc-scroll.js drives --arc-s): a white ellipse centred on the top edge of the section, clipped to it. */
 .locations::before {
-  content: ""; position: absolute; left: 0; right: 0; top: var(--smile-top); height: var(--smile-h);
+  content: ""; position: absolute; left: -1px; right: -1px; top: var(--smile-top); height: var(--smile-h);
   background: var(--paper); border-radius: 50%;
+  transform-origin: 50% calc(-1 * var(--smile-top));  /* the section's top edge: scaleY moves only the apex, the chord on the edge stays full width (the ellipse's centre line sits 13px below the edge, scaling about it left a black wedge at both corners) */
 }
 
 /* ---------- Standorte (Figma Locations Section: black from y=4286 under a white ellipse; title and button at y=4575; two 1400x787 cards) ---------- */
@@ -236,8 +237,8 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 
 /* ---------- Social (Figma Social Media Section 6608: header, then 6 tiles 225x353 from x=20) ---------- */
 /* The section starts 111px above the end of the curve, so the title (42px in) sits inside the white dome. */
-.social { position: relative; background: linear-gradient(var(--paper), var(--paper)) 0 calc(7.7083vw - 1.5px) / 100% 100% no-repeat; /* white from the dome's last row down: hides the antialiased bottom row of the rotated curve */ margin-top: -7.7083vw; padding: 2.9167vw 0 11.1458vw; text-align: center; container-type: inline-size; }
-.social-head { display: grid; gap: 23px; justify-items: center; padding: 0 var(--pad) 14.0972vw; }  /* tiles start 203px below the buttons */
+.social { position: relative; background: linear-gradient(var(--paper), var(--paper)) 0 calc(7.7083vw - 1.5px) / 100% 100% no-repeat; /* white from the dome's last row down: hides the antialiased bottom row of the rotated curve */ margin-top: -7.7083vw; padding: 2.9167vw 0 2.6444vw; text-align: center; container-type: inline-size; }  /* client round 2: 12.145vw from the dots down to the section end cut by 70% (3.644vw = 2.6444vw + the 1cqw under the dots) */
+.social-head { display: grid; gap: 23px; justify-items: center; padding: 0 var(--pad) 4.9672vw; }  /* client round 2: buttons to the centre card halved, 18.26vw -> 9.13vw (was 14.0972vw of padding) */
 .social-head p, .news-head p { min-height: 54px; } /* Figma description box is 54px tall */
 .social-links { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
 /* tile width from the section's width (cqw), so it is 225px at 1440 whether or not js/carousel.js has taken the row's padding away */
@@ -283,6 +284,14 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .finale img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 0; }
 @media (min-width: 768px) {
   .finale img { width: 120%; max-width: none; height: auto; margin-left: -10%; }
+  /* The news section's white ellipse over the top of the photo (Figma Ellipse 3, 1440x609, its centre line on the photo's top edge:
+     304.5px = 21.1458vw deep). It is a hole in the photo, not a white shape on top of it: the photo rises over the sticky cards, and a white
+     ellipse above them would wash them out (round 1). The hole shows whatever is behind, the white page or a card. js/arc-scroll.js sets --arc-s on .finale. */
+  .finale {
+    --fin-d: 21.1458vw;
+    -webkit-mask-image: radial-gradient(ellipse 50.2% calc(var(--fin-d) * var(--arc-s, 1)) at 50% 0, transparent calc(100% - 1.5px), #000 100%);
+    mask-image: radial-gradient(ellipse 50.2% calc(var(--fin-d) * var(--arc-s, 1)) at 50% 0, transparent calc(100% - 1.5px), #000 100%);
+  }
 }
 
 /* Stacked mode: layers stick one after another, each a little lower than the last so the top edge of a covered card
@@ -348,10 +357,14 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 /* Home page: the footer's top 248px lie over the bottom of the full-width image (Figma: footer at y=9948, image ends 10196), with a
    white ellipse 1440x572 (its top 48px into the footer) carrying the logo. Subpages have no image above, so no overlap there. */
 @media (min-width: 768px) {
-  html[data-home] .site-footer { position: relative; margin-top: -17.2222vw; background: linear-gradient(to bottom, transparent 17.2222vw, var(--paper) 17.2222vw); }
+  html[data-home] .site-footer { position: relative; margin-top: -17.2222vw; background: linear-gradient(to bottom, transparent calc(17.2222vw - 1px), var(--paper) calc(17.2222vw - 1px)); }   /* 1px early: the photo's last row is antialiased against its own bottom edge, and the dome's base sits on that same edge (two coincident antialiased edges leave a grey hairline) */
   html[data-home] .footer-top { position: relative; }
-  html[data-home] .footer-top::before { content: ""; position: absolute; left: 0; right: 0; top: 3.3333vw; height: 39.7222vw; background: var(--paper); border-radius: 50%; }
-  html[data-home] .footer-logo { position: relative; }
+  /* Only the half that stands over the photo is drawn: a half-ellipse whose flat side is the photo's bottom edge (17.2222vw down; the Figma ellipse
+     1440x572 reaches 48px into the footer, so 13.8889vw above that edge) and whose scale origin is that edge. Scaling the full ellipse about its own centre
+     line (6vw below the edge) pulled its sides in and left the photo showing in both corners. The Figma ellipse crosses the edge 34px inside the corners;
+     this one meets them, and its shoulders stand up to 11px higher than Figma's (max 60px in the outer 4%). */
+  html[data-home] .footer-top::before { content: ""; position: absolute; left: 0; right: 0; top: 3.3333vw; height: 13.8889vw; background: var(--paper); border-radius: 50% 50% 0 0 / 100% 100% 0 0; transform-origin: 50% 100%; }
+  html[data-home] .footer-logo { position: relative; z-index: 1; transform-origin: 50% 0; }   /* js/arc-scroll.js moves it down inside the white and scales it while the dome is shallow; z-index: once it hangs below the footer-top the footer body (positioned, later) would paint over its lower part */
   html[data-home] .footer-logo img { mix-blend-mode: multiply; }   /* the logo file has an opaque white ground: while the white dome (js/arc-scroll.js) is still shallow it would show as a box over the photo */
 }
 

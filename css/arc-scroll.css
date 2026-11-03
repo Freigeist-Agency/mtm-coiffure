@@ -1,8 +1,8 @@
 /* Scroll-driven depth of the curved section edges (js/arc-scroll.js). Without the script, with
    prefers-reduced-motion, or when GSAP is missing none of this applies and the curves are the static Figma shapes in site.css.
    The script adds .arc-live to an element once its curve is drawn; --arc-s is the depth factor: 1 = the designed ellipse,
-   0 = a straight edge. scaleY about the ellipse's own centre line keeps the section edge (the ellipse's corners) fixed; only
-   the apex moves. */
+   0 = a straight edge. scaleY about the section edge (transform-origin in site.css) keeps that edge, and the ellipse's full width on it, fixed; only
+   the apex moves. The team photo (.finale) takes the same variable in its mask (site.css), so it needs no rule here. */
 .hero.arc-live::after,
 .locations.arc-live::before,
 html[data-home] .footer-top.arc-live::before { transform: scaleY(var(--arc-s, 1)); will-change: transform; }
