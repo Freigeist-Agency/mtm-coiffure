@@ -474,4 +474,3 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 @media (prefers-reduced-motion: no-preference) and (max-width: 767px) {
   html.js .location-info:nth-child(1) { top: min(var(--nav-h), 100svh - var(--stack-row-h, 0px)); }
 }
-}
