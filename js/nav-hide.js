@@ -10,6 +10,7 @@
   var dir = -1;                           // -1 up (or at rest), 1 down
   var ref = Math.max(0, window.scrollY);  // scrollY at the last turning point of the current run
   var queued = false;
+  var keyboard = false;                   // focus guard is for keyboard users; a mouse click on "Standorte." leaves focus on the link
 
   function update() {
     queued = false;
@@ -22,7 +23,7 @@
       if (d > 0) ref = y;
       else if (-d >= T) { dir = -1; ref = y; }
     }
-    var hide = dir > 0 && y > height && !header.contains(document.activeElement);
+    var hide = dir > 0 && y > height && !(keyboard && header.contains(document.activeElement));
     header.classList.toggle('is-hidden', hide);
   }
 
@@ -33,6 +34,8 @@
   function measure() { height = header.offsetHeight; schedule(); }
 
   window.addEventListener('scroll', schedule, { passive: true });
+  document.addEventListener('keydown', function () { keyboard = true; }, true);
+  document.addEventListener('pointerdown', function () { keyboard = false; }, true);
   header.addEventListener('focusin', schedule);
   header.addEventListener('focusout', schedule);
   window.addEventListener('resize', measure);

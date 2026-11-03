@@ -107,6 +107,7 @@ for (const { width, height } of SIZES) {
     const hid = await read(page);
     assert(gone(hid), `${tag} E precondition: header hidden before focus (bottom ${hid.bottom})`);
 
+    await page.keyboard.press('Shift');   // a real key press: the guard only holds for keyboard focus
     const focused = await page.evaluate(() => { const a = document.querySelector('.site-header a'); a.focus({ preventScroll: true }); return document.activeElement === a; });
     assert(focused, `${tag} E precondition: focus is on a link inside the header`);
     await sleep(SETTLE);
@@ -120,6 +121,13 @@ for (const { width, height } of SIZES) {
     await page.evaluate(() => document.activeElement.blur()); await sleep(SETTLE);
     const e3 = await read(page);
     assert(!e3.focusIn && gone(e3), `${tag} E: after focus leaves, the header hides again (bottom ${e3.bottom})`);
+
+    // mouse focus (a click on "Standorte." leaves focus on the link) must not pin the header
+    await page.mouse.down(); await page.mouse.up();
+    await page.evaluate(() => document.querySelector('.site-header a').focus({ preventScroll: true }));
+    await wheelBy(page, 120); await sleep(SETTLE);
+    const e4 = await read(page);
+    assert(e4.focusIn && gone(e4), `${tag} E: mouse focus inside the header does not keep it shown (focusIn ${e4.focusIn}, bottom ${e4.bottom})`);
     assert(errors.length === 0, `${tag} E: no page errors (${errors.length})`);
     await close();
   }
