@@ -249,13 +249,15 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   position: relative; display: grid; place-items: center; overflow: hidden;
   width: min(67.7083vw, 975px); aspect-ratio: 975 / 667; margin-inline: auto; left: .3819vw;   /* Figma x=238, 5.5px right of centre */
   border-radius: var(--radius);   /* the 2px stroke is in the baked assets/review-card.jpg */
-  box-shadow: 0 4px 11px -1px rgba(165, 115, 45, .25); color: var(--paper);
+  box-shadow: 0 4px 11px -1px rgba(165, 115, 45, .25); color: var(--paper); container-type: inline-size;
 }
 .reviews__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.reviews__quote {
-  grid-area: 1 / 1; position: relative; z-index: 1; margin: 0; text-align: left;
-  width: 31.3889vw; min-height: 19.0278vw; padding: 2.9167vw 1.1111vw 1.8vw;   /* 452x274; the text starts 42px down, 16px in */
+/* the box is sized from the card (cqw) so it stays 452x274 on the 975px card at 1440 and wider; every review sits in the same grid cell, so the tallest one sets the height */
+.reviews__list {
+  grid-area: 1 / 1; position: relative; z-index: 1; display: grid; text-align: left;
+  width: 46.359cqw; min-height: 28.1cqw; padding: 4.308cqw 1.641cqw 2.667cqw;   /* 452x274; the text starts 42px down, 16px in */
 }
+.reviews__quote { grid-area: 1 / 1; margin: 0; }
 .reviews__quote blockquote { margin: 0; }
 .reviews__quote p { line-height: 1.25; }
 .reviews__quote figcaption { margin-top: 17px; font-size: 10px; line-height: 1.25; }
@@ -443,7 +445,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   /* Review card: fills the width, text centred over the photo */
   .reviews { padding: 60px var(--pad); }
   .reviews__card { left: 0; width: 100%; aspect-ratio: auto; min-height: 420px; }
-  .reviews__quote { width: 100%; min-height: 0; padding: 24px; }
+  .reviews__list { width: 100%; min-height: 0; padding: 24px; }
 
   /* News (frame 76:320): cards 410x316, 20px apart; they stack and pin as before */
   .news { padding: 124px 0 0; }
