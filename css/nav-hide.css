@@ -1,1 +1,7 @@
-/* nav-hide: see feat/mo-fixes */
+/* Header hides on scroll down, returns on any scroll up (js/nav-hide.js toggles .is-hidden). Transform only. */
+.site-header { transition: transform 250ms ease-out; }
+.site-header.is-hidden { transform: translateY(-100%); }
+/* reduced motion: no slide, the header simply appears or disappears */
+@media (prefers-reduced-motion: reduce) {
+  .site-header { transition: none; }
+}
