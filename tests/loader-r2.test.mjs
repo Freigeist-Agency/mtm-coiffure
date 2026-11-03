@@ -233,12 +233,16 @@ if (want('frames')) for (const w of [1440, 450]) {
     window.__tl = tl; return tl ? [tl.duration(), tl.labels.hold] : null;
   });
   assert(seeked && near(seeked[0] - seeked[1], 0.7, 0.01), `frames@${w}: precondition, the loader timeline's exit (hold to end) is ${seeked && (seeked[0] - seeked[1]).toFixed(3)}s`);
-  const t0 = seeked[1];
+  const t0 = seeked[1], seen = [];
   for (const f of [0, 25, 50, 75, 100]) {
     await page.evaluate(([t, f]) => { window.__tl.paused(true).time(Math.min(t, window.__tl.duration() - 0.0001)); }, [t0 + 0.7 * f / 100, f]);
     await sleep(60);
+    seen.push(await page.evaluate(() => { const l = document.querySelector('.loader__logo'); if (!l) return null; const r = l.getBoundingClientRect(); return { top: r.top, op: getComputedStyle(l).opacity, ar: r.width / r.height }; }));
     await page.screenshot({ path: `${OUT}exit-${w}-${String(f).padStart(3, '0')}.png` });
   }
+  const lg = seen.slice(0, 4);   // 0, 25, 50, 75%: the logo is still in the DOM; at 100% the loader is gone
+  assert(lg.every(x => x && x.op === '1' && near(x.ar, 708 / 422, 0.01)) && lg.every((x, i) => i === 0 || x.top < lg[i - 1].top),
+    `frames@${w}: seeked 0/25/50/75%: logo opacity 1, aspect constant, top strictly rising (${lg.map(x => x && x.top.toFixed(0))})`);
   await close();
   // overlay: my frame resampled to the Figma render's size, 50% blend + abs difference; the mean diff over the frame is the number reported
   const fig = FIGMA_DIR + (w === 1440 ? 'mcp-plugin_figma_figma-blob-1793697982777-1kbbjs.png' : 'mcp-plugin_figma_figma-blob-1793698010483-ivqocb.png');
@@ -253,6 +257,25 @@ print(json.dumps({'mean': sum(i*c for i, c in enumerate(h)) / n, 'over40': sum(h
   const res = JSON.parse(execFileSync('python3', ['-I', '-c', code, `${OUT}overlay-src-${w}.png`, fig, `${OUT}overlay-${w}.png`, `${OUT}diff-${w}.png`]).toString());
   console.log(`overlay ${w}: ${JSON.stringify(res)}`);
   assert(res.over40 < 0.04, `frames@${w}: against Figma ${F.name} ${(res.over40 * 100).toFixed(2)}% of pixels differ by more than 40/255 (want < 4%; mean ${res.mean.toFixed(2)})`);
+}
+
+// ---- page-change reveal frames at 0/25/50/75/100% (seeked) ------------------------------------------------------------
+if (want('tframes')) for (const [w, h] of [[1440, 900], [375, 812]]) {
+  const { page, close } = await begin({
+    width: w, height: h,
+    before: p => p.addInitScript(() => { try { sessionStorage.setItem('mtm-transition', '1'); sessionStorage.setItem('mtm-visited', '1'); } catch (e) {} }),
+  });
+  await page.evaluate(() => { window.gsap.globalTimeline.pause(); });   // frozen before the 400ms font cap can start it
+  const dur = await page.evaluate(() => { const tl = window.gsap.globalTimeline.getChildren(false, false, true).find(t => Math.abs(t.duration() - 0.7) < 0.01); window.__tl = tl; return tl ? tl.duration() : null; });
+  assert(dur !== null && near(dur, 0.7, 0.01), `tframes@${w}: precondition, the reveal timeline is 0.7s long (${dur})`);
+  for (const f of [0, 25, 50, 75, 100]) {
+    await page.evaluate(f => { window.__tl.paused(true).time(f === 100 ? window.__tl.duration() : 0.7 * f / 100); }, f);
+    await sleep(60);
+    await page.screenshot({ path: `${OUT}transition-${w}-${String(f).padStart(3, '0')}.png` });
+  }
+  const gone = await page.evaluate(() => !document.querySelector('.loader'));
+  assert(gone, `tframes@${w}: at 100% the cover is gone`);
+  await close();
 }
 
 // ---- Figma FR2 (1440x891, 92:40) is a mid-exit frame: dome edge at y=166 (x centre), panel edge at 731. Seek to where it matches ----
