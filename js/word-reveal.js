@@ -5,6 +5,8 @@
    - it closes when the paragraph's centre reaches the viewport's centre, so every word is in by then;
    - on a paragraph taller than the viewport a word may still be below the fold at that point: it then closes when the word has
      scrolled fully into view (the off-screen rule wins over the centre rule).
+   Inside a line the words start one after another, left to right, spread over LINE_SPREAD_VH of scroll. Both rules above win
+   over the spread: a line with less room than that gets a smaller spread (same order), never a word earlier or later than allowed.
    Window positions are measured on load / refresh and cached; nothing is measured while scrolling.
    Nothing happens (text stays plain and fully visible) without GSAP/ScrollTrigger or under prefers-reduced-motion. */
 (function () {
@@ -18,7 +20,9 @@
   var EASE = 'back.out(1.7)';          // the pop (overshoot), applied over each word's own scroll window
   var ENTER_MARGIN_VH = 0.03;          // a word's reveal starts when its (shifted) top is this far above the bottom edge, in viewport heights
   var DONE_AT_VH = 0.5;                // every word is in when the paragraph centre is at this height of the viewport (0.5 = centre)
-  var WORD_STAGGER_VH = 0.012;         // extra scroll distance between neighbours on one line (reading order), in viewport heights
+  var LINE_SPREAD_VH = 0.12;           // scroll distance from a line's first word starting to its last word starting, in viewport heights
+  var WORD_SPAN_VH = 0.2;              // scroll distance of one word's own pop, at most (shorter than the line spread would make neighbours blur into one fade)
+  var PORTRAIT_STAGGER_VH = 0.012;     // portraits only: extra scroll distance per item before them on their line (unchanged since round 1)
   var MIN_SPAN_VH = 0.03;              // no window is shorter than this, in viewport heights
 
   var text = document.querySelector('.intro-text');
@@ -67,7 +71,7 @@
   }
   split(text);
 
-  var items = [];   // { els, pic, line, win: [start, end] }
+  var items = [];   // { els, pic, win: [start, end] }
   steps.forEach(function (st) { items.push({ els: st.els, pic: st.pic, win: [0, 0] }); });
 
   /* Document position of an element from the offsetTop chain: unlike getBoundingClientRect it ignores the transform being animated. */
@@ -78,15 +82,39 @@
     var off = 0.6 * fs;   // WORD_FROM_Y in px (em of the paragraph); the word's start is measured from where its shifted top is
     var pc = docTop(text) + text.offsetHeight / 2;
     var sEnd = pc - H * DONE_AT_VH;
-    var margin = ENTER_MARGIN_VH * H, minSpan = MIN_SPAN_VH * H, stagger = WORD_STAGGER_VH * H;
+    var margin = ENTER_MARGIN_VH * H, minSpan = MIN_SPAN_VH * H, spread = LINE_SPREAD_VH * H, pStagger = PORTRAIT_STAGGER_VH * H;
+
+    /* Portraits: the round-1 rule, untouched (rank = items before it on its line, words and portraits alike). */
     var lineMid = null, rank = 0;
     items.forEach(function (it) {
-      var el = it.els[0];
-      var y = docTop(el), h = el.offsetHeight, mid = y + h / 2;
+      var el = it.els[0], y = docTop(el), h = el.offsetHeight, mid = y + h / 2;
       if (lineMid === null || Math.abs(mid - lineMid) > 0.4 * fs) { lineMid = mid; rank = 0; } else { rank++; }
-      var start = y + (it.pic ? 0 : off) - H + margin + rank * stagger;
-      var end = Math.max(sEnd, y + h - H, start + minSpan);
-      it.win = [start, end];
+      if (!it.pic) return;
+      var start = y - H + margin + rank * pStagger;
+      it.win = [start, Math.max(sEnd, y + h - H, start + minSpan)];
+    });
+
+    /* Words: group into lines (portraits do not break a line), then give each line one run of starts left to right.
+       base = the first moment the line may animate (its lowest word is margin inside the viewport); limit = the latest it may finish. */
+    var lines = [], cur = null, curMid = 0;
+    items.forEach(function (it) {
+      if (it.pic) return;
+      var el = it.els[0], y = docTop(el), h = el.offsetHeight, mid = y + h / 2;
+      if (!cur || Math.abs(mid - curMid) > 0.4 * fs) { cur = { list: [], base: -Infinity, limit: -Infinity }; lines.push(cur); curMid = mid; }
+      cur.list.push(it);
+      cur.base = Math.max(cur.base, y + off - H + margin);
+      cur.limit = Math.max(cur.limit, sEnd, y + h - H);
+    });
+    lines.forEach(function (ln) {
+      var n = ln.list.length, room = ln.limit - ln.base;
+      /* every word keeps a window of at least minSpan, so the spread is what is left of the room; 1px per gap keeps the order strict.
+         All words of a line get the same window length, so the line reads as a wave of equal pops, not one slow fade. */
+      var sp = n > 1 ? Math.min(spread, Math.max(room - minSpan, n - 1)) : 0;
+      var len = Math.max(Math.min(room - sp, WORD_SPAN_VH * H), minSpan);
+      ln.list.forEach(function (it, k) {
+        var start = ln.base + (n > 1 ? sp * k / (n - 1) : 0);
+        it.win = [start, start + len];
+      });
     });
   }
   var dirty = true;
