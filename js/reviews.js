@@ -12,9 +12,9 @@
   var IN_DURATION = 0.45;        // incoming: opacity 0 -> 1 and y IN_Y -> 0, starts when the outgoing one has ended
   var IN_Y = 8;
   var IN_EASE = 'power2.out';
-  var HOLD_BASE = 4;             // hold per review = HOLD_BASE + HOLD_PER_CHAR * characters, capped at HOLD_MAX
-  var HOLD_PER_CHAR = 0.04;
-  var HOLD_MAX = 10;
+  var HOLD_BASE = 2.5;           // hold per review = HOLD_BASE + HOLD_PER_CHAR * characters, capped at HOLD_MAX
+  var HOLD_PER_CHAR = 0.02;
+  var HOLD_MAX = 6;
 
   var reduceMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 
