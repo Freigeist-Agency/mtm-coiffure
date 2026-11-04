@@ -1,0 +1,61 @@
+{
+  "fileKey": "HFuZZUOKyUWmXb8yER287l",
+  "tokens": "css/tokens.css",
+  "assets": "assets",
+  "protected": [
+    "js/**",
+    "css/loader.css",
+    "css/orbit.css",
+    "css/carousel.css",
+    "css/hover-gallery.css",
+    "css/arc-scroll.css",
+    "tests/**"
+  ],
+  "ready": "html.is-loaded",
+  "sections": [
+    {
+      "name": "home",
+      "frames": [
+        "64:2"
+      ],
+      "files": [
+        "index.html",
+        "css/site.css"
+      ],
+      "selector": "main",
+      "page": "index.html"
+    },
+    {
+      "name": "nav",
+      "frames": [
+        "94:62"
+      ],
+      "files": [
+        "index.html",
+        "impressum.html",
+        "datenschutz.html",
+        "404.html",
+        "locations/*.html",
+        "css/site.css"
+      ],
+      "selector": "header.site-header",
+      "page": "index.html"
+    },
+    {
+      "name": "footer",
+      "frames": [
+        "100:10"
+      ],
+      "files": [
+        "index.html",
+        "impressum.html",
+        "datenschutz.html",
+        "404.html",
+        "locations/*.html",
+        "css/site.css"
+      ],
+      "selector": "footer.site-footer",
+      "page": "index.html"
+    }
+  ]
+}
