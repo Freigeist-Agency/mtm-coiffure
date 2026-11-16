@@ -1,0 +1,71 @@
+{
+  "404.html": {
+    "nb.address": 1,
+    "nb.hours": 1,
+    "social.instagram": 1,
+    "social.tiktok": 1,
+    "wb.address": 1,
+    "wb.hours": 1
+  },
+  "datenschutz.html": {
+    "nb.address": 1,
+    "nb.hours": 1,
+    "social.instagram": 1,
+    "social.tiktok": 1,
+    "wb.address": 1,
+    "wb.hours": 1
+  },
+  "impressum.html": {
+    "nb.address": 1,
+    "nb.hours": 1,
+    "social.instagram": 1,
+    "social.tiktok": 1,
+    "wb.address": 1,
+    "wb.hours": 1
+  },
+  "index.html": {
+    "about": 1,
+    "faq": 1,
+    "home.cut1": 1,
+    "home.cut2": 1,
+    "home.cut3": 1,
+    "home.cut4": 1,
+    "home.cut5": 1,
+    "home.cut6": 1,
+    "home.rating": 1,
+    "home.reviews": 1,
+    "home.services": 1,
+    "nb.address": 1,
+    "nb.booking": 1,
+    "nb.hours": 2,
+    "social.instagram": 2,
+    "social.tiktok": 2,
+    "wb.address": 1,
+    "wb.booking": 1,
+    "wb.hours": 2
+  },
+  "locations/nuembrecht.html": {
+    "about": 1,
+    "faq": 1,
+    "nb.address": 1,
+    "nb.booking": 4,
+    "nb.hours": 2,
+    "social.instagram": 1,
+    "social.tiktok": 1,
+    "wb.address": 1,
+    "wb.booking": 1,
+    "wb.hours": 1
+  },
+  "locations/waldbroel.html": {
+    "about": 1,
+    "faq": 1,
+    "nb.address": 1,
+    "nb.booking": 1,
+    "nb.hours": 1,
+    "social.instagram": 1,
+    "social.tiktok": 1,
+    "wb.address": 1,
+    "wb.booking": 4,
+    "wb.hours": 2
+  }
+}
