@@ -42,7 +42,7 @@
     var queue = [];                 // indices still to show in this cycle
     var hold = null;                // the running hold (delayedCall); paused/resumed, never rebuilt
     var tl = null;                  // the running swap
-    var reasons = { hover: false, focus: false, offscreen: 'IntersectionObserver' in window, hidden: document.hidden };
+    var reasons = { hover: false, focus: false, offscreen: 'IntersectionObserver' in window, hidden: document.hidden, row: list.hasAttribute('data-row-live') };   // row: js/review-grow.js shows its scrolled row instead (it may start first and mark the list)
 
     items.forEach(function (it, i) {
       if (i) { gsap.set(it, { autoAlpha: 0 }); it.setAttribute('aria-hidden', 'true'); }
@@ -52,7 +52,7 @@
     list.setAttribute('role', 'group');
     list.setAttribute('aria-label', 'Kundenbewertungen');
 
-    function paused() { return reasons.hover || reasons.focus || reasons.offscreen || reasons.hidden; }
+    function paused() { return reasons.hover || reasons.focus || reasons.offscreen || reasons.hidden || reasons.row; }
     function sync() { if (hold) { if (paused()) hold.pause(); else hold.resume(); } }
 
     // first cycle starts from the review already on screen; every later cycle is a fresh shuffle that never opens with the one just shown
@@ -108,6 +108,7 @@
       history: function () { return history.slice(); },
       paused: paused,
       reasons: function () { return JSON.parse(JSON.stringify(reasons)); },
+      hold: function (reason, on) { set(reason, !!on); },   // js/review-grow.js: hold('row', true) while its row replaces the rotation
     };
     return list.__reviews;
   }

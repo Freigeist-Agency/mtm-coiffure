@@ -3,13 +3,21 @@
    photo is the stack's last layer as before. --fh is the footer's measured height and --box-h the photo box's (set by the script before every
    refresh). The footer is pulled up by exactly its own height and the stack gets a tail of --fh plus --pre, so the stack ends where the page
    ends: its end cannot push the photo up before the footer has covered it. --pre is the run of scroll the photo stays pinned before the
-   footer arrives (the pan starts inside it). The pin line is the lower of the stack's own and "the whole box fits under the header". */
+   footer arrives (the pan starts inside it).
+   Since 2026-11-13 (cofounder): the photo pins at the very top of the viewport and fills the whole screen; the header turns see-through
+   over it (js/nav-over-hero.js), so no white bar sits above it. Before, it pinned under the header with a gap, 834px tall at 1440. */
 @media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
   html.photo-pin { --pre: 70vh; }
   html.photo-pin .finale {
-    top: max(var(--nav-h), min(calc(var(--nav-h) + 4vh + 5vh), calc(100svh - var(--box-h, 57.9vw))));
+    position: sticky;   /* its own: since 2026-11-13 the news cards stack on phones only, so from 768px up the stack no longer makes its layers sticky */
+    top: 0;   /* 2026-11-13: back at the very top (a 5% higher pin was tried; the tallest head then touched the edge with no room left to slide) */
+    height: 100svh;
+    height: round(down, 100svh, 1px);   /* whole pixels: the end of the stack is computed from the box's offsetHeight, and a fractional box stuck out 0.2px at the page's end */
   }
-  html.photo-pin .finale img { will-change: transform; }
-  html.photo-pin .stack::after { height: calc(var(--fh, 0px) + var(--pre)); }
+  /* The image covers the box at every shape: 120% of the width (Figma's crop), or, on a tall screen, wide enough that it is 1.15x the
+     screen's height (2400x1600, so 1.5 x 1.15 = 172.5svh), which keeps room for the pan; centred across. */
+  html.photo-pin .finale img { will-change: transform; width: max(120%, 172.5svh); margin-left: calc((100% - max(120%, 172.5svh)) / 2); }
+  /* the tail: a full-width grid row after the photo (the stack is a grid from 768px up), its row gap taken back */
+  html.photo-pin .stack::after { content: ""; display: block; grid-column: 1 / -1; margin-top: calc(-1 * var(--stack-row-gap)); height: calc(var(--fh, 0px) + var(--pre)); }
   html.photo-pin[data-home] .site-footer { margin-top: calc(-1 * var(--fh, 0px)); }
 }

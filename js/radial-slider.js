@@ -53,7 +53,7 @@
     var k = 0;               // stage width / 1000
     var tween = null;        // { from, to, t0, dur } while a move is running
     var raf = 0, dragging = null;
-    var announced = 0, active = -1;
+    var announced = 0, active = -1, centreJ = -1, vidTimer = 0, VIDEO_SETTLE_MS = 250;
 
     function button(dir, label, path) {
       var b = document.createElement('button');
@@ -88,6 +88,11 @@
         el.style.transform = 'translate3d(' + (RING * Math.sin(th) * k).toFixed(2) + 'px,0,' + (RING * (1 - Math.cos(th)) * k).toFixed(2) + 'px) rotateY(' + (-u * STEP_DEG).toFixed(2) + 'deg)';
         if (el.__vis !== 1) { el.style.opacity = ''; el.__vis = 1; }
         if (!el.__placed) { el.__placed = true; el.classList.add('is-placed'); }
+      }
+      var cj = mod(Math.round(pos), M);
+      if (cj !== centreJ) {   // a new card in the middle: the playing video stops now; the new one starts once the ring has stood still
+        centreJ = cj; syncVideos(true);   // for VIDEO_SETTLE_MS (starting videos while it spins cost frames)
+        clearTimeout(vidTimer); vidTimer = setTimeout(syncVideos, VIDEO_SETTLE_MS);
       }
       var idx = mod(Math.round(pos), n);
       if (idx !== active) {
@@ -180,19 +185,23 @@
     stage.addEventListener('dragstart', function (e) { e.preventDefault(); });
 
     // stage width -> px scale for the design units; measured here and on resize, never per frame
-    function setK(w) { if (w > 0 && Math.abs(w / 1000 - k) > 1e-6) { k = w / 1000; render(); } }
+    // --rs-scale (css/radial-slider.css) scales the whole bowl; read with the width, never per frame
+    function setK(w) { var s = parseFloat(getComputedStyle(root).getPropertyValue("--rs-scale")) || 1, nk = w / 1000 * s; if (w > 0 && Math.abs(nk - k) > 1e-6) { k = nk; render(); } }
+    root.__rsRemeasure = function () { setK(stage.clientWidth); };
     setK(stage.clientWidth);
     if (window.ResizeObserver) new ResizeObserver(function (es) { setK(es[0].contentRect.width); }).observe(stage);
     else window.addEventListener('resize', function () { setK(stage.clientWidth); });
 
-    // videos dropped into the slots play only while the slider is on screen, the tab is visible and motion is allowed
+    // videos dropped into the slots play only while the slider is on screen, the tab is visible and motion is allowed; and only the
+    // centre card's (2026-11-15, with the six real videos: measured in a real browser on this laptop, one playing video keeps the page
+    // at 60 frames a second, three or more drop everything to 30). The other cards show their still frame (the video's poster).
     var inView = true;
-    function syncVideos() {
-      var play = inView && !document.hidden && !reduce;
+    function syncVideos(hold) {
+      var play = hold !== true && inView && !document.hidden && !reduce, mid = centreJ >= 0 ? cards[centreJ].querySelector('video') : null;
       var vids = root.querySelectorAll('video');
       for (var i = 0; i < vids.length; i++) {
         var v = vids[i];
-        if (play) { var pr = v.play && v.play(); if (pr && pr.catch) pr.catch(function () {}); }
+        if (play && v === mid) { var pr = v.play && v.play(); if (pr && pr.catch) pr.catch(function () {}); }
         else if (v.pause) v.pause();
       }
     }

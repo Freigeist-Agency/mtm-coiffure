@@ -72,11 +72,12 @@ for (const width of [1440, 768, 375]) {
     if (width > 720) {
       const ratio = 460 / 178, gap = 10;
       const inactive = (s0.inner - 5 * gap) / (5 + ratio), activeW = inactive * ratio;
-      if (width === 1440) {
-        assert(near(s0.inner, 1400, 2), `${tag}: gallery inner width 1400 (${s0.inner})`);
-        assert(near(s0.h, 460, 2), `${tag}: gallery height 460 (${s0.h})`);
-        assert(near(s0.cards[0].w, 460, 3), `${tag}: active card 460 wide (${s0.cards[0].w.toFixed(1)})`);
-        assert(s0.cards.slice(1).every(c => near(c.w, 178, 3)), `${tag}: inactive cards 178 wide (${s0.cards.slice(1).map(c => c.w.toFixed(1))})`);
+      if (width === 1440) {   // 2026-11-15, Desktop_new: the gallery is 1400 wide at 1512 and scales with the page (1333.3 at 1440); the 10px gaps stay
+        const k = 1440 / 1512, inner = 1400 * k, inact = (inner - 5 * gap) / (5 + ratio);
+        assert(near(s0.inner, inner, 2), `${tag}: gallery inner width 1400/1512 of the page (${s0.inner}, want ${inner.toFixed(1)})`);
+        assert(near(s0.h, inner * 460 / 1400, 2), `${tag}: gallery height in Figma's 1400:460 (${s0.h})`);
+        assert(near(s0.cards[0].w, inact * ratio, 3), `${tag}: active card ${(inact * ratio).toFixed(1)} wide (${s0.cards[0].w.toFixed(1)})`);
+        assert(s0.cards.slice(1).every(c => near(c.w, inact, 3)), `${tag}: inactive cards ${inact.toFixed(1)} wide (${s0.cards.slice(1).map(c => c.w.toFixed(1))})`);
       } else {
         assert(near(s0.cards[0].w, activeW, 3) && s0.cards.slice(1).every(c => near(c.w, inactive, 3)),
           `${tag}: active ${activeW.toFixed(0)} / inactive ${inactive.toFixed(0)} from the width formula (${s0.cards.map(c => c.w.toFixed(0))})`);

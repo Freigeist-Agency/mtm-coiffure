@@ -1,6 +1,7 @@
 // Task 7: scroll-linked image orbit around the Services CTA.
-// Desktop: entry from the sides in the first 50% of the section's pass (scale 1.6 -> 1.0), then a rigid RADIAL ring
-// that turns 90deg by the end (45deg slot spacing, so the end state is a permutation of the Figma layout).
+// Desktop: entry from the sides in the first 50% of the section's pass (scale 1.6 -> 1.0), then a rigid RADIAL ring.
+// Since 2026-11-13 (cofounder) the desktop ring makes one FULL turn (360deg) while the section is pinned: progress p 0..0.5 is the
+// entry trigger (section top entering -> its centre on the viewport's centre), p 0.5..1 the pin. A full turn ends on the Figma layout.
 // Mobile (<=767): same entry, settles into the Figma mobile slots, ring amplitude 0 (the Figma mobile slots already bleed
 // past the viewport edges, so any rotation about the section centre would push some diamond further out).
 import fs from 'node:fs';
@@ -23,6 +24,8 @@ const ease = t => 0.5 - Math.cos(Math.PI * t) / 2;   // sine.inOut
 // scroll so that the section's pass through the viewport is at progress p; wheel=true drives it with real wheel events
 async function goto(page, p, wheel = false) {
   const target = await page.evaluate(p => {
+    const e = window.ScrollTrigger && ScrollTrigger.getById('orbit-entry'), k = window.ScrollTrigger && ScrollTrigger.getById('orbit-pin');
+    if (e && k) return p <= 0.5 ? e.start + (p / 0.5) * (e.end - e.start) : k.start + ((p - 0.5) / 0.5) * (k.end - k.start);   // pinned (desktop)
     const r = document.querySelector('.services').getBoundingClientRect();
     return r.top + scrollY - innerHeight + p * (r.height + innerHeight);
   }, p);
@@ -35,9 +38,10 @@ async function goto(page, p, wheel = false) {
       if (Math.abs(y - target) < 1) break;
       await page.mouse.wheel(0, target - y);
       await page.waitForTimeout(120);
+      await page.waitForFunction(() => !window.lenis || !window.lenis.isScrolling, null, { timeout: 3000 }).catch(() => {});   // Lenis glides: read where it lands
     }
   } else {
-    await page.evaluate(t => window.scrollTo({ top: t, behavior: 'instant' }), target);
+    await page.evaluate(t => window.lenis ? window.lenis.scrollTo(t, { immediate: true }) : window.scrollTo({ top: t, behavior: 'instant' }), target);
   }
   await frames(page);
   await page.waitForTimeout(60);
@@ -51,6 +55,9 @@ const read = page => page.evaluate(() => {
   const ob = orb.getBoundingClientRect();
   const ocx = ob.left + ob.width / 2, ocy = ob.top + ob.height / 2;
   const box = e => { const b = e.getBoundingClientRect(); return { l: b.left, t: b.top, r: b.right, b: b.bottom }; };
+  // 2026-11-13: the heading and text now sit outside the ring in fixed-width boxes (Figma 73:3); what must stay clear is the text itself,
+  // so they are measured by their words (the union of the line boxes), not by the empty width of their boxes
+  const ink = e => { const g = document.createRange(); g.selectNodeContents(e); const rs = [...g.getClientRects()].filter(r => r.width > 0); return { l: Math.min(...rs.map(r => r.left)), t: Math.min(...rs.map(r => r.top)), r: Math.max(...rs.map(r => r.right)), b: Math.max(...rs.map(r => r.bottom)) }; };
   const items = [...orb.children].map(li => {
     const cs = getComputedStyle(li);
     if (cs.display === 'none') return null;
@@ -64,7 +71,7 @@ const read = page => page.evaluate(() => {
     };
   });
   return {
-    items, h2: box(sec.querySelector('h2')), btn: box(sec.querySelector('.btn')), copyP: box(sec.querySelector('.services-copy p')), oh: ob.height,
+    items, h2: ink(sec.querySelector('h2')), btn: box(sec.querySelector('.btn')), copyP: ink(sec.querySelector('.services-copy p')), oh: ob.height,
     sw: document.documentElement.scrollWidth, iw: innerWidth, ih: innerHeight, y: scrollY,
     progress: sec.__orbit ? sec.__orbit.progress() : null, hasOrbit: !!sec.__orbit,
     ow: getComputedStyle(sec).overflowX,
@@ -125,7 +132,7 @@ for (const width of [1440, 375]) {
   const { page, errors, close } = await openPage({ width, height: 900 });
   try {
     await page.waitForTimeout(400);
-    const ringFor = p => mobile ? 0 : 90 * ease(clamp01((p - 0.5) / 0.5));
+    const ringFor = p => mobile ? 0 : 360 * ease(clamp01((p - 0.5) / 0.5));   // one full turn while pinned (2026-11-13)
     const S = {};
     const samplePs = mobile ? [0, 0.18, 0.26, 0.3, 0.4] : [0, 0.25, 0.5, 0.75, 1];
     // Samples: positions differ between consecutive samples. Real wheel on two of them.
@@ -155,8 +162,11 @@ for (const width of [1440, 375]) {
     const T = {};
     for (const p of sweep) {
       await goto(page, p, p === 0.5 || p === 1); T[p] = await read(page);
+      T[p].sec = await page.evaluate(() => { const r = document.querySelector('.services').getBoundingClientRect(); return { top: r.top, mid: (r.top + r.bottom) / 2 - innerHeight / 2 }; });
       if (p === 0.5 && !mobile) await page.screenshot({ path: path.join(OUT, `${width}-p050-formed.png`) });   // the formed ring, for the Figma comparison
     }
+    // pinned (desktop, 2026-11-13): from 50% to 100% the section holds still with its centre on the viewport's centre
+    if (!mobile) assert(sweep.every(p => Math.abs(T[p].sec.top - T[0.5].sec.top) <= 1 && Math.abs(T[p].sec.mid) <= 1.5), `${tag}: the section is pinned, centred, for the whole turn (tops ${sweep.map(p => T[p].sec.top.toFixed(0)).join(',')}, centre offsets ${sweep.map(p => T[p].sec.mid.toFixed(0)).join(',')})`);
     // scale 1.0 from 50% on (the entry is done)
     assert(sweep.every(p => vis.every(i => Math.abs(T[p].items[i].scale - 1) < 0.05)), `${tag}: all items at scale 1.0 +-0.05 from 50% to 100%`);
     // no horizontal overflow at any sample
@@ -173,9 +183,9 @@ for (const width of [1440, 375]) {
       worstNet = Math.max(worstNet, Math.abs(wrap(it.rot - (slot[i].tilt + ring))));
       worstSpec = Math.max(worstSpec, Math.abs(wrap(it.rot - (slot[i].tilt + ringFor(p)))));   // independent of where the item is
     }
-    assert(worstRing <= 3, `${tag}: ring angle follows ${mobile ? '0 (mobile amplitude)' : '90deg * progress after 50%'} within 3deg (worst ${fmt(worstRing)})`);
+    assert(worstRing <= 3, `${tag}: ring angle follows ${mobile ? '0 (mobile amplitude)' : '360deg x ease((p-0.5)/0.5), pinned'} within 3deg (worst ${fmt(worstRing)})`);
     assert(worstNet <= 2, `${tag}: from 50% on every face's net rotation = Figma tilt + ring angle +-2deg (worst ${fmt(worstNet)})`);
-    assert(worstSpec <= 2, `${tag}: net rotation = Figma tilt + the specified ring angle (${mobile ? '0' : '90deg x ease((p-0.5)/0.5)'}) +-2deg (worst ${fmt(worstSpec)})`);
+    assert(worstSpec <= 2, `${tag}: net rotation = Figma tilt + the specified ring angle (${mobile ? '0' : '360deg x ease((p-0.5)/0.5)'}) +-2deg (worst ${fmt(worstSpec)})`);
     // at 100%: the net rotation equals the Figma tilt of the slot the item now occupies
     let endTilt = 0, endPos = 0, permuted = 0;
     for (const i of vis) {
@@ -188,7 +198,7 @@ for (const width of [1440, 375]) {
     assert(endTilt <= 2, `${tag}: at 100% net rotation = tilt of the occupied slot +-2deg (worst ${fmt(endTilt)})`);
     if (!mobile) {
       assert(endPos <= 3, `${tag}: at 100% every item sits on a Figma slot centre (worst offset ${fmt(endPos)}px)`);
-      assert(permuted === 8, `${tag}: the 90deg turn maps all 8 slots onto other slots (${permuted}/8 moved)`);
+      assert(permuted === 0, `${tag}: the full turn brings every item back to its own Figma slot (${permuted}/8 elsewhere)`);
     } else {
       assert(permuted === 0, `${tag}: mobile ring amplitude 0 -> items stay in their Figma slots (${permuted} moved)`);
     }
@@ -311,14 +321,16 @@ for (const width of [800, 850, 900, 768]) {
 {
   const trig = page => page.evaluate(() => {
     const sec = document.querySelector('.services');
-    const t = ScrollTrigger.getAll().find(s => s.trigger === sec);
-    const expected = sec.getBoundingClientRect().top + scrollY - innerHeight;
-    return { y: Math.round(scrollY), start: t ? t.start : null, expected, smooth: getComputedStyle(document.documentElement).scrollBehavior };
+    const t = ScrollTrigger.getById('orbit-entry') || ScrollTrigger.getAll().find(s => s.trigger === sec);   // the entry trigger: since 2026-11-13 a pin trigger shares the section
+    const box = sec.parentElement && sec.parentElement.classList.contains('pin-spacer') ? sec.parentElement : sec;   // while pinned the section is fixed: its place in the page is the spacer's
+    const expected = box.getBoundingClientRect().top + scrollY - innerHeight;
+    return { y: Math.round(scrollY), start: t ? t.start : null, expected, smooth: getComputedStyle(document.documentElement).scrollBehavior, lenis: !!window.lenis };
   });
   const wheelTo3000 = async page => {
     await page.mouse.move(700, 450);
     for (let i = 0; i < 60 && (await page.evaluate(() => scrollY)) < 3000; i++) { await page.mouse.wheel(0, 300); await page.waitForTimeout(30); }
     await page.waitForTimeout(500);
+    await page.waitForFunction(() => !window.lenis || !window.lenis.isScrolling, null, { timeout: 3000 }).catch(() => {});
   };
   for (const how of ['resize', 'refresh()']) {
     const { page, close } = await openPage({ width: 1440, height: 900 });
@@ -331,7 +343,7 @@ for (const width of [800, 850, 900, 768]) {
       const r = await trig(page);
       assert(r.y >= 2900, `refresh mid-page (${how}): still near scrollY 3000 (${r.y})`);
       assert(r.start !== null && Math.abs(r.start - r.expected) <= 5, `refresh mid-page (${how}): orbit start ${Math.round(r.start)} is within 5px of ${Math.round(r.expected)}`);
-      assert(r.smooth === 'smooth', `refresh mid-page (${how}): scroll-behavior is restored to smooth (${r.smooth})`);
+      assert(r.smooth === (r.lenis ? 'auto' : 'smooth'), `refresh mid-page (${how}): scroll-behavior is ${r.lenis ? 'auto under Lenis (it scrolls the page itself)' : 'restored to smooth'} (${r.smooth})`);
     } finally { await close(); }
   }
 }

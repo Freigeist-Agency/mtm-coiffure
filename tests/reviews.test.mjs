@@ -1,5 +1,7 @@
 // Review rotator (js/reviews.js, css/reviews.css, the .reviews__* rules in css/site.css, the reviews section of index.html).
 // RV_ONLY=text,rotation,... runs just those blocks (used for the mutation runs).
+// Since 2026-11-13 the rotator runs below 768px (and under reduced motion); from 768px up js/review-grow.js holds it and shows its scrolled
+// row (tests/review-grow.test.mjs), so the rotation blocks run at 600px wide.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -60,7 +62,7 @@ const EXPECTED = [
  }
 ];
 
-const CARD = '.reviews__card', LIST = '.reviews__list', Q = '.reviews__quote';
+const CARD = '.reviews__card', LIST = '.reviews__list', Q = '.reviews__list .reviews__quote';   // the rotator's own reviews: js/review-grow.js adds copies in its row from 768px up
 const reveal = async page => {
   await page.evaluate(s => document.querySelector(s).scrollIntoView({ block: 'center', behavior: 'instant' }), CARD);
   await sleep(150);
@@ -102,9 +104,9 @@ if (want('text')) {
     assert(html.includes(`<blockquote><p>${esc(r.text)}</p></blockquote>`), `source: review ${k + 1} text is in index.html byte-identical (${r.name})`);
     assert(html.includes(`<span class="reviews__name">${esc(r.name)}</span>`), `source: review ${k + 1} name is in index.html byte-identical`);
   });
-  const { page, errors, close } = await openPage({ width: 1440 });
+  const { page, errors, close } = await openPage({ width: 600 });
   try {
-    const got = await page.evaluate(() => [...document.querySelectorAll('.reviews__quote')].map(f => ({
+    const got = await page.evaluate(() => [...document.querySelectorAll('.reviews__list .reviews__quote')].map(f => ({
       text: f.querySelector('blockquote p').textContent, name: f.querySelector('.reviews__name').textContent,
       stars: f.querySelector('.reviews__stars .sr-only').textContent, n: f.querySelectorAll('blockquote, figcaption').length })));
     assert(got.length === EXPECTED.length, `DOM: ${got.length} reviews, expected ${EXPECTED.length}`);
@@ -124,7 +126,7 @@ if (want('text')) {
 if (want('nojs')) {
   const heights = {};
   for (const js of [true, false]) {
-    const { page, close } = await openPage({ width: 1440, js });
+    const { page, close } = await openPage({ width: 600, js });
     try {
       await reveal(page);
       const m = await page.evaluate(([L, Qs]) => {
@@ -141,7 +143,7 @@ if (want('nojs')) {
 
 // ---- 3. rotation: every review once per cycle, no repeat, box height constant ---------------------
 if (want('rotation')) {
-  const { page, errors, close } = await openPage({ width: 1440 });
+  const { page, errors, close } = await openPage({ width: 600 });
   try {
     await reveal(page);
     const a0 = await api(page);
@@ -168,7 +170,7 @@ if (want('rotation')) {
 
 // ---- 3b. many cycles at high speed: every cycle complete, no repeat at any cycle boundary --------------
 if (want('cycles')) {
-  const { page, close } = await openPage({ width: 1440 });
+  const { page, close } = await openPage({ width: 600 });
   try {
     await reveal(page);
     const CYCLES = 40;
@@ -189,7 +191,7 @@ if (want('cycles')) {
 
 // ---- 4. real-speed motion: durations, offsets, hold, outgoing ends before incoming starts ----------
 if (want('motion')) {
-  const { page, close } = await openPage({ width: 1440 });
+  const { page, close } = await openPage({ width: 600 });
   try {
     await reveal(page);
     await noLag(page);
@@ -222,7 +224,7 @@ if (want('motion')) {
 
 // ---- 4b. hold formula, deterministic: every review's hold read from the delayedCall the script schedules ----
 if (want('holds')) {
-  const { page, close } = await openPage({ width: 1440 });
+  const { page, close } = await openPage({ width: 600 });
   try {
     await reveal(page);
     await page.evaluate(() => {
@@ -248,7 +250,7 @@ if (want('holds')) {
 
 // ---- 5. pause: hover, focus inside, offscreen, hidden tab ------------------------------------------
 if (want('pause')) {
-  const { page, close } = await openPage({ width: 1440 });
+  const { page, close } = await openPage({ width: 600 });
   try {
     await speed(page, SPEED);
     // offscreen at load (the card is far below the fold): must not rotate
@@ -296,7 +298,7 @@ if (want('pause')) {
 
 // ---- 6. reduced motion: instant swap, no transform, same hold ----------------------------------------
 if (want('reduced')) {
-  const { page, close } = await openPage({ width: 1440, reducedMotion: true });
+  const { page, close } = await openPage({ width: 600, reducedMotion: true });
   try {
     await reveal(page);
     assert(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches), 'reduced-motion emulation is on (precondition)');
@@ -340,7 +342,7 @@ if (want('fit')) {
       assert(m.items.every(i => Math.abs(i.top - m.items[0].top) < 0.5 && Math.abs(i.left - m.items[0].left) < 0.5), `@${w}: all reviews are stacked in one cell (same top and left)`);
       assert(m.inner.h <= tallest + 1, `@${w}: the box is only as tall as the tallest review (${m.inner.h.toFixed(1)} vs ${tallest.toFixed(1)})`);
       assert(m.list.top >= m.card.top && m.list.bottom <= m.card.bottom && m.list.left >= m.card.left && m.list.right <= m.card.right, `@${w}: the box lies inside the card, nothing cut off by its overflow:hidden`);
-      if (w >= 768) assert(Math.abs(m.card.h - m.card.w * 667 / 975) < 1, `@${w}: the card keeps the Figma 975:667 ratio (${m.card.w.toFixed(0)}x${m.card.h.toFixed(0)}), the text did not grow it`);
+      if (w >= 768) assert(Math.abs(m.card.h - m.card.w * 610 / 975) < 1, `@${w}: the card keeps the Figma 975:610 ratio (68:18) (${m.card.w.toFixed(0)}x${m.card.h.toFixed(0)}), the text did not grow it`);
       assert(m.docW <= w, `@${w}: no horizontal page scroll (${m.docW})`);
       const r = await page.evaluate(s => { const b = document.querySelector(s).getBoundingClientRect(); return { x: 0, y: Math.max(0, b.top - 20), width: innerWidth, height: Math.min(innerHeight - Math.max(0, b.top - 20), b.height + 40) }; }, CARD);
       await page.screenshot({ path: path.join(OUT, `reviews-${w}.png`), clip: r });

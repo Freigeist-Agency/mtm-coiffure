@@ -35,7 +35,10 @@ const snap = () => {
     footTop: fb.top, footBot: fb.bottom, footH: fb.height, pos: cs.position, stuck: cs.position === 'sticky' ? parseFloat(cs.top) : null,
     s: window.arcScroll ? window.arcScroll.factor('finale') : null,
     cls: document.documentElement.className, fhVar: document.documentElement.style.getPropertyValue('--fh'),
-    pan: !!(window.ScrollTrigger && ScrollTrigger.getById('pan')), arcEnd: window.ScrollTrigger && ScrollTrigger.getById('arc-finale') ? ScrollTrigger.getById('arc-finale').end : null,
+    pan: !!(window.ScrollTrigger && ScrollTrigger.getById('pan')),
+    hdOver: document.querySelector('.site-header').classList.contains('is-over-hero') || document.querySelector('.site-footer').getBoundingClientRect().top <= 50,
+    chk: !!(window.checker && window.checker['.finale__checker']),
+    chkLeft: [...document.querySelectorAll('.finale__checker .checker-grid i')].filter(c => c.style.visibility !== 'hidden').length,
   };
 };
 // every ScrollTrigger's start and end, rounded, in a stable order: what a resize must reproduce
@@ -63,25 +66,28 @@ async function pinned(w, h, note) {
   await sleep(600);
   const s0 = await page.evaluate(snap);
   assert(s0.W === w && s0.H === h && !s0.hidden, `${tag}: viewport is ${w}x${h} and the tab is visible`);
-  assert(s0.cls.split(/\s+/).includes('photo-pin') && s0.pan && s0.pos === 'sticky' && s0.arcEnd !== null, `${tag}: preconditions: html.photo-pin, the pan trigger and the finale curve exist, the photo is sticky (class "${s0.cls}")`);
+  assert(s0.cls.split(/\s+/).includes('photo-pin') && s0.pan && s0.pos === 'sticky' && s0.chk, `${tag}: preconditions: html.photo-pin, the pan trigger and the photo's block reveal exist, the photo is sticky (class "${s0.cls}")`);
   const navH = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--nav-h')));
-  const range = s0.imgH - s0.boxH;
-  assert(range > 100, `${tag}: the image is ${s0.imgH.toFixed(1)} tall in a ${s0.boxH.toFixed(1)} box: ${range.toFixed(1)}px to pan`);
+  // 2026-11-13 (cofounder, "shorten the slide"): the pan is capped so the tallest head (its hair 4% down the picture) stays 16px below the screen's top
+  const range = Math.min(s0.imgH - s0.boxH, 0.04 * s0.imgH - 16);
+  assert(range > 10 && range < s0.imgH - s0.boxH, `${tag}: the image is ${s0.imgH.toFixed(1)} tall in a ${s0.boxH.toFixed(1)} box: a ${range.toFixed(1)}px pan, shorter than the ${(s0.imgH - s0.boxH).toFixed(1)} it could run`);
   const seq = await sweep(page, h, Math.max(40, Math.round(h / 15)));
   const last = seq[seq.length - 1];
   assert(last.y >= last.max - 1 && seq.length >= 25, `${tag}: the wheel swept ${seq.length} steps to the end of the page (scrollY ${last.y} of ${last.max})`);
 
   // ---- 1. pin
-  const stuck = s0.stuck, wantStuck = Math.max(navH, Math.min(navH + 0.09 * h, h - s0.boxH));
+  const stuck = s0.stuck, wantStuck = 0;   // 2026-11-13: pinned at the very top of the viewport, the box one screen tall, the header see-through over it (a 5% higher pin left no room to pan with every head in view)
   const iPin = seq.findIndex(s => s.boxTop <= stuck + 0.6);
   const before = seq.slice(0, iPin), after = seq.slice(iPin);
   if (on('pin')) {
-    assert(Math.abs(stuck - wantStuck) <= 1, `${tag} pin: the pin line is max(nav, min(nav + 9vh, viewport - box)) = ${wantStuck.toFixed(1)} (is ${stuck.toFixed(1)})`);
+    assert(Math.abs(stuck - wantStuck) <= 1, `${tag} pin: the pin line is the top of the viewport (is ${stuck.toFixed(1)})`);
+    assert(Math.abs(s0.boxH - Math.floor(h)) <= 1, `${tag} pin: the box is one screen tall (${s0.boxH.toFixed(1)} of ${h})`);
+    assert(after.every(s => s.hdOver), `${tag} pin: the header is see-through while the photo is pinned and the footer has not reached it (${after.filter(s => !s.hdOver).length} samples not)`);
     assert(iPin > 3 && before.every(s => s.boxTop > stuck + 0.6) && after.length >= 10, `${tag} pin: the sweep has ${before.length} samples above the pin line and ${after.length} on it`);
     // a footer taller than the viewport (2560 x 1440) ends the page with its top above the fold: the stack's end then nudges the box up, behind a footer that already fills the screen
     const live = after.filter(s => s.footTop >= 0), dev = live.reduce((m, s) => Math.max(m, Math.abs(s.boxTop - stuck)), 0);
     assert(dev <= 0.6 && live.length >= 10, `${tag} pin: the box's top stays at ${stuck.toFixed(1)} from the pin line on, to the end of the page (max deviation ${dev.toFixed(2)}px over ${live.length} samples while the footer's top is on screen; last scrollY ${last.y})`);
-    if (s0.boxH + navH <= h) assert(after.every(s => s.boxBot <= h + 0.5), `${tag} pin: the whole box is in view while pinned (bottom ${after[0].boxBot.toFixed(1)} of ${h})`);
+    if (s0.boxH <= h) assert(after.every(s => s.boxBot <= h + 0.5), `${tag} pin: the whole box is in view while pinned (bottom ${after[0].boxBot.toFixed(1)} of ${h})`);
     else console.log(`INFO ${tag} pin: the box (${s0.boxH.toFixed(0)}) plus the header (${navH}) is taller than the viewport; its bottom ${(after[0].boxBot - h).toFixed(0)}px lies below the fold while pinned`);
   }
 
@@ -94,7 +100,8 @@ async function pinned(w, h, note) {
     assert(seq.filter(s => s.footTop >= 1.5 * h).every(s => s.t === 0) && seq.filter(s => s.footTop >= 1.5 * h).length >= 3, `${tag} pan: no translate until the footer's top is 150% down (${seq.filter(s => s.footTop >= 1.5 * h).length} samples)`);
     assert(Math.abs(last.t + range) <= 1 && seq.filter(s => s.t < -2 && s.t > -range + 2).length >= 5 && rev === 0, `${tag} pan: it runs 0 -> ${(-range).toFixed(1)} through ${seq.filter(s => s.t < -2 && s.t > -range + 2).length} intermediate samples, never back (${rev} reversals; end ${last.t.toFixed(2)})`);
     const done = seq.filter(s => s.footTop <= 0.85 * h - 3);
-    assert(done.length >= 3 && done.every(s => s.imgBot <= s.boxBot + 0.5), `${tag} pan: once the footer's top is above 85% the image's bottom edge is at or above the box's bottom (${done.length} samples, worst ${Math.max(...done.map(s => s.imgBot - s.boxBot)).toFixed(2)}px)`);
+    const headY = s => s.imgBot - s.imgH + 0.04 * s.imgH;   // the tallest head's hair, in the viewport
+    assert(done.length >= 3 && after.every(s => headY(s) >= 16 - 0.5), `${tag} pan: every head stays in view: the tallest hair is at least 16px below the screen's top the whole time (lowest ${Math.min(...after.map(headY)).toFixed(1)}px)`);
     const covered = Math.max(0, (after[0].boxBot - 0.85 * h) / after[0].boxH);       // the share of the box the footer has taken at the moment the pan is finished
     assert(covered <= 0.25, `${tag} pan: when the pan is finished (footer's top at 85%) the footer has covered ${(covered * 100).toFixed(0)}% of the box (at most a quarter), the rest of the photo with the chair is in view`);
     const cross = seq.find(s => s.footTop <= s.boxBot);
@@ -118,15 +125,11 @@ async function pinned(w, h, note) {
     else console.log(`INFO ${tag} cover: the footer (${fh.toFixed(0)}px) is taller than the viewport; at the end its top is ${last.footTop.toFixed(0)}`);
   }
 
-  // ---- 4. the finale curve ends where the photo pins
+  // ---- 4. (2026-11-13) the curve over the photo is gone: Figma has white blocks there (js/checker.js). They are all gone by the time
+  //      the photo pins, and none comes back while it stays pinned.
   if (on('curve')) {
-    const u = before[before.length - 1];                                           // last sample still in the flow: its top moves 1:1 with the scroll
-    const pinY = u.y + u.boxTop - stuck;
-    assert(Math.abs(seq[0].arcEnd - pinY) <= 2, `${tag} curve: the team photo's ellipse ends at scrollY ${seq[0].arcEnd.toFixed(1)}, the photo pins at ${pinY.toFixed(1)} (${Math.abs(seq[0].arcEnd - pinY).toFixed(2)}px apart)`);
-    assert(after.every(s => s.s <= 0.05) && before[0].s >= 0.95, `${tag} curve: deep as the photo enters (${before[0].s.toFixed(2)}), flat from the pin line on (${Math.max(...after.map(s => s.s)).toFixed(3)} at most)`);
-    const mid = before.filter(s => s.boxTop < h * 0.85 && s.boxTop > stuck + 20);
-    const e = mid.reduce((m, s) => Math.max(m, Math.abs(s.s - Math.max(0.04, (s.boxTop - stuck) / (h - stuck)))), 0);
-    assert(mid.length >= 4 && e <= 0.06, `${tag} curve: the depth follows the photo's travel to the pin line within 0.06 (${e.toFixed(3)} over ${mid.length} samples)`);
+    assert(after.length >= 3 && after.every(s => s.chkLeft === 0), `${tag} blocks: no block left over the photo from the pin line on (${after.map(s => s.chkLeft).join(',')})`);
+    assert(before[0].chkLeft === 32, `${tag} blocks: all 32 blocks show while the photo enters (${before[0].chkLeft})`);
   }
 
   // ---- 5. resize while scrolled to the middle of the pan and to the end
@@ -151,8 +154,8 @@ async function pinned(w, h, note) {
       const diff = afterT.filter((t, i) => t !== freshT[i]).slice(0, 3).map((t, i) => `${t} vs ${freshT[afterT.indexOf(t)]}`);
       assert(same, `${tag} resize ${label} -> ${w2}x${h2}: every ScrollTrigger start/end equals a fresh load's (${afterT.length} triggers${same ? '' : '; ' + diff.join('; ')}; pan ${afterT.find(t => t.startsWith('pan'))})`);
       assert(JSON.stringify(afterN) === JSON.stringify(freshN), `${tag} resize ${label}: document height, --fh, --box-h, pin line and tail equal a fresh load's (${JSON.stringify(afterN)} vs ${JSON.stringify(freshN)})`);
-      const wantT = -(a.imgH - a.boxH) * clamp01((1.5 * a.H - a.footTop) / (0.65 * a.H));
-      assert(Math.abs(a.t - wantT) <= 4 && a.s !== null, `${tag} resize ${label}: the pan stands where the footer puts it (translate ${a.t.toFixed(1)}, wanted ${wantT.toFixed(1)}; box top ${a.boxTop.toFixed(1)}, pin line ${a.stuck})`);
+      const wantT = -Math.min(a.imgH - a.boxH, 0.04 * a.imgH - 16) * clamp01((1.5 * a.H - a.footTop) / (0.65 * a.H));   // the capped pan (heads in view)
+      assert(Math.abs(a.t - wantT) <= 4, `${tag} resize ${label}: the pan stands where the footer puts it (translate ${a.t.toFixed(1)}, wanted ${wantT.toFixed(1)}; box top ${a.boxTop.toFixed(1)}, pin line ${a.stuck})`);
       console.log(`INFO ${tag} resize ${label}: scrollY ${before2.y} -> ${a.y}; pan trigger ${t0.find(t => t.startsWith('pan'))} before the resize cycle, ${afterT.find(t => t.startsWith('pan'))} after (fresh ${freshT.find(t => t.startsWith('pan'))})`);
     }
   }

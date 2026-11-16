@@ -2,7 +2,7 @@
 //   1. seams: on every animated curve the first row beside the section edge is white across the FULL width (x 0..20 and the last 20 px included)
 //      at the floor, mid and full depth. A flattened ellipse scaled about a centre line that is not the edge leaves the section background
 //      showing as a strip; this reads rendered pixels.
-//   2. the hero is curved at load (scrollY 0 = full depth) and flattens monotonically as it scrolls out.
+//   2. (removed 2026-11-13: the hero is straight now; see tests/hero-title.test.mjs)
 //   3. the news section's white ellipse over the top of the team photo: mapped like the Standorte curve, never painted over a card.
 //   4. the footer logo and button never lie over the photo (768px and up), and whether they do below that.
 // Pixels come from page screenshots decoded with pngjs. To see the photo against the white the test blacks it out (a real photo has white walls),
@@ -85,7 +85,7 @@ async function seams(w, h, mobile) {
   await page.mouse.move(w / 2, h / 2);
   await sleep(400);
   assert(await page.evaluate(() => innerWidth) === w && await page.evaluate(() => !!window.arcScroll), `${tag}: viewport is ${w} wide and js/arc-scroll.js is running`);
-  const names = ['hero', 'about', 'curve', ...(w >= 768 ? ['finale', 'footer'] : [])];
+  const names = ['about', 'curve', ...(w >= 768 ? ['finale', 'footer'] : [])];
   for (const name of names) {
     const table = name === 'curve' ? AT.curve : AT[KIND[name]];
     for (const level of ['floor', 'mid', 'full']) {
@@ -115,32 +115,7 @@ async function seams(w, h, mobile) {
   await close();
 }
 
-// ---- 2. hero curved at load ----------------------------------------------------------------------------------------------------------
-async function heroAtLoad(w, h, mobile) {
-  const tag = `@${w} hero`;
-  const { page, close } = await openPage({ width: w, height: h, ...(mobile ? { isMobile: true, hasTouch: true } : {}) });
-  await page.mouse.move(w / 2, h / 2);
-  await sleep(500);
-  const read = () => page.evaluate(() => {
-    const hero = document.querySelector('.hero'), cs = getComputedStyle(hero, '::after');
-    return { y: scrollY, s: window.arcScroll.factor('hero'), d: cs.transform === 'none' ? 1 : new DOMMatrix(cs.transform).d, bottom: hero.getBoundingClientRect().bottom, H: innerHeight, W: innerWidth };
-  });
-  const r0 = await read();
-  assert(r0.W === w && r0.y === 0, `${tag}: the page is at scrollY 0 at ${w} wide`);
-  assert(r0.s >= 0.999 && r0.d >= 0.999, `${tag}: curved at load: depth factor ${r0.s?.toFixed(4)} in the script, ${r0.d.toFixed(4)} rendered (full = 1)`);
-  const seq = [r0];
-  for (let i = 0; i < 80; i++) {
-    await page.mouse.wheel(0, Math.round(h / 20)); await sleep(40);
-    const r = await read(); seq.push(r);
-    if (r.bottom < 0) break;
-  }
-  assert(seq[seq.length - 1].y > 100 && seq[seq.length - 1].bottom < 0, `${tag}: the wheel really scrolled the hero out (scrollY 0 -> ${seq[seq.length - 1].y})`);
-  let inc = 0;
-  for (let i = 1; i < seq.length; i++) if (seq[i].d > seq[i - 1].d + 0.002) inc++;
-  assert(inc === 0, `${tag}: the rendered depth never increases while scrolling out (${seq.length} samples, ${inc} increases; ${seq.filter((_, i) => i % 6 === 0).map(r => r.d.toFixed(2)).join(' ')})`);
-  assert(seq[seq.length - 1].d <= 0.06 && seq.some(r => r.d > 0.3 && r.d < 0.7), `${tag}: it passes through mid depth and ends at the floor (min ${Math.min(...seq.map(r => r.d)).toFixed(3)})`);
-  await close();
-}
+// ---- 2. (removed 2026-11-13) the hero is no longer curved: Figma 66:8 ends straight. tests/hero-title.test.mjs checks its edge. ----
 
 // ---- 3. the team photo's ellipse -----------------------------------------------------------------------------------------------------
 const finaleInfo = () => {
@@ -299,7 +274,6 @@ async function footerRide(w, h, mobile, noOverlap) {
 }
 
 for (const [w, h, m] of [[1440, 900, false], [768, 1024, false], [375, 812, true], [2560, 1440, false]]) await seams(w, h, m);
-for (const [w, h, m] of [[1440, 900, false], [768, 1024, false], [375, 812, true], [2560, 1440, false]]) await heroAtLoad(w, h, m);
 for (const [w, h] of [[1440, 900], [768, 1024], [2560, 1440]]) await finaleCurve(w, h);
 for (const [w, h, m, no] of [[1440, 900, false], [768, 1024, false, true], [768, 700, false], [2560, 1440, false], [375, 812, true]]) await footerRide(w, h, m, no);
 {

@@ -1,4 +1,4 @@
-/* Scroll-driven depth of the animated curved section edges on the home page: the white dome under the hero, the white
+/* Scroll-driven depth of the animated curved section edges on the home page: the white
    ellipse over the top of Standorte (.locations), the curve under Standorte (before Social), the white ellipse over the top of the
    team photo (.finale, the bottom of the news section), and the white dome above the footer (.footer-top). The black footer dome has no moving edge.
    Reference: "Arc Scroll Transition" (Freigeist/references/hover-gallery-make/ScrollAnim.mp4, 1440x900 at 30fps), measured frame by
@@ -10,9 +10,7 @@
      - K is a per-transition setting in the reference (0.195 / 0.423 W for the two covers, 0.156 / 0.085 W for the two reveals).
    Here K is fixed so the moving depth meets the designed one at the end of the travel where the section settles:
      dome   (Locations curve, footer):        depth = D * p      p = 0 when the edge enters at the bottom, 1 when it has settled
-     smile  (hero, Standorte top, team photo): depth = D * (1 - p) p = 0 when the edge enters, 1 when it reaches the top
-   The hero is a smile: the client wants it curved when the page loads, flattening as it scrolls out (its trigger starts at scrollY 0 when the
-   hero is shorter than the viewport, so the first frame is the full depth either way).
+     smile  (Standorte top, team photo):       depth = D * (1 - p) p = 0 when the edge enters, 1 when it reaches the top
    D is the designed (Figma) depth, so s = depth / D is the factor applied to the ellipse. For the footer dome, p runs from its centre
    line (the bottom edge of .footer-top) entering at the bottom to the end of the document, because the page ends before that line
    can reach the top.
@@ -98,20 +96,18 @@
   function init() {
     var gsap = window.gsap, ST = window.ScrollTrigger;
     if (!gsap || !ST) return;
-    var hero = document.querySelector('.hero');
-    var about = document.querySelector('.locations');
-    var curve = document.querySelector('svg.curve');
+    var about = null;   // 2026-11-13: Standorte has no curve any more (Figma 73:74 starts straight, under the team row)
+    var curve = document.querySelector('svg.curve');   // removed from the page 2026-11-13 (Figma has blocks there); null now
     var footTop = document.querySelector('html[data-home] .footer-top');   // its white ellipse exists from 768px up only
-    var fin = document.querySelector('.news .stack > .finale');           // the team photo: the news section's white ellipse hangs over its top edge
-    if (!hero && !about && !curve && !footTop && !fin) return;
+    var fin = null;   // 2026-11-13: the team photo's top edge is Figma's white blocks now (257:77), not the ellipse
+    if (!about && !curve && !footTop && !fin) return;
     gsap.registerPlugin(ST);
 
     var mm = gsap.matchMedia();
     mm.add('(prefers-reduced-motion: no-preference)', function () {
       var curves = [], triggers = [];
 
-      // the edge under the hero: its bottom edge is the dome's centre line. Curved at load: clamp() keeps the start at scrollY 0 on a viewport taller than the hero
-      if (hero) curves.push(varCurve('hero', hero, hero, 'smile', 'clamp(bottom bottom)', 'bottom top'));
+      // (2026-11-13: the hero's smile edge is gone. The Figma hero (66:8) ends straight, and the cofounder chose Figma over the earlier client request.)
       if (about) curves.push(varCurve('about', about, about, 'smile', 'top bottom', 'top top'));   // the Standorte top
       if (curve) curves.push(svgCurve(curve, 'dome'));
       // the team photo's top edge. It is position: sticky, whose rect moves while stuck, so its range comes from the layout (as js/stack.js does):

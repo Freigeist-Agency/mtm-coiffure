@@ -212,7 +212,9 @@
           .slice(0, index + 1)
           .reduce(function (sum, width) { return sum + width; }, 0);
         var movement = targetPosition - currentPosition;
-        if (Math.abs(movement) < 0.5) {
+        // site: card widths render as whole pixels, so up to ~half a pixel per card piles up in the sum; a boundary that
+        // moves less than 2px is standing still (Make used 0.5, where its rounding never added up past it).
+        if (Math.abs(movement) < 2) {
           timeline.to(boundary, { bend: 0, duration: 0.15 }, 0);
           return;
         }
