@@ -1,0 +1,84 @@
+/* Paper textures and the pattern strips (Figma Desktop - 1, pulled again 2026-11-13; the cofounder chose: "pattern strips, paper texture,
+   texture in the black sections").
+   Textures. In Figma each section's fill is a repeating PATTERN of one texture tile, top-left aligned, with a vertical gradient over it:
+   - light paper (Figma 305:2611, "image 22", 1442x2564, assets/paper-light.jpg) on Services 73:3 (scale 0.38), Social 73:122 (0.28),
+     News 75:194 (0.29) and the reviews backdrop 310:2995 (0.64), under white that fades out towards the middle and back;
+   - dark crumpled paper (305:2615, "image 23", 736x1308, assets/paper-dark.jpg) on the intro 73:60 (0.10) and Standorte 73:74 (0.14),
+     under black.
+   The tile width is the Figma tile at 1440 expressed in vw, so it scales with the page; it never gets smaller than at 1440, so a phone
+   shows the same grain instead of a shrunken blur. The gradients keep each section's edges solid white or black, so the checkerboard
+   transitions and neighbours still meet a flat colour.
+   Strips. Figma 300:1107 / 300:1106 / 300:1858: the ornament tile (771x139, from Figma's export of 300:1859) repeated across the width
+   from Figma's own x offset, in two layers: the still pattern without its red star rings is a picture (assets/ornament-base.png, drawn
+   from Figma's shapes at 4x and kept at 2x: drawn as vectors at 1x, Figma's pieces showed hairline seams at their joins), repeated as an
+   SVG pattern; the rings are vectors on top (assets/ornament.svg#rings, three tiles), both in the strip's own SVG at Figma's x offset, and turn on scroll
+   (js/ornament.js). Decorative only (aria-hidden). */
+
+.services {
+  background:
+    linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0) 46.6%, #fff 100%),
+    url("../assets/paper-light.jpg") 0 0 / max(38.0528vw, 548px) auto repeat,
+    var(--paper);
+}
+.social {
+  background:
+    linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0) 47.6%, #fff 100%),
+    url("../assets/paper-light.jpg") 0 0 / max(28.0389vw, 404px) auto repeat,
+    var(--paper);
+}
+.reviews {
+  background:
+    linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0) 49%, #fff 100%),
+    url("../assets/paper-light.jpg") 0 0 / max(64.0889vw, 923px) auto repeat,
+    var(--paper);
+}
+/* News: the texture covers the title and cards only (Figma 75:194, 834 tall at 1440 = 57.9vw); below that the section holds the team
+   photo, so a flat white layer covers the texture from there down. */
+.news {
+  --news-tex-h: 57.9vw;
+  background:
+    linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0) 48.6%, #fff 100%) 0 0 / 100% var(--news-tex-h) no-repeat,
+    linear-gradient(#fff, #fff) 0 var(--news-tex-h) / 100% 100% no-repeat,
+    url("../assets/paper-light.jpg") 0 0 / max(29.0403vw, 418px) auto repeat,
+    var(--paper);
+}
+@media (max-width: 767px) { .news { --news-tex-h: 100%; } }   /* phones: the stacked cards fill the section; the photo covers its own box */
+
+.intro {
+  background:
+    linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0) 100%),
+    url("../assets/paper-dark.jpg") 0 0 / max(5.1111vw, 74px) auto repeat,
+    var(--ink);
+}
+/* Team photo slider + Standorte. In Figma the slider (Location Gallery 170:37) sits inside Standorte (73:74), so one gradient runs behind
+   both: transparent at the section's top, black at 30.288% (y=1000.7 of 3304), 15% black at 63.942% (2111.3), black at the end. Here the
+   slider is its own section (.team-row, 732px at 1440: exactly Figma's run from the intro's bottom at y=217 to the strip at 949) and the
+   strip sits between the two, so the one gradient is split at Figma's own positions (2026-11-13, cofounder: "a gradient going from
+   transparent to black behind that image slider"):
+   - .team-row: Figma y 217 -> 949, black from 217/1000.7 = 21.68% to 949/1000.7 = 94.83%;
+   - .locations: Figma y 1088 (the strip's bottom) -> 3304: 93.3% black at its top (1088 lies just past the black stop, on the way to 15%),
+     15% at (2111.3 - 1088) / 2216 = 46.18%, black at the end. */
+.team-row {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, .2168) 0%, rgba(0, 0, 0, .9483) 100%),
+    url("../assets/paper-dark.jpg") 0 0 / max(7.1556vw, 103px) auto repeat,
+    var(--ink);
+}
+.locations {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, .9332) 0%, rgba(0, 0, 0, .15) 46.18%, #000 100%),
+    url("../assets/paper-dark.jpg") 0 0 / max(7.1556vw, 103px) auto repeat,
+    var(--ink);
+}
+
+/* Google rating card (Figma 278:178, 239x253, 2026-11-13): the dark paper as a pattern at 0.35 (a 257.6px tile = 107.78% of the card's
+   width), under a radial gradient: centre (119, 160.5) = 49.79% 63.44%, radii 220.6 x 92.5 = 92.30% x 36.56% of the card, clear at the
+   centre to black at 85.414%. In % of the card, so it scales with it. */
+.rating-card {
+  background:
+    radial-gradient(92.3% 36.56% at 49.79% 63.44%, rgba(0, 0, 0, 0) 0%, #000 85.414%),
+    url("../assets/paper-dark.jpg") 0 0 / 107.7824% auto repeat,
+    var(--ink);
+}
+
+.pattern-strip { display: block; width: 100%; height: 9.6528vw; }   /* 139 at 1440; both layers are drawn in the strip's own SVG (1440 x 139 units), so they line up at every width */

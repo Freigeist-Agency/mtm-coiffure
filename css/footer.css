@@ -1,0 +1,29 @@
+/* The footer's 2026-11-16 changes (cofounder), on every page: the subpages (Impressum, Datenschutz, the error page) do not load
+   css/v2.css, so these live here. Loaded after css/site.css (and css/v2.css where there is one). */
+
+/* the new Termin button (assets/v2/btn-black.svg, the same 4.72:1 shape as the old one) with its corners rounded like the services
+   button (10 on 151 x 32), and the FRED badge linking to freigeist.agency */
+.footer-cta { overflow: hidden; border-radius: 6.62% / 31.25%; }
+.footer-fred-link { display: inline-block; line-height: 0; }
+
+/* phones: the layout from the cofounder's screenshot: a smaller logo (36% of the width), the button wider (59.2%) 34px under it,
+   the black curve 94px under the button, the first heading 98px under the curve and 14.7% in from the screen's left edge, the FRED
+   badge to the right of "Folge uns", and under a line inset 5.6% each side the copyright with the legal links on their own line
+   beneath it, all from the left */
+@media (max-width: 767px) {
+  .footer-top { min-height: 0; padding-bottom: 0; }
+  .footer-logo { width: 36vw; }
+  .footer-cta { margin-top: calc(34px - 3.1vw); }   /* the block's own 3.1vw padding is above it */
+  .footer-cta img { width: 59.2vw; height: auto; }
+  .footer-body::before { top: calc(34px + 12.55vw + 94px); }   /* the button's 34 and its height (59.2vw x 32/151), then 94 */
+  .footer-body::after { top: calc(34px + 12.55vw + 94px + 20.14vw); }   /* the strip from the curve's centre line, as before */
+  .footer-cols { margin-top: 192px; padding-inline: calc(14.7vw - var(--pad)) 5vw; gap: 30px; }   /* 94 to the curve + 98 to the first heading */
+  .footer-col { padding-right: 0; }
+  .footer-col:last-child { display: grid; grid-template-columns: 1fr auto; column-gap: 16px; align-items: start; }
+  .footer-col:last-child h3, .footer-col:last-child ul { grid-column: 1; }
+  .footer-col:last-child .footer-fred-link { grid-column: 2; grid-row: 1 / span 2; justify-self: end; }
+  .footer-fred { width: 55px; height: auto; margin: 0; }
+  .footer-body { padding-bottom: 32px; }
+  .footer-bottom { position: relative; left: auto; right: auto; bottom: auto; margin: 37px calc(5.6vw - var(--pad)) 0;
+    display: grid; justify-content: start; gap: 18px; padding-top: 22px; font-size: 14px; }
+}

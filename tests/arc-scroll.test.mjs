@@ -1,4 +1,4 @@
-// Scroll-driven curved edges (js/arc-scroll.js): the white dome under the hero, the white ellipse over Standorte (.locations), the curve
+// Scroll-driven curved edges (js/arc-scroll.js): the white ellipse over Standorte (.locations), the curve
 // before Social, and the white dome above the footer (.footer-top, from 768px up). The black footer dome (.footer-body::before) has no moving edge.
 // The team photo's mask ellipse (.finale) and the corner seams are covered by tests/curves-r2.test.mjs.
 // Real wheel scrolling (page.mouse.wheel) through each curve at 1440x900, 768x1024 and 375x812. Every sample reads the
@@ -6,8 +6,8 @@
 // section edge, derives the expected depth factor from the reference mapping on its own, and compares.
 //   dome  (Locations curve, footer):        s = max(floor, p)       p = 0 when the edge enters at the bottom, 1 when it has settled; floor 0.5 on the
 //                                                                   Locations curve (the Social title stays on its white), 0.04 elsewhere
-//   smile (hero, Standorte top):            s = max(0.04, 1 - p)    p = 0 when the edge enters, 1 when it reaches the top. The hero starts at
-//                                                                   scrollY 0 when it is shorter than the viewport, so it is curved at load.
+//   smile (Standorte top):                  s = max(0.04, 1 - p)    p = 0 when the edge enters, 1 when it reaches the top.
+// The hero has had no curve since 2026-11-13 (Figma 66:8 ends straight): checked at every width.
 //   s = rendered depth / designed depth. The footer's p ends where the document ends (the page cannot scroll the dome higher).
 // There is no resting state: a stopped page shows the depth its position maps to (checked after a 900ms stop, mid-travel).
 import fs from 'node:fs';
@@ -23,8 +23,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const MIN_S = 0.04;
 const FLOOR = { curve: 0.5 };
 const TOL = 0.06;            // |rendered s - expected s|: the depth is drawn from the scroll position, so only a frame of lag
-const ALL = ['hero', 'about', 'curve', 'footer'];   // 'about' = .locations (the old About smile moved to the Standorte top)
-const KIND = { hero: 'smile', about: 'smile', curve: 'dome', footer: 'dome' };
+const ALL = ['about', 'curve', 'footer'];   // 'about' = .locations (the old About smile moved to the Standorte top); the hero's curve was removed 2026-11-13
+const KIND = { about: 'smile', curve: 'dome', footer: 'dome' };
 
 // everything a test needs to know, read in one evaluate (layout reads are fine here, this is the test)
 const READ = () => {
@@ -109,6 +109,9 @@ async function pass(w, h, mobile) {
   const rest0 = await page.evaluate(READ);
   const G = restGeometry(rest0.iw);
   assert(await page.evaluate(() => window.arcScroll.factor('photo') === null && window.arcScroll.factor('footer') !== undefined), `${tag}: no curve is driven for the team photo`);
+  // 2026-11-13: the hero ends straight (Figma 66:8), so it has no ellipse and the script does not drive it
+  assert(!rest0.hero.live && rest0.hero.radius !== '50%' && await page.evaluate(() => window.arcScroll.factor('hero') == null),
+    `${tag}: the hero has no curved edge (live ${rest0.hero.live}, radius ${rest0.hero.radius})`);
 
   for (const name of NAMES) {
     // ---- forward pass: start below the entry line, wheel through to the settled end ------------------------------
@@ -212,7 +215,7 @@ async function reduced(w, h, mobile) {
     const r = await page.evaluate(READ);
     samples++;
     const ok = ['hero', 'about', 'footer'].every(n => r[n].transform === 'none' && !r[n].live) && !r.finale.live && r.black.transform === 'none' && r.curve.ry === '286'
-      && Math.abs(r.hero.top - r.hero.top0 - G.hero.top) <= 1 && Math.abs(r.about.top - G.about.top) <= 1 && (r.iw < 768 || Math.abs(r.footer.top - G.footer.top) <= 1) && Math.abs(r.black.top - G.black.top) <= 1 && Math.abs(r.curve.boxH - G.curveH) <= 1;
+      && Math.abs(r.about.top - G.about.top) <= 1 && (r.iw < 768 || Math.abs(r.footer.top - G.footer.top) <= 1) && Math.abs(r.black.top - G.black.top) <= 1 && Math.abs(r.curve.boxH - G.curveH) <= 1;
     if (!ok && !bad) bad = `y=${r.y} hero ${r.hero.transform} about ${r.about.transform} footer ${r.footer.transform} ry ${r.curve.ry}`;
     return r;
   };

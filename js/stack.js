@@ -39,7 +39,7 @@
       return parseFloat(getComputedStyle(layers[k]).top) || 0;
     }
 
-    gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', function () {
+    gsap.matchMedia().add(opts.media || '(prefers-reduced-motion: no-preference)', function () {
       if (getComputedStyle(layers[0]).position !== 'sticky') return;   // static layout (e.g. no stylesheet): leave it alone
       var measure = null;
       if (opts.rowVar) {
@@ -72,7 +72,7 @@
     if (!gsap || !ST) return;
     gsap.registerPlugin(ST);
     var news = document.querySelector('.news .stack');
-    if (news) initStack(news, ':scope > .stack__layer');
+    if (news) initStack(news, ':scope > .stack__layer', { media: '(prefers-reduced-motion: no-preference) and (max-width: 767px)' });   // phones only (cofounder, 2026-11-13): side by side from 768px up
     var locations = document.querySelector('.locations__main');
     if (locations) initStack(locations, ':scope > .location-info', { id: 'stack-locations', rowVar: '--stack-row-h' });
   }

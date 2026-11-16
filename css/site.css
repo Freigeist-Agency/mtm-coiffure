@@ -4,6 +4,13 @@
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-padding-top: var(--nav-h); -webkit-text-size-adjust: 100%; } /* in-page anchors clear the sticky nav */
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+/* Lenis 1.3.11 (js/smooth-scroll.js): its dist/lenis.css, verbatim, plus scroll-behavior off while it runs (it scrolls the page itself) */
+html.lenis, html.lenis body { height: auto; }
+.lenis:not(.lenis-autoToggle).lenis-stopped { overflow: clip; }
+.lenis [data-lenis-prevent], .lenis [data-lenis-prevent-wheel], .lenis [data-lenis-prevent-touch] { overscroll-behavior: contain; }
+.lenis.lenis-smooth iframe { pointer-events: none; }
+.lenis.lenis-autoToggle { transition-property: overflow; transition-duration: 1ms; transition-behavior: allow-discrete; }
+html.lenis { scroll-behavior: auto; }
 body {
   margin: 0;
   font-family: var(--font);
@@ -43,6 +50,16 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .site-nav a { text-decoration: none; font-size: var(--fs-body); }
 .site-nav .nav-link { min-width: 6.5278vw; }
 .site-nav .nav-link:hover { text-decoration: underline; text-underline-offset: 4px; }
+/* Home: the hero starts at the top of the page, under the header (cofounder, 2026-11-13; Figma 64:2 also puts the hero at y=0).
+   While the hero is behind it (js/nav-over-hero.js sets .is-over-hero), the bar is transparent with white text and the logo reversed
+   out: logo-nav.png is black on an opaque white ground, so it swaps for logo-nav-white.png (made from it: white where it is dark,
+   transparent where it is white; no white logo exists in Figma). Without the script the bar stays the white Figma bar over the top 50px of the video. */
+html[data-home] main { margin-top: calc(-1 * var(--nav-h)); }
+html[data-home] .site-header { transition: transform 250ms ease-out, background-color 250ms ease-out; }
+html[data-home] .site-header.is-over-hero, html[data-home] .site-header.is-over-review { background: transparent; color: var(--paper); }   /* is-over-review: js/review-grow.js, the full-screen review card */
+.brand .brand__over-hero, html[data-home] .site-header.is-over-hero .brand img:not(.brand__over-hero), html[data-home] .site-header.is-over-review .brand img:not(.brand__over-hero) { display: none; }
+html[data-home] .site-header.is-over-hero .brand .brand__over-hero, html[data-home] .site-header.is-over-review .brand .brand__over-hero { display: block; }
+@media (prefers-reduced-motion: reduce) { html[data-home] .site-header { transition: none; } }
 @media (min-width: 768px) {   /* top-aligned as in Figma: logo and button 5px from the top, the text 13px */
   .site-header { align-items: flex-start; }
   .brand { margin-top: 5px; }
@@ -50,56 +67,72 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   .site-nav .nav-link { margin-top: 8px; line-height: 1.25; }
 }
 
-/* ---------- Hero (Figma Hero video 1440x1080: sand, text row at y=329, the decorative curve from y=452 ends the hero) ---------- */
-/* The curve frame is a radial gradient (sand to transparent black, centred on the frame's BOTTOM edge: the frame is flipped)
-   over the sand, plus a white ellipse 1440x572 whose centre line is the hero's bottom edge. Figma interpolates the gradient
-   un-premultiplied, so over sand the colour is sand * (1 - t + t^2), t = r / 0.9487 (measured on the render: 0.80 at r 0.66,
-   0.915 at r 0.86, 1.0 beyond 0.95): written out as stops, because CSS would interpolate it premultiplied and stay flat. */
+/* ---------- Hero (Figma 66:8 "Hero video", 1440x1005 in HFuZZUOKyUWmXb8yER287l) ---------- */
+/* The frame's fill is the salon video under a 32% black layer, bottom corners 5px. One white text row at y=329: "Wilkommen."
+   left (x=11), "Friseurmeister in Nümbrecht & Waldbröl" centred, the Arabic greeting right (80x24, ends at x=1429).
+   The title (Figma 265:63) is "MTM Coiffure." in Badeen Display 200px, white, centred, its 311px line box from y=775: it runs 81px
+   past the hero's bottom edge, where white letters meet the white page, so the hero's overflow clips it at the edge. */
 .hero {
   position: relative; overflow: hidden;
-  height: clamp(560px, 75vw, 1080px);
-  background:
-    radial-gradient(ellipse 70.18% 70.18% at 50% 100%,
-      #a5732d 0%, #936628 11.86%, #865d25 23.72%, #7e5822 35.58%, #7c5622 47.44%,
-      #7e5822 59.29%, #865d25 71.15%, #936628 83.01%, #a5732d 94.87%) bottom / 100% 43.6111vw no-repeat,
-    var(--sand);
+  height: 69.7917vw;                                   /* 1005 at 1440 */
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: var(--ink);                              /* until the video's first frame is in */
+  color: var(--paper);
 }
-.hero::after { /* white ellipse 1440x572, its centre line on the hero's bottom edge */
-  content: ""; position: absolute; z-index: 1; left: -1px; right: -1px; bottom: -19.8611vw; height: 39.7222vw;   /* 1px wider each side: the first row above the edge must reach the corners */
-  background: var(--paper); border-radius: 50%;
-}
+.hero::after { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, .32); pointer-events: none; }   /* Figma's 32% black fill */
 .hero-media { position: absolute; inset: 0; overflow: hidden; }
 .hero-media video { width: 100%; height: 100%; object-fit: cover; }
-/* Header row: x=11..1429 (margin 11), "Friseurmeister ..." centred at y=20, then the row at y=329 (hello left, name centred, Arabic right) */
 .hero-intro {
-  position: absolute; inset: 1.3889vw 0.7639vw 0;   /* no z-index: a stacking context here would stop the Arabic SVG blending into the sand */
- 
-  display: grid; grid-template-columns: 1fr auto 1fr; grid-template-rows: auto auto;
-  row-gap: min(19.7222vw, 284px); align-content: start; align-items: start;
-  font-size: var(--fs-body); line-height: 1.25;
+  position: absolute; z-index: 1; inset: 22.8472vw 0.7639vw auto;   /* the row's top at y=329, margins 11 */
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: start;
+  font-size: var(--fs-body); font-weight: 300; line-height: 1.25;
 }
-.hero-title { display: contents; font-size: inherit; }
-.hero-title small { grid-column: 2; grid-row: 1; display: block; font-size: inherit; text-align: center; }
-.hero-title span { grid-column: 2; grid-row: 2; display: block; font-size: inherit; line-height: inherit; text-transform: uppercase; text-align: center; } /* the column is as wide as the subtitle, so the name needs its own centring */
-.hero-hello { grid-column: 1; grid-row: 2; }
-.hero-arabic { grid-column: 3; grid-row: 2; justify-self: end; width: 5.5556vw; height: 1.6667vw; mix-blend-mode: multiply; } /* 80x24; the SVG ships with an off-white ground */
+.hero-title { display: contents; font-size: inherit; font-weight: inherit; }
+.hero-title small { grid-column: 2; grid-row: 1; display: block; font-size: inherit; text-align: center; margin-top: .2em; translate: -0.5556vw 0; }   /* Figma sets it 4px below the row and centres it at x=712, 8px left of the middle */
+.hero-title span {
+  position: absolute; left: calc(50% + 0.3472vw); top: 30.9722vw;   /* line box at y=775: 446 below the row (its containing block); Figma centres the box at x=725, 5px right of the middle */
+  translate: -50% 0; white-space: nowrap;   /* the translate property, not transform: js/hero-morph.js scales this word with transform */
+  font-family: var(--font-display); font-weight: 400; font-size: var(--fs-hero); line-height: normal;
+}
+.hero-hello { grid-column: 1; grid-row: 1; }
+.hero-arabic { grid-column: 3; grid-row: 1; justify-self: end; width: 5.5556vw; height: 1.6667vw; }   /* 80x24 */
 
-/* ---------- About: "Wir sind MTM Coiffure." (Figma Section Content, 1440x416 at y=1080) then the team gallery (1400x460 at y=1522) ---------- */
-.about { position: relative; padding-bottom: 13.8194vw; }   /* 199px between the gallery and the Introduction */
-.about-copy {
-  display: grid; grid-template-columns: 44.4444vw 1fr; grid-template-rows: auto auto; column-gap: 0; row-gap: 1.5972vw;   /* the second row is 80px of margin + 3 lines - 2px = 153px at 1440 */
-  padding: 1.4583vw 1.5972vw;                 /* 21px / 23px */
+/* ---------- About (Figma 204:50 "Section Content" at x=28 y=1134 and 278:97 the blurred logo; section y=1005..2043, 1038 tall) ----------
+   Text 73:62: Geom Light 64px, white with mix-blend-mode: difference (black on the white page, lighter over the grey logo), 930 wide at
+   x=28 y=1213, 8 lines in a 664px box (83px lines). Rating card 278:178: black, 239x253, radius 5, at x=1183 y=1213 (18px from the right).
+   Logo: the Figma export keeps its blur (filter) and 28% opacity inside the SVG; the file is 1196.6x729.6 because the blur reaches
+   2.87% / 1.71% past the 1157x690 logo, so it is placed 19.8px up and left of the logo's x=147 y=1318. */
+/* 2026-11-13 (cofounder): the section fits its content (the 48px text and the card), no longer a fixed 72.0833vw (1038px at 1440):
+   the text is in the flow under a 14.4444vw top padding, the section ends as far below the text or the card (whichever is lower) as
+   the content starts below the hero (2026-11-13, cofounder), then the ornament. The card stays absolutely placed beside the text. */
+.about { position: relative; isolation: isolate; padding: 14.4444vw 0; min-height: calc(14.4444vw + clamp(200px, 16.5972vw, 300px) * 253 / 239 + 14.4444vw); background: var(--paper); }   /* 2026-11-13: as much space below the content as above it (208 at 1440), up to the ornament */
+/* 2026-11-13 (cofounder): the 40svh of breathing room before the services now sits below the first ornament strip (the orbit's photos
+   need it to fly in); the section itself ends as far below its content as the content starts below the hero (see the padding). */
+.pattern-strip--about { margin-bottom: 40vh; margin-bottom: 40svh; }   /* was on .about: 50, then 20% less = 40, at every width (svh: steady while a phone's address bar moves) */   /* cofounder, 2026-11-13: breathing room before the services, at every width; 50 then 20% less, 40 before the services, at every width (svh: steady while a phone's address bar moves) */
+/* 2026-11-13 (cofounder): the blurred MTM logo behind the text is gone (hidden in Figma too: 278:97) */
+.about-text {
+  position: relative; z-index: 1; left: 1.9444vw; width: 64.5833vw; margin: 0;
+  font-size: 3.3333vw; font-weight: 300; line-height: 1.25; text-wrap: balance;   /* 48px at 1440, Geom Light (Figma 73:62, 2026-11-13; was 64); 1.25 is Geom's own line height, Figma's "auto" */
+  color: var(--paper); mix-blend-mode: difference;
 }
-.about-copy h2 {
-  grid-column: 1 / -1; margin-inline: -0.8333vw; text-align: center;   /* 1418 wide box at x=11 */
-  font-size: var(--fs-mega); line-height: 1.25; padding-bottom: .185em; /* 172.5px line at the top of a 198px box */
+/* Rating card: its parts are placed in % of the card and sized in cqw, so the card scales as one piece (Figma px / 239 or / 253) */
+.rating-card {
+  position: absolute; z-index: 1; right: 1.25vw; top: 14.4444vw; width: clamp(200px, 16.5972vw, 300px); aspect-ratio: 239 / 253;
+  container-type: inline-size; background: var(--ink); color: var(--paper); border-radius: var(--radius); overflow: hidden;
+  font-weight: 300; line-height: normal;
 }
-.about-copy p { grid-column: 1; margin-top: 5.5556vw; margin-bottom: -.1389vw; line-height: 1.25; text-align: left; }
-.about-copy .btn { grid-column: 2; justify-self: end; align-self: end; }
-.br-m { display: none; }
+.rating-card > * { position: absolute; margin: 0; }
+.rating-card__google { left: 11.2971%; top: 11.8577%; width: 56.0669%; height: auto; }          /* 134x41 at 27,30 */
+.rating-card__score { left: 11.7155%; top: 28.0632%; font-size: 8.3682cqw; display: flex; align-items: center; gap: 0; }  /* "4,7" 20px at 28,80 */
+.rating-card__score img { position: absolute; left: 14.6444cqw; top: -3.7657cqw; width: 47.6595cqw; max-width: none; height: auto; }  /* stars 113.9x45 at 63,71: 35 left of and 9 above "4,7" */
+.rating-card__count { left: 11.7155%; top: 41.8972%; font-size: 6.6946cqw; white-space: nowrap; }  /* 16px at 28,106 (Figma 278:209, 2026-11-13; was 114) */
+.rating-card__btn { left: 11.2971%; top: 71.9368%; width: 76.9874%; }                              /* 184x39 at 27,182 */
+.rating-card__btn img { width: 100%; height: auto; }
 
-/* Team photos: the hover gallery (css/hover-gallery.css) sits in .gallery, on white. .carousel below is the shared base for the social carousel. */
-.gallery { padding: 1.8056vw 0 0; }          /* 26px below the copy: the gallery starts at y=1522 */
+/* Team photos: the hover gallery (css/hover-gallery.css) in .team-row, on the black of the intro and Standorte (Figma 170:37 "Location
+   Gallery": the 1400x460 gallery at x=20 y=5135, 169px below the intro section's end at 4966; the frame ends at 5698). */
+.team-row { background: var(--ink); }
+.gallery { padding: 11.7361vw 0 7.1528vw; }   /* 169 above, 103 below */
 .carousel {
   display: flex; gap: var(--gap);
   padding-inline: var(--pad); scroll-padding-inline: var(--pad);
@@ -110,8 +143,26 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .carousel__item { scroll-snap-align: start; }
 .carousel__item img { width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius); }
 
-/* ---------- Introduction (Figma 73:60, 1440x915 at y=2181): 85px/150px weight 400, centred, three 145px portraits in the text ---------- */
-.intro { padding: .5208vw var(--pad); margin-bottom: 13.1944vw; }   /* 7.5px above and below the text; the Services start 190px after the section's end */
+/* ---------- Checkerboard blocks (Figma "transition" frames 257:112 and 278:122, 1445x1024): static for now, animated later ----------
+   Each wrapper is the white gap between two sections; the SVG is the Figma frame, drawn at its Figma place relative to the gap. */
+.blocks { position: relative; overflow: clip; background: var(--paper); }
+.blocks svg { position: absolute; display: block; width: 100.3472vw; height: 71.1111vw; }   /* 1445x1024 */
+.blocks--into-intro { height: 59.2361vw; }                       /* services end 3136 .. intro 3989 */
+.blocks--into-intro svg { top: -11.875vw; left: -0.2778vw; }     /* frame at x=-4 y=2965 */
+.blocks--out-of-locations { height: 71.1111vw; }                 /* Standorte end 8053 .. 9077, the frame's top */
+/* Scrubbed reveal (js/checker.js): with motion, each area becomes a grid of 180x171 cells in the colour being left, over a ground in
+   the colour arriving; the cells go one by one as the area scrolls through. The static SVG is the fallback and is hidden meanwhile. */
+.checker-live > svg { visibility: hidden; }
+.blocks--into-intro.checker-live { background: var(--ink); }
+.checker-grid { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.checker-grid i { position: absolute; width: calc(12.5% + 1px); height: calc(11.875vw + 1px); }   /* +1px: no hairline seams between cells */
+.checker-grid--paper i { background: var(--paper); }
+.checker-grid--ink i { background: var(--ink); }
+.blocks--out-of-locations svg { top: -11.875vw; left: -0.1389vw; }   /* drawn as on Figma's render: the densest row touches the black of Standorte (171 above where the frame offsets alone put it) */
+
+/* ---------- Introduction (Figma 73:60 "Introduction Section", black, 1460x977 at y=3989): 85px/150px weight 400, white, centred,
+   three 145px portraits in the text; the text box (66:13) at y=4021, 851 tall ---------- */
+.intro { padding: 0.6944vw var(--pad) 4.6528vw; background: var(--ink); color: var(--paper); }   /* the first line on Figma's at 10px (the portrait margins add the rest of the 32); 977 tall in all */
 .intro-text { font-size: var(--fs-display); font-weight: 400; line-height: 1.7647; text-align: center; }
 /* Portraits are inline, so they rewrap with the words. In Figma the first and the last one hang outside the centred text (the words
    stay on the centre line), so each of those two gets an invisible twin of the same width (.intro-gap) on the other side: after
@@ -129,7 +180,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .services {
   position: relative;               /* overflow-x: clip lives in css/orbit.css, next to the entry motion that needs it */
   display: grid; place-items: center;
-  padding: 12.43vw 0 2.29vw;   /* 179px above and 33px below the orbit at 1440 */
+  padding: 12.43vw 0 8.75vw;   /* 179px above and 126px below the orbit at 1440: Figma 73:3 is 1093 tall (2043..3136) */
 }
 .orbit {
   grid-area: 1 / 1; position: relative; list-style: none; margin: 0; padding: 0;
@@ -159,65 +210,48 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .services-copy { margin-bottom: .9028vw; }   /* Figma: the copy block's centre is 6.5px above the ring's centre */
 .services-copy h2 { font-size: var(--fs-lead); line-height: 1.25; }
 .services-copy p { max-width: 424px; line-height: 1.25; }
-
-/* Smile edge (js/arc-scroll.js drives --arc-s): a white ellipse centred on the top edge of the section, clipped to it. */
-.locations::before {
-  content: ""; position: absolute; left: -1px; right: -1px; top: var(--smile-top); height: var(--smile-h);
-  background: var(--paper); border-radius: 50%;
-  transform-origin: 50% calc(-1 * var(--smile-top));  /* the section's top edge: scaleY moves only the apex, the chord on the edge stays full width (the ellipse's centre line sits 13px below the edge, scaling about it left a black wedge at both corners) */
+/* 2026-11-13 (cofounder, Figma 73:3 pulled again): from 768px up the ring is smaller and the copy moves out of it. The ring and all its
+   motion (js/orbit.js measures the slots on every refresh) are unchanged, only scaled: photos 124.7px whose centres sit 277px from the
+   ring centre at 1440 (was 131.4 at 328), the centre at (720.5, 547) of the 1093-tall section. The title sits top left, the text bottom
+   right, the button alone in the ring's centre. The text keeps the 16px floor below 1440; the title scales with the page (with a floor it
+   would collide with the ring at 768-850). Phones keep their own layout below. */
+@media (min-width: 768px) {
+  .services { padding: 14.8958vw 0 14.8333vw; }                     /* 214.5 above and 213.6 below the 664.9px ring box: 1093 at 1440 */
+  .orbit { width: 46.1736vw; }                                       /* 664.9: the side photos' centres 0.4166 x that = 277 from the centre */
+  .orbit__item { width: 18.755%; margin: -9.3775% 0 0 -9.3775%; }    /* 124.7 of 664.9 */
+  .services-copy { grid-area: auto; position: absolute; inset: 0; width: auto; max-width: none; margin: 0; display: block; text-align: left; pointer-events: none; }   /* grid-area auto: placed against the section, not its grid cell */
+  .services-copy > * { position: absolute; margin: 0; pointer-events: auto; }
+  .services-copy h2 { left: 1.875vw; top: 13.3333vw; width: 31.9444vw; font-family: var(--font-display); font-weight: 400; font-size: 2.5vw; line-height: normal; color: #000; }   /* 73:11: 36px at 27,192, 460 wide; no 24px floor: a larger title runs into the top-left photo at 768-850 */
+  .services-copy p { left: 71.3889vw; top: 55vw; width: 27.7083vw; max-width: none; font-size: max(1.3889vw, 16px); font-weight: 300; line-height: normal; text-wrap: balance; color: #fff; mix-blend-mode: difference; }   /* 73:13: 20px Geom Light at 1028,792, 399 wide, white in difference mode */
+  .services-copy .btn { left: 50%; top: 37.9514vw; transform: translate(-50%, -50%); }   /* 73:147: 184x39 centred at (720, 546.5) */
 }
 
-/* ---------- Standorte (Figma Locations Section: black from y=4286 under a white ellipse; title and button at y=4575; two 1400x787 cards) ---------- */
-/* The section's own gradient is the About frame's: sand to transparent black over black, un-premultiplied, so (1 - t)^2 * sand. */
+/* ---------- Standorte (Figma 73:74 "Locations Section", black, 1440x3304 from y=4749; this section is its part from 5698 to 8053) ----------
+   Title 73:75 "Standorte." Badeen Display 200px, white, centred, its box at y=5911 (213 below the team row); the button (257:101,
+   184x39) centred at y=6181; two 1400x787 cards at x=20, y=6312 and 7111 (12px apart); the black ends at 8053 (155 below the second).
+   A card (171:108 / 176:53) is the salon video under 50% black (Figma adds a Glass effect, not rendered here), the name (20px Geom 400,
+   white) centred on the card (cofounder, 2026-11-13; Figma had it right-aligned), the whole card a link. overflow is clip, not hidden: hidden would make the
+   section or the card a scroll container and kill the sticky stack (motion, js/stack.js, unchanged). */
 .locations {
-  --smile-top: -20.2083vw; --smile-h: 42.2917vw;      /* ellipse 1440x609, 291px above the top edge */
-  position: relative; overflow: clip;                 /* clip, not hidden: hidden would make this a scroll container and kill the sticky card */
-  color: var(--paper); container-type: inline-size;   /* cqw below = the 1400px content box */
-  padding: 20.0694vw var(--pad) 0;
-  background:
-    radial-gradient(70.2% 70.2% at 50% 0,
-      #a5732d 0%, #7e5822 9.95%, #5d4119 19.9%, #402d12 29.85%, #291d0b 39.8%,
-      #171006 49.75%, #0a0703 59.7%, #030201 69.65%, #000 79.6%) top / 100% 57.9vw no-repeat,
-    var(--ink);
+  position: relative; overflow: clip; background: var(--ink); color: var(--paper);
+  container-type: inline-size;                        /* cqw below = the section's width */
+  padding: 13.2639vw var(--pad) 10.7639vw;            /* 191 above the title box (Figma 213, less the 22px the browser sets this font lower in its line), 155 below the cards */
 }
-.locations > * { position: relative; }               /* above the ellipse */
-.locations__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 14.0278vw; } /* cards start 202px below the title */
-.locations__head .btn img { width: 186px; height: 39px; }
-.locations__head h2 { font-size: var(--fs-title); line-height: 1.25; }
-/* A card is the photo with the salon name centred on it. DOM order stays label, photo, button; the photo fills the card, the
-   Planity link sits at the bottom edge (Figma has no button on the cards). assets/location-card.jpg is Figma's own render of
-   the photo under the Glass effect on 50% black, so a new salon photo means exporting that card again.
-   overflow is clip, not hidden: hidden would make the card a scroll container and kill the sticky label and button. */
-.locations__main { display: grid; gap: 12px; }
-.location-info {
-  --loc-btn-w: min(12.9167cqw, 186px); --loc-btn-h: calc(var(--loc-btn-w) * 39 / 186); --loc-btn-end: 2.7778vw;
-  --loc-clear: calc(var(--loc-btn-end) + var(--loc-btn-h) + 12px);   /* room the button takes at the card's bottom edge */
-  position: relative; display: grid; place-items: center; aspect-ratio: 1400 / 787; overflow: clip;
-}
-.location-info .location-img { position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; }
-.location-info h3 { grid-area: 1 / 1; position: relative; z-index: 1; font-size: var(--fs-body); font-weight: 400; line-height: 1.25; text-align: center; }
-.location-info h3 a { text-decoration: none; }
-.location-info h3 a:hover { text-decoration: underline; text-underline-offset: 4px; }
-.location-info .btn { grid-area: 1 / 1; position: relative; z-index: 1; align-self: end; justify-self: center; margin-bottom: var(--loc-btn-end); max-width: 100%; }
-/* While a card is taller than the space left, the name stays under the nav and the button at the bottom of the viewport.
-   The name and button share one grid cell (on the live site they had separate columns), so they must never meet: the name
-   also holds above the stuck button, and the margins stop a sticky item before it reaches the other's zone at either card end.
-   The margins are symmetric on the name and ignored by the button's end alignment, so the static layout does not move. */
-.location-info h3 { margin-block: var(--loc-clear); }
-.location-info .btn { margin-top: calc(var(--loc-clear) + 32px); }
-@media (prefers-reduced-motion: no-preference) {   /* the offsets live here too: on a position: relative element they would shift the static layout */
-  .location-info h3, .location-info .btn { position: sticky; }
-  .location-info h3 { top: calc(var(--nav-h) + 2vh); bottom: calc(2vh + var(--loc-btn-h) + 12px); }
-  .location-info .btn { bottom: 2vh; }
-}
-.location-info .btn img { width: var(--loc-btn-w); height: auto; aspect-ratio: 186 / 39; }
-/* Locations stack. The Nümbrecht card pins under the nav and the Waldbröl card scrolls up over it and covers it, like the
-   news cards used to. Needs html.js and no-preference; without JS or under reduced motion both cards are plain flow.
-   --stack-row-h is the first card's measured height (js/stack.js, on refresh, never per frame); the pin line is nav + 2vh
-   unless that would push the photo's bottom out of view, then the card is pinned bottom-aligned. --stack-hold is the run
-   where the pinned card stands alone before Waldbröl starts to rise (static layout: Figma's 12px gap). Waldbröl is opaque
-   black above the pinned card. js/stack.js scrubs the covered card to
-   scale 0.92 and its content to opacity 0.35. No ancestor may be a scroll container. */
+.locations__head { display: grid; justify-items: center; }
+.locations__head h2 { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-hero); line-height: normal; white-space: nowrap; }
+.locations__head .btn { margin-top: calc(20.2778vw - 1.3889 * var(--fs-hero)); }   /* the button at y=6181: 292px below this title box's top */
+.locations__head .btn img { width: 184px; height: 39px; }
+.locations__main { display: grid; gap: 12px; margin-top: 6.3194vw; }   /* the first card 92px below the button */
+.location-info { position: relative; display: grid; align-items: center; aspect-ratio: 1400 / 787; overflow: clip; border-radius: 0; }
+.location-info::after { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, .5); pointer-events: none; }   /* Figma 172:37 */
+.location-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* 2026-11-13 (cofounder): the name centred on the card, and the whole card is the link to the salon page. The heading covers the card
+   and its one link fills it, so a click or tap anywhere on the card opens the page; the name stays the link's text (one link per card,
+   read as the salon's name). */
+.location-info h3 { position: absolute; inset: 0; z-index: 1; margin: 0; font-size: var(--fs-body); font-weight: 400; line-height: 1.25; }
+.location-info h3 a { display: grid; place-items: center; width: 100%; height: 100%; text-align: center; text-decoration: none; }
+/* Locations stack (motion, unchanged in behaviour): the Nümbrecht card pins under the nav and the Waldbröl card scrolls up over it.
+   Needs html.js and no-preference; otherwise both cards are plain flow. --stack-row-h comes from js/stack.js. */
 @media (prefers-reduced-motion: no-preference) {
   html.js .locations__main { gap: 0; --stack-hold: 20vh; }
   html.js .location-info:nth-child(1) {
@@ -226,19 +260,17 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   }
   html.js .location-info:nth-child(2) { position: relative; z-index: 1; margin-top: var(--stack-hold); background: var(--ink); }
 }
-.location-img { width: 100%; aspect-ratio: 930 / 523; object-fit: cover; object-position: 50% 50%; }
 
-/* The curve frame (1440x628) lies under the Waldbröl card in Figma: the black above the dome is the card's black, the dome apex is
-   5px below the card. Only the bottom 291px of the frame is drawn here (clip-path, in the pre-rotation space), pulled up under the card. */
-.curve { --curve-h: clamp(200px, 43.6vw, 628px); display: block; width: 100%; height: var(--curve-h); transform: rotate(180deg); margin: -1px 0 -2px; }
-@media (min-width: 768px) {
-  .curve { margin: calc(var(--curve-h) * -.5366) 0 -2px; clip-path: inset(0 0 calc(var(--curve-h) * .5366) 0); }
-}
-
-/* ---------- Social (Figma Social Media Section 6608: header, then 6 tiles 225x353 from x=20) ---------- */
-/* The section starts 111px above the end of the curve, so the title (42px in) sits inside the white dome. */
-.social { position: relative; background: linear-gradient(var(--paper), var(--paper)) 0 calc(7.7083vw - 1.5px) / 100% 100% no-repeat; /* white from the dome's last row down: hides the antialiased bottom row of the rotated curve */ margin-top: -7.7083vw; padding: 2.9167vw 0 2.6444vw; text-align: center; container-type: inline-size; }  /* client round 2: 12.145vw from the dots down to the section end cut by 70% (3.644vw = 2.6444vw + the 1cqw under the dots) */
-.social-head { display: grid; gap: 23px; justify-items: center; padding: 0 var(--pad) 4.9672vw; }  /* client round 2: buttons to the centre card halved, 18.26vw -> 9.13vw (was 14.0972vw of padding) */
+/* ---------- Social (Figma 73:122 "Social Media Section", 1440x1000 at y=10255) ----------
+   Title 73:97 Badeen Display 96px, black, centred, its box at y=10308 (53 below the section's top); description 778 wide at 10435;
+   the two links at 10543; the tiles (here the radial slider, motion unchanged) from 10742. */
+.social { position: relative; background: var(--paper); padding-top: 3.6806vw; box-sizing: border-box; min-height: 69.4444vw; }   /* 1000 tall at 1440, like the Figma frame */
+.social-head { display: grid; justify-items: center; padding: 0 var(--pad) 4.9672vw; }
+.social-head h2, .news-head h2 { font-family: var(--font-display); font-weight: 400; font-size: 6.6667vw; line-height: normal; }   /* 96px at 1440 */
+.social-head, .news-head { text-align: center; }
+@media (max-width: 767px) { .social-head h2, .news-head h2 { font-size: 10.6667vw; line-height: 1.1; } }   /* phones: 40px at 375, two lines */
+.social-head p { margin-top: 0; }
+.social-head .social-links { margin-top: 3.75vw; }   /* 54px under the description box */
 .social-head p, .news-head p { min-height: 54px; } /* Figma description box is 54px tall */
 .social-links { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
 /* tile width from the section's width (cqw), so it is 225px at 1440 whether or not js/carousel.js has taken the row's padding away */
@@ -247,15 +279,41 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   background: var(--placeholder); border-radius: var(--radius);
 }
 
-/* ---------- Review card (Figma Image Card 975x667 at y=7798: photo under the Glass effect on 50% black, a 452x274 review card in the middle) ---------- */
-.reviews { padding: 13.1597vw 0 12.1528vw; }   /* 189.5px above the card, 175px below */
+/* ---------- Review card (Figma 68:18 "Image Card" 975x610 at x=247 y=9269: photo under the Glass effect on 50% black, the 452x274 review box
+   centred in it). The review texts stay the real Google reviews (the cofounder kept them over Figma's placeholder). The section runs
+   from the checkerboard's end (9077) to the social section (10255). ---------- */
+.reviews { padding: 13.3333vw 0 26.1111vw; }   /* 192px above the card, 376px below */
 .reviews__card {
   position: relative; display: grid; place-items: center; overflow: hidden;
-  width: min(67.7083vw, 975px); aspect-ratio: 975 / 667; margin-inline: auto; left: .3819vw;   /* Figma x=238, 5.5px right of centre */
+  width: min(67.7083vw, 975px); aspect-ratio: 975 / 610; margin-inline: auto; left: 1.0069vw;   /* Figma x=247, 14.5px right of centre; the frame clips its 667px background at 610 */
   border-radius: var(--radius);   /* the 2px stroke is in the baked assets/review-card.jpg */
   box-shadow: 0 4px 11px -1px rgba(165, 115, 45, .25); color: var(--paper); container-type: inline-size;
 }
+/* The frame holds the photo, the reviews and the button. Static (and on phones, and under reduced motion) it is exactly the card.
+   js/review-grow.js (.reviews--live) makes it the grown size and clips it back to the card, then opens the clip while the card is pinned. */
+.reviews__frame { position: absolute; inset: 0; display: grid; place-items: center; overflow: hidden; border-radius: inherit; }
 .reviews__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.reviews__btn { position: absolute; z-index: 1; left: 50%; top: 76.8335%; translate: -50% 0; visibility: hidden; opacity: 0; }   /* Figma 284:255: 184x39, centred, its top at 660 of 859 */
+/* the white button, as in the hero (2026-11-15); sized by .btn--white in v2.css */
+.reviews--live .reviews__card { overflow: visible; box-shadow: none; filter: drop-shadow(0 4px 5.5px rgba(165, 115, 45, .25)); }   /* the shadow follows the clipped frame */
+.reviews--live .reviews__frame {
+  inset: auto; left: var(--rv-x); top: var(--rv-y); width: var(--rv-w); height: var(--rv-h);
+  border-radius: 0;                      /* the clip-path carries the 5px corners */
+  will-change: clip-path;
+}
+.reviews--live .reviews__bg { transform-origin: 50% 50%; will-change: transform; }
+/* The row (js/review-grow.js): in the rotator's place and box, five reviews side by side, 547px apart at 1440 (Figma 284:240): a review's
+   text box is 420 wide, so each sits 547/420 = 130.238% of its own width right of the last. The track moves; the frame clips. */
+.reviews--live .reviews__list { visibility: hidden; }
+.reviews__row {
+  grid-area: 1 / 1; position: relative; z-index: 1; text-align: left;
+  width: 46.359cqw; min-height: 28.1cqw; padding: 4.308cqw 1.641cqw 2.667cqw;   /* the same 452x274 box as .reviews__list */
+}
+.reviews__track { display: grid; will-change: transform; }
+.reviews--live .reviews__row .reviews__quote { grid-area: 1 / 1; visibility: visible; translate: calc(var(--i) * 130.238%) 0;
+  text-align: center; align-self: center; }   /* cofounder, 2026-11-13: the reviews in the centre of the full-screen image, across and up-down */
+.reviews--live .reviews__row { display: grid; padding-block: 0; }   /* the box's own top/bottom padding would hold the text above the centre */
+.reviews--live .reviews__track { align-self: center; }   /* outranks css/reviews.css, which hides all but the first review for the rotator */
 /* the box is sized from the card (cqw) so it stays 452x274 on the 975px card at 1440 and wider; every review sits in the same grid cell, so the tallest one sets the height */
 .reviews__list {
   grid-area: 1 / 1; position: relative; z-index: 1; display: grid; text-align: left;
@@ -266,12 +324,15 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .reviews__quote p { line-height: 1.25; }
 .reviews__quote figcaption { margin-top: 17px; font-size: 10px; line-height: 1.25; }
 
-/* ---------- News (Figma Content Section 8640: title, description, two cards side by side) ---------- */
-.news { padding: 73.4px 0 0; text-align: center; }
-.news-head { display: grid; gap: 23px; justify-items: center; margin-bottom: 28px; padding-inline: var(--pad); }
+/* ---------- News (Figma 75:194 "Content Section" at y=11356, 101 below the social section): title 75:196 Badeen Display 96px, its box at
+   y=11407; description 75:197 (992 wide) at 11578; two 460x337 cards (75:216 / 75:220) at x=256 and 726, y=11637; the team photo
+   (222:52) at 12432, 458 below the cards. ---------- */
+.news { padding: 10.5556vw 0 0; text-align: center; }   /* 152px: 101 + 51 to the title box */
+.news-head { display: grid; gap: 0; justify-items: center; margin-bottom: 0.3472vw; padding-inline: var(--pad); }
+.news-head p { margin-top: 2.5vw; }   /* Figma: 68px under its 103px title box; this box is 135 tall (the browser's line height for the font), so 36 */
 .news-head p { max-width: 992px; }
 /* Static layout: cards side by side (460 each at x=255 and x=725), the full-width image 104px below. "Stacked mode" stacks these. */
-.stack { display: grid; grid-template-columns: 1fr repeat(2, minmax(0, 460px)) 1fr; column-gap: var(--gap); row-gap: 104px; }
+.stack { --stack-row-gap: 15.9028vw; display: grid; grid-template-columns: 1fr repeat(2, minmax(0, 460px)) 1fr; column-gap: var(--gap); row-gap: var(--stack-row-gap); }   /* the photo 229px below the cards at 1440 (cofounder, 2026-11-13: half of Figma's 458) */
 .stack__layer:nth-child(1) { grid-column: 2; }
 .stack__layer:nth-child(2) { grid-column: 3; }
 .stack__layer:nth-child(3) { grid-column: 1 / -1; }
@@ -280,18 +341,14 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 
 /* Full-width image, the stack's third layer (Figma Gallery Image 1440x834 at y=9345, a flat top edge; the footer overlaps its bottom).
    Figma places the photo (222:52) 1728x1152 at x -180 from the section's top: 120% wide, centred, top-aligned, cropped below. */
-.finale { position: relative; overflow: clip; height: 57.9vw; }
+.finale { position: relative; isolation: isolate; overflow: clip; height: 57.9vw; }   /* isolate: the block grid (z-index 1) stays inside the photo, under the footer that slides over it */
 .finale img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 0; }
+/* Figma 257:77: white 180x171 blocks hanging into the photo from its top edge (where the old white ellipse was); static for now */
+.finale__checker { position: absolute; z-index: 1; left: 0; right: 0; top: 0; height: 47.5vw; pointer-events: none; }   /* the 4 block rows over the photo's top (js/checker.js) */
+.finale__blocks { position: absolute; left: 0; top: -11.875vw; width: 100%; height: 71.1111vw; }   /* placed as on Figma's render: 171 above where the frame offsets alone put it (as .blocks--out-of-locations) */
 @media (min-width: 768px) {
   .finale img { width: 120%; max-width: none; height: auto; margin-left: -10%; }
-  /* The news section's white ellipse over the top of the photo (Figma Ellipse 3, 1440x609, its centre line on the photo's top edge:
-     304.5px = 21.1458vw deep). It is a hole in the photo, not a white shape on top of it: the photo rises over the sticky cards, and a white
-     ellipse above them would wash them out (round 1). The hole shows whatever is behind, the white page or a card. js/arc-scroll.js sets --arc-s on .finale. */
-  .finale {
-    --fin-d: 21.1458vw;
-    -webkit-mask-image: radial-gradient(ellipse 50.2% calc(var(--fin-d) * var(--arc-s, 1)) at 50% 0, transparent calc(100% - 1.5px), #000 100%);
-    mask-image: radial-gradient(ellipse 50.2% calc(var(--fin-d) * var(--arc-s, 1)) at 50% 0, transparent calc(100% - 1.5px), #000 100%);
-  }
+  .finale { height: 75.2778vw; }   /* 1084 at 1440: the footer's logo then sits at Figma's y (about 13400), the white dome rising over the photo's bottom */
 }
 
 /* Stacked mode: layers stick one after another, each a little lower than the last so the top edge of a covered card
@@ -304,18 +361,14 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
    A sticky card must stay inside .stack, and the stack ends at the image's bottom. When the image is shorter than a card
    (mobile) the card would be pushed up before the image reached it, so ::after adds a tail that keeps the cards stuck
    until the image has arrived; the image simply stays put over them for that run. */
-@media (prefers-reduced-motion: no-preference) {
+@media (prefers-reduced-motion: no-preference) and (max-width: 767px) {   /* phones only since 2026-11-13: side by side from 768px up */
   html.js .stack { display: block; padding-inline: 0; --gap-scroll: 60vh; }
   html.js .stack::after { content: ""; display: block; height: max(0px, calc(420px - 58vw)); }
   html.js .stack__layer { position: sticky; top: calc(var(--nav-h) + 4vh + var(--i) * 2.5vh); margin-inline: auto; transform-origin: center top; }
   html.js .stack__layer:nth-child(1) { --i: 0; will-change: transform; }
   html.js .stack__layer:nth-child(2) { --i: 1; will-change: transform; margin-top: var(--gap-scroll); }
-  html.js .stack__layer:nth-child(3) { --i: 2; margin-top: var(--gap-scroll); }
-  html.js .news-card { width: clamp(360px, 32vw, 620px); } /* Figma 460px at 1440; about 360 at 768; 614 at 1920 */
+  html.js .stack__layer:nth-child(3) { --i: 2; margin-top: 23.5vh; }   /* the photo: 2026-11-13 (cofounder) half the white gap seen under the stuck cards (381 -> 191px at 375x812); was --gap-scroll */
   html.js .finale { margin-inline: 0; }
-}
-@media (prefers-reduced-motion: no-preference) and (max-width: 767px) {
-  html.js .news-card { width: calc(100% - 2 * var(--pad)); }
 }
 
 /* ---------- Footer (Figma 103:14, 1440x891: logo + button on white, black dome over a sand radial, 3 columns, legal strip) ---------- */
@@ -328,24 +381,33 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   padding: 3.1vw var(--pad) 0;
   background: radial-gradient(ellipse 90.505% 90.505% at 50% 100%, var(--sand) 0%, var(--paper) 96.154%);   /* Figma handles */
 }
-.footer-body::before { /* black dome: ellipse 1440x572 from y=130 of the 557px block */
-  content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 9vw; height: 39.72vw;
+@media (min-width: 768px) {   /* 2026-11-13, the cofounder's Footer.svg (Figma 103:14 export): plain white behind the black dome, no sand glow */
+  .footer-body { background: var(--paper); }
+}
+/* The black shape is ONE form (Footer.svg / Figma 103:14, 557px block): the ellipse 1440x572 from y=130 (its centre line at 416) and the
+   strip from y=420 to the bottom. Both are placed from the block's top in vw, so the strip always starts 4px (scaled) below the ellipse's
+   centre line, at every width, whatever height the text gives the block (it only runs further down). Before 2026-11-13 the strip hung
+   from the bottom, and where the text made the block taller (768px) it started 65px low, leaving white wedges at the dome's sides. */
+.footer-body::before { /* black dome: ellipse 1440x572 from y=130 */
+  content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 9.0278vw; height: 39.7222vw;
   background: var(--ink); border-radius: 50%;
 }
-.footer-body::after { /* black rect 1440x137 closes the bottom of the block */
-  content: ""; position: absolute; z-index: -1; left: 0; right: 0; bottom: 0; height: 9.5vw; background: var(--ink);
+.footer-body::after { /* the black strip: from y=420 (4px below the ellipse's centre line) to the bottom of the block */
+  content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 29.1667vw; bottom: 0; background: var(--ink);
 }
 .footer-cta { display: block; width: max-content; margin-inline: auto; }
 .footer-cols {
   display: grid; grid-template-columns: repeat(3, 24.35vw); /* 351px pitch, first column at x=342 */
   margin: calc(11.8vw - 19px) 0 0 calc(23.72vw - var(--pad)); /* the first heading sits at y=575 of 891 (measured on the Figma render) */
 }
+.footer-col { padding-right: 16px; min-width: 0; }   /* room between columns: at 768 the long Waldbröl address ran into "Instagram"; it now wraps inside its column */
 .footer-col h3 { font-size: clamp(15px, 1.2153vw, 17.5px); font-weight: 400; margin-bottom: 14px; }   /* the text blocks are images in Figma: sizes measured on its render */
 .footer-col p, .footer-col li { font-size: clamp(13px, 1.0069vw, 14.5px); line-height: 1.6; opacity: .8; }
 .footer-col ul { list-style: none; margin: 0; padding: 0; }
 .footer-col a { text-decoration: none; }
 .footer-col a:hover { text-decoration: underline; text-underline-offset: 4px; }
 .footer-fred { width: 47px; height: 53px; margin-top: 14px; }
+@media (min-width: 768px) { .footer-fred { margin: calc(14px - 0.1806vw) 0 0 0.2222vw; } }   /* Footer.svg: at x=1046 y=663 at 1440 (3px right of and 2.6px above the column flow) */
 .footer-bottom {
   position: absolute; left: 2.08vw; right: 2.08vw; bottom: 1.33vw;
   display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap;
@@ -372,6 +434,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 .page-hero { padding: 60px var(--pad) 60px; display: grid; gap: 20px; }
 .page-hero .kicker { font-size: var(--fs-body); }
 .loc-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; padding: 0 var(--pad) 120px; }
+.location-img { width: 100%; aspect-ratio: 930 / 523; object-fit: cover; object-position: 50% 50%; }   /* the salon pages */
 .loc-detail .location-img { border-radius: var(--radius); }
 .loc-facts { display: grid; gap: 28px; align-content: start; }
 .loc-facts h2 { font-size: var(--fs-lead); }
@@ -387,11 +450,6 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 
 /* ---------- Tablet ---------- */
 /* Text keeps its 16/24px floor, so below ~1100px the ring is drawn larger than its 1440 proportion to leave room for the copy */
-@media (min-width: 768px) and (max-width: 1100px) {
-  .services { padding: 6vw 0; }
-  .orbit { width: 78vw; }
-  .services-copy { width: 46vw; }
-}
 
 /* ---------- Mobile (Figma frame 76:222, 450px) ---------- */
 @media (min-width: 768px) and (max-width: 900px) {
@@ -404,15 +462,18 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   .site-nav .nav-link { display: none; }
   .site-nav .btn img { width: clamp(140px, 40.9vw, 184px); height: auto; }
 
+  /* No phone frame for the new hero yet (76:223 is still the old sand one): the desktop design, stacked. Same 667px height as
+     before, the text column centred above the title, which keeps its desktop size in vw and sits on the bottom edge the same way:
+     on desktop its line box starts 230px (1.15em) above the hero's bottom edge (775 of 1005). */
   .hero { height: 667px; }
   .hero-intro {
-    inset: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 25px;
-    padding: 0 var(--pad) 133px; text-align: center;
+    inset: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 14px;
+    padding: 0 var(--pad) calc(var(--fs-hero) * 1.15 + 40px); text-align: center;
   }
-  .hero-arabic { order: 1; width: 160px; height: auto; }
+  .hero-arabic { order: 1; width: 120px; height: 36px; }
   .hero-title { display: block; order: 2; }
-  .hero-title small { font-size: var(--fs-body); }
-  .hero-title span { font-size: var(--fs-display); line-height: 1.15; text-transform: none; } /* Figma 76:223: 52px at 450 wide; 1.15 puts the subtitle ink on Figma's rows (1.0 leaves it 8px low) */
+  .hero-title small { font-size: var(--fs-body); margin-top: 0; translate: none; }
+  .hero-title span { position: absolute; top: calc(100% - 1.15em); }   /* the containing block is the whole hero here; left / transform / size from the desktop rule */
   .hero-hello { order: 3; }
 
   /* the DOM order changed (Wir sind, gallery, Introduction come before the Services): plain stacked flow on a phone */
@@ -439,21 +500,18 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
   .services-copy p { max-width: 424px; }
 
   /* About (frame 76:261): copy boxes 170/155 tall in Figma */
-  .about { padding-bottom: 60px; }
-  .about-copy { display: grid; grid-template-columns: 1fr; grid-template-rows: auto; gap: 23px; justify-items: center; padding: 50px var(--pad) 0; text-align: center; }
-  .about-copy h2 { grid-column: 1; margin-inline: 0; font-size: var(--fs-display); line-height: 1.25; padding-bottom: 17px; }
-  .br-m { display: inline; }
-  .about-copy p { grid-column: 1; margin-top: 0; margin-bottom: 0; text-align: center; padding-bottom: 7px; }
-  .about-copy .btn { grid-column: 1; justify-self: center; align-self: auto; }
-  .gallery { padding: 41px 0 0; }
+  /* About on a phone (no Figma phone frame for it): the text in flow at the lead size, the card under it, the logo behind both */
+  .about { height: auto; min-height: 0; display: grid; justify-items: start; gap: 40px; padding: 60px var(--pad); overflow: hidden; }   /* 60 above and below the content (2026-11-13) */
+  .about-text { position: relative; left: auto; top: auto; width: auto; font-size: var(--fs-lead); }
+  .rating-card { position: relative; right: auto; top: auto; width: 239px; }
+  .gallery { padding: 60px 0; }
   .carousel { scrollbar-width: none; scroll-padding-inline: 4.9vw; padding-inline: 4.9vw; gap: 1.78vw; }
 
-  /* Locations (frame 76:279): title and button, then a 16:9 card per salon */
-  .locations { --smile-top: -31.78vw; --smile-h: 63.56vw; padding: 50.5vw var(--pad) 0; }   /* ellipse 450x286 */
-  .locations__head { flex-wrap: wrap; margin-bottom: 46px; }
-  .locations__main { gap: var(--gap); }
-  .location-info { --loc-btn-w: min(40vw, 186px); --loc-btn-end: 4vw; }
-  .curve { height: 74.1vw; }
+  /* Standorte on a phone (no phone frame for the new design): the same parts, the gaps in px; the cards stay 16:9 */
+  .locations { padding: 80px var(--pad) 60px; }
+  .locations__head .btn { margin-top: 16px; }
+  .locations__main { gap: var(--gap); margin-top: 40px; }
+  /* the name is centred on the card at every size (2026-11-13) */
 
   /* Social (frame 76:297) */
   .social { margin-top: 0; padding-top: 107px; padding-bottom: 60px; }
@@ -477,7 +535,7 @@ h1, h2, h3, p { margin: 0; font-weight: 300; }
 
   .footer-body { min-height: 0; padding-bottom: 80px; }
   .footer-body::before { top: 20vw; }
-  .footer-body::after { top: 40vw; height: auto; } /* below the dome's midline everything is black */
+  .footer-body::after { top: 40.1389vw; height: auto; } /* the same form as above: 20vw + half the 39.7222vw ellipse + the frame's 4/1440 */
   .footer-cta { margin-top: 4vw; }
   .footer-cols { grid-template-columns: 1fr; gap: 28px; width: auto; margin: 22vw 0 0; padding-inline: 4.5vw; }
   .footer-col h3 { font-size: var(--fs-body); }

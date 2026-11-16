@@ -2,11 +2,12 @@
    reference video (VideoSlider.mp4), expressed in cqw of the slider's own width: it is the stage, so every
    size below scales with the section at any viewport. Without JS the cards are a plain scroll-snap row. */
 .radial-slider {
-  --rs-card-w: 10.5cqw;            /* centre card, 9:16 */
-  --rs-stage-h: 36cqw;             /* tall enough for the near, enlarged outer cards */
+  --rs-scale: 1.75;                /* 1.75 since 2026-11-13 (cofounder: the 2.5 cards 30% smaller at every size; before that, 2.5 for "100-200% bigger"). The whole bowl (cards, ring, eye distance) scaled as one: the view stays the same, only closer (js/radial-slider.js reads it) */
+  --rs-card-w: calc(10.5cqw * var(--rs-scale));   /* centre card, 9:16 */
+  --rs-stage-h: calc(25cqw * var(--rs-scale));    /* tall enough for the nearest card still on screen while sliding (the second from the centre, 859 tall at 2.5 and 1440); 36cqw was for the third, now off screen */
   container-type: inline-size;
   position: relative;
-  margin-top: -4.5vw;              /* the row's centre sits where the old tile row's centre was */
+  margin-top: -1.375vw;            /* client round 2: social buttons -> middle card 9.13vw. The centre card's top sits 3.167 x scale cqw into its stage, 8.667cqw at scale 1 (-4.5vw then): -4.5 + (8.667 - 3.167 x 1.75) = -1.375vw */
   outline-offset: -2px;
   -webkit-tap-highlight-color: transparent;
 }
@@ -33,7 +34,7 @@
 .radial-slider.is-enhanced .radial-slider__stage {
   position: relative; display: block; height: var(--rs-stage-h); padding: 0;
   overflow: hidden; overflow: clip; scroll-snap-type: none;
-  perspective: 72.5cqw;            /* eye distance 0.725 of the stage width, fitted to the reference */
+  perspective: calc(72.5cqw * var(--rs-scale));   /* eye distance 0.725 of the stage width, fitted to the reference */
   perspective-origin: 50% 50%;
 }
 .radial-slider.is-enhanced .radial-slider__card {
@@ -47,12 +48,12 @@
 /* prev / next squares with six page dots between them; only the active dot shows (the others are almost white) */
 .radial-slider__controls {
   display: flex; align-items: center; justify-content: center; gap: max(1.5cqw, 10px);
-  margin-top: -.2cqw; padding-bottom: 1cqw;   /* reference: buttons' centres 0.093 of the stage width below the centre card's bottom edge */
+  margin-top: -.2cqw; padding-bottom: 3.646cqw;   /* client round 2: dots -> section end 52.5px at 1440 (3.646vw) */   /* reference: buttons' centres 0.093 of the stage width below the centre card's bottom edge */
 }
 .radial-slider__btn {
   position: relative; display: grid; place-items: center; flex: none;
   width: max(1.6cqw, 18px); height: max(1.6cqw, 18px); padding: 0;
-  border: 0; border-radius: 25%; background: #1a1a1a; color: #fff; cursor: pointer;
+  border: 0; border-radius: 50%; background: #1a1a1a; color: #fff; cursor: pointer;   /* round (2026-11-15; was a rounded square, 25%) */
   transition: transform .25s cubic-bezier(.37, 0, .63, 1);
 }
 .radial-slider__btn::after { content: ''; position: absolute; inset: -13px; }   /* 44px touch target around the small square */
@@ -70,6 +71,11 @@
 }
 
 @media (max-width: 767px) {
-  .radial-slider { margin-top: -88px; }   /* mobile .social-head carries 136px of bottom padding for the old two-up tiles */
+  /* phones: 4.2x (cofounder, 2026-11-13: first 6x for near phone-sized cards, then 30% smaller). The centre card's top sits
+     (12.5 - 9.333) x scale cqw into its stage, 8.667cqw at scale 1, so the margin takes back the difference
+     and the social buttons -> middle card gap stays the recorded 80.5px at 375 (at 6x: 3.167 x 6 - 8.667 = 10.333vw) */
+  .radial-slider { --rs-scale: 2.8; margin-top: calc(-88px - 0.2vw); }   /* 481-767px (small tablets, phones on their side): 2.8x (4 less 30%, 2026-11-13), offset 3.167 x 2.8 - 8.667 = 0.2vw */
+  @media (max-width: 480px) { .radial-slider { --rs-scale: 4.2; margin-top: calc(-88px - 4.6333vw); } }   /* phones: 4.2x (6 less 30%, 2026-11-13), offset 3.167 x 4.2 - 8.667 = 4.633vw */
+  .radial-slider__controls { padding-bottom: 1cqw; }   /* phones keep the recorded dots -> section end gap (63.75px at 375) */   /* the same 0.75vw: below 768 the buttons -> middle card gap stays the recorded 80.5px at 375 */   /* mobile .social-head carries 136px of bottom padding for the old two-up tiles */
 }
 @media (prefers-reduced-motion: reduce) { .radial-slider__btn { transition: none; } }

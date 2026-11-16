@@ -13,6 +13,8 @@
 
   /* type: Geom (Google Fonts), weights 300 / 400. Figma desktop uses 20 / 32 / 52 / 85 / 138; the vw factors are size / 1440, so 1440 gives the Figma value exactly. */
   --font: 'Geom', system-ui, sans-serif;
+  --font-display: 'Badeen Display', 'Geom', system-ui, sans-serif;   /* Figma's big headings (Google Fonts, SIL OFL) */
+  --fs-hero: 13.8889vw;                       /* 200px at 1440: "MTM Coiffure." spans the width at every size */
   --fs-display: clamp(40px, 5.9028vw, 85px);   /* 85px at 1440 */
   --fs-mega: clamp(56px, 9.5833vw, 138px);   /* 138px at 1440: "Wir sind MTM Coiffure." */
   --fs-title: clamp(36px, 3.6111vw, 52px);    /* 52px at 1440: "Standorte." */

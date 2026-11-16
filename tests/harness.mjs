@@ -1,16 +1,20 @@
 // Shared test harness: static server + headless chromium + tiny assert/report.
 import { createRequire } from 'node:module';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 
-const require = createRequire('/home/eddie/Work/Amatsima/Code/studio/node_modules/');
-const { chromium } = require('playwright');
-
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+// Playwright: Eddie's studio checkout on Linux; on the Windows workspace laptop, the figma-sync engine next to this repo.
+const PW_HOMES = ['/home/eddie/Work/Amatsima/Code/studio/node_modules/', path.join(ROOT, '../figma-sync/node_modules/')];
+const { chromium } = (() => {
+  for (const home of PW_HOMES) { try { return createRequire(home)('playwright'); } catch {} }
+  throw new Error('playwright not found in ' + PW_HOMES.join(' or '));
+})();
 const CACHE = path.join(ROOT, 'tests/.cache');
 // third-party hosts whose flaky network used to fail the suite; served from tests/.cache after the first fetch
 const CACHED_HOSTS = /^https?:\/\/(cdnjs\.cloudflare\.com|fonts\.googleapis\.com|fonts\.gstatic\.com)\//;
@@ -32,9 +36,11 @@ function freePort() {
 
 async function startServer() {
   const port = await freePort();
-  serverProc = spawn('python3', ['-m', 'http.server', String(port), '--bind', '127.0.0.1'], {
-    cwd: ROOT, stdio: 'ignore',
-  });
+  // python3's http.server where there is one (Linux); else the small Node server in tests/serve.mjs (Windows laptop)
+  const hasPython = (() => { try { return spawnSync('python3', ['--version']).status === 0; } catch { return false; } })();
+  serverProc = hasPython
+    ? spawn('python3', ['-m', 'http.server', String(port), '--bind', '127.0.0.1'], { cwd: ROOT, stdio: 'ignore' })
+    : spawn(process.execPath, [path.join(ROOT, 'tests/serve.mjs'), ROOT, String(port)], { cwd: ROOT, stdio: 'ignore' });
   process.on('exit', () => { try { serverProc.kill(); } catch {} });
   const base = `http://127.0.0.1:${port}/`;
   for (let i = 0; i < 100; i++) {

@@ -55,7 +55,8 @@ for (const { width, height } of SIZES) {
     assert(scrollable > 2000, `${tag} A precondition: page scrolls (${scrollable}px of overflow)`);
     assert(s0.y === 0 && shown(s0), `${tag} A: header visible at the top (top ${s0.top}, bottom ${s0.bottom})`);
     const cs = await page.evaluate(() => { const c = getComputedStyle(document.querySelector('.site-header')); return [c.transitionProperty, c.transitionDuration, c.transitionTimingFunction]; });
-    assert(cs[0] === 'transform' && cs[1] === '0.25s' && cs[2] === 'ease-out', `${tag} A: slide is transform 0.25s ease-out (${cs.join(' | ')})`);
+    // the home header also fades its background over the hero and the pinned photo (2026-11-13): transform must be the first transition
+    assert(cs[0].split(', ')[0] === 'transform' && cs[1].split(', ')[0] === '0.25s' && cs[2].split(', ')[0] === 'ease-out', `${tag} A: slide is transform 0.25s ease-out (${cs.join(' | ')})`);
 
     await wheelBy(page, 600); await sleep(SETTLE);
     const d = await read(page);

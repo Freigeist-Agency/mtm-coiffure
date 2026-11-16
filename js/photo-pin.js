@@ -7,6 +7,9 @@
 (function () {
   'use strict';
   var PAN_START = 'top bottom+=50%', PAN_END = 'top 85%';
+  // 2026-11-13 (cofounder): every face stays in view. The tallest head's hair starts 4% down the picture (65 of 1600px, measured), so the
+  // pan stops once that hair is HEAD_MARGIN px below the top of the screen, even if more of the picture's bottom could still come into view.
+  var HEAD_TOP = 0.04, HEAD_MARGIN = 16;
 
   function init() {
     var gsap = window.gsap, ST = window.ScrollTrigger;
@@ -27,7 +30,8 @@
       measure();
       ST.addEventListener('refreshInit', measure);
       var pan = gsap.fromTo(img, { y: 0 }, {
-        y: function () { return -Math.max(0, img.getBoundingClientRect().height - finale.getBoundingClientRect().height); },   // heights only: a translate does not change them, and rounded offsetHeight leaves a fraction of a pixel short
+        y: function () { var ih = img.getBoundingClientRect().height, pin = parseFloat(getComputedStyle(finale).top) || 0;
+          return -Math.max(0, Math.min(ih - finale.getBoundingClientRect().height, pin + HEAD_TOP * ih - HEAD_MARGIN)); },   // the full pan, capped so the heads stay in view   // heights only: a translate does not change them, and rounded offsetHeight leaves a fraction of a pixel short
         ease: 'none',
         scrollTrigger: { id: 'pan', trigger: footer, start: PAN_START, end: PAN_END, scrub: true, invalidateOnRefresh: true }
       });

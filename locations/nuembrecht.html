@@ -1,18 +1,11 @@
 <!doctype html>
-<html lang="de" data-root="../">
+<!-- built by tools/build-locations.mjs from index.html: change the home page or that script, not this file -->
+<html lang="de" data-root="../" data-home data-location="nuembrecht">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MTM Coiffure Nümbrecht – Friseurmeister</title>
-<meta name="description" content="MTM Coiffure in Nümbrecht: Adresse, Öffnungszeiten und Termin buchen.">
-<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geom:wght@300;400&display=swap">
-<link rel="stylesheet" href="../css/tokens.css">
-<link rel="stylesheet" href="../css/site.css">
-<link rel="stylesheet" href="../css/loader.css">
-<link rel="stylesheet" href="../css/nav-hide.css">
+<meta name="description" content="MTM Coiffure by Mo in Nümbrecht: Lindchenweg 3, 51588 Nümbrecht. Öffnungszeiten und Termin buchen.">
 <script>
   /* js + is-loading are set before first paint so the loader shows with no flash; without JS neither exists and the page is plain.
      Two cases get the cover: the full loader (home, first visit of the session: mtm-visited unset), and a transition
@@ -25,7 +18,7 @@
     h.classList.add('js');
     w.mtmReady = new Promise(function (r) { w.mtmResolve = r; });
     var skip = /[?&]skiploader\b/.test(location.search) || matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var home = h.hasAttribute('data-home'), tr = false, seen = true;
+    var home = true   /* every page: the first page of a visit plays the full loader (2026-11-16; was the home page only) */, tr = false, seen = true;
     try {
       tr = w.sessionStorage.getItem('mtm-transition') === '1';
       if (tr) w.sessionStorage.removeItem('mtm-transition');
@@ -44,36 +37,92 @@
     }, 6600);
   })(document.documentElement, window);
 </script>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geom:wght@300;400&display=swap">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/site.css">
+<link rel="stylesheet" href="../css/loader.css">
+<link rel="stylesheet" href="../css/hover-gallery.css">
+<link rel="stylesheet" href="../css/arc-scroll.css">
+<link rel="stylesheet" href="../css/word-reveal.css">
+<link rel="stylesheet" href="../css/textures.css">
+<link rel="stylesheet" href="../css/radial-slider.css">
+<link rel="stylesheet" href="../css/reviews.css">
+<link rel="stylesheet" href="../css/v2.css">
+<link rel="stylesheet" href="../css/footer.css">
 </head>
 <body>
-<div class="loader" aria-hidden="true"><div class="loader__panel"></div><div class="loader__dome"></div></div>
-<header class="site-header">
-  <a class="brand" href="../index.html" aria-label="MTM Coiffure, Startseite"><img src="../assets/logo-nav.png" alt="" width="67" height="40"></a>
-  <nav class="site-nav" aria-label="Hauptnavigation">
-    <a class="nav-link" href="../index.html#standorte">Standorte.</a>
-    <a class="btn" href="../index.html#standorte" aria-label="Termin buchen"><img src="../assets/btn-nav.svg" alt="" width="184" height="39"></a>
-  </nav>
+<div class="loader" aria-hidden="true"><div class="loader__panel"></div><div class="loader__dome"><img class="loader__logo" src="../assets/logo-nav.png" alt="" width="708" height="422"></div><div class="loader__count"><span class="loader__num">0</span></div></div>
+<header class="site-header pill-nav"><!-- Figma Desktop_new 324:3180 (the white pill, difference mode, with the logo) and 324:3167 (the button) -->
+  <span class="pill-nav__plate"><a class="pill-nav__brand" href="../index.html" aria-label="MTM Coiffure, Startseite"><img src="../assets/v2/logo-pill.svg" alt="" width="57" height="34"></a></span>
+  <a class="btn btn--sm pill-nav__cta" href="https://www.planity.com/de-DE/mtm-coiffure-by-mo-51588-numbrecht" target="_blank" rel="noopener" aria-label="Termin in Nümbrecht buchen"><img src="../assets/v2/btn-black-small.svg" alt="" width="132" height="28"></a>
 </header>
 <main>
-  <section class="page-hero">
-    <p class="kicker">Standort</p>
-    <h1 class="display">Nümbrecht.</h1>
-  </section>
-  <section class="loc-detail">
-    <img class="location-img" src="../assets/dsc09341.jpg" alt="Salon Nümbrecht"><!-- TODO(content): salon photo -->
-    <div class="loc-facts">
-      <h2>Adresse &amp; Öffnungszeiten</h2>
-      <dl>
-        <dt>Adresse</dt><dd>Hauptstraße 34, 51588 Nümbrecht</dd><!-- TODO(content): placeholder address -->
-        <dt>Telefon</dt><dd><a href="tel:02293000000">02293 000000</a></dd><!-- TODO(content): placeholder phone -->
-        <dt>Di – Fr</dt><dd>9 – 18 Uhr</dd><dt>Sa</dt><dd>9 – 14 Uhr</dd><dt>So – Mo</dt><dd>geschlossen</dd><!-- TODO(content): placeholder hours -->
-      </dl>
-      <a class="btn" href="https://www.planity.com/de-DE/mtm-coiffure-by-mo-51588-numbrecht" target="_blank" rel="noopener" aria-label="Termin buchen in Nümbrecht"><img src="../assets/btn-hero.svg" alt="" width="184" height="39"></a>
-      <!-- TODO(content): Google Maps embed needs consent handling (DSGVO) before it loads; placeholder until then. -->
-      <a class="map" href="https://www.google.com/maps/search/?api=1&amp;query=Hauptstraße+34,+51588+Nümbrecht" rel="noopener" style="display:grid;place-items:center;text-decoration:none">Auf Google Maps öffnen</a>
-      <h2>Team</h2>
-      <div class="team"><figure><img src="../assets/dsc09979.jpg" alt="" loading="lazy"><figcaption>Name</figcaption></figure><figure><img src="../assets/dsc00594.jpg" alt="" loading="lazy"><figcaption>Name</figcaption></figure><figure><img src="../assets/dsc09310.jpg" alt="" loading="lazy"><figcaption>Name</figcaption></figure></div><!-- TODO(content): team names + photos per salon -->
+  <section class="hero hero--loc" aria-label="Nümbrecht"><!-- Figma 369:4477 "Hero Location" -->
+    <div class="hero-media">
+      <!-- the salon pan, as on the home page; silent -->
+      <video autoplay muted loop playsinline preload="metadata" poster="../assets/hero-poster.jpg" aria-hidden="true">
+        <source src="../assets/hero-960.mp4" type="video/mp4" media="(max-width: 767px)">
+        <source src="../assets/hero-1600.mp4" type="video/mp4">
+      </video>
+      <script>/* prefers-reduced-motion: show the still poster instead of the moving clip */
+        if (matchMedia('(prefers-reduced-motion: reduce)').matches) { var hv = document.currentScript.previousElementSibling; hv.removeAttribute('autoplay'); hv.pause(); }
+      </script>
     </div>
+    <h1 class="loc-hero__title"><span class="sr-only">MTM Coiffure by Mo in </span>Nümbrecht</h1>
+    <a class="btn btn--white hero-cta" href="https://www.planity.com/de-DE/mtm-coiffure-by-mo-51588-numbrecht" target="_blank" rel="noopener" aria-label="Termin in Nümbrecht buchen"><img src="../assets/v2/btn-white.svg" alt="" width="163" height="35"></a>
+    <p class="loc-hero__info"><strong>Lindchenweg 3, 51588 Nümbrecht</strong><br>Mo – Fr: 9 – 18 Uhr<br>Sa: 8:30 – 14 Uhr<br>So: geschlossen</p><!-- from the salon's Planity page, 2026-11-16 -->
+  </section>
+
+  <section class="news news--swapped" aria-labelledby="news-h"><!-- Figma Desktop_new 324:4242 "Content Section": the heading and cards, then the team photos -->
+    <div class="team-row" aria-label="Das Team"><!-- 324:4138 "Location Gallery" (the hover gallery) -->
+      <div class="gallery">
+        <div class="hover-gallery" role="group" aria-label="Das Team von MTM Coiffure bei der Arbeit">
+          <button class="hover-gallery__card" type="button" aria-pressed="true" aria-label="Drei Mitarbeiter von MTM Coiffure im Salon"><span class="hover-gallery__visual"><img class="hover-gallery__img" src="../assets/gallery-1.jpg" alt="Drei Mitarbeiter von MTM Coiffure im Salon" width="920" height="920" loading="lazy"></span></button>
+          <button class="hover-gallery__card" type="button" aria-pressed="false" aria-label="Friseur hält lächelnd eine Schere in die Kamera"><span class="hover-gallery__visual"><img class="hover-gallery__img" src="../assets/gallery-2.jpg" alt="Friseur hält lächelnd eine Schere in die Kamera" width="920" height="920" loading="lazy"></span></button>
+          <button class="hover-gallery__card" type="button" aria-pressed="false" aria-label="Friseur mit Bart hält eine Schere in die Kamera"><span class="hover-gallery__visual"><img class="hover-gallery__img" src="../assets/gallery-3.jpg" alt="Friseur mit Bart hält eine Schere in die Kamera" width="920" height="920" loading="lazy"></span></button>
+          <button class="hover-gallery__card" type="button" aria-pressed="false" aria-label="Friseur schneidet einem Kunden die Haare"><span class="hover-gallery__visual"><img class="hover-gallery__img" src="../assets/gallery-4.jpg" alt="Friseur schneidet einem Kunden die Haare" width="920" height="920" loading="lazy"></span></button>
+          <button class="hover-gallery__card" type="button" aria-pressed="false" aria-label="Hände mit Kamm und Schere beim Locken schneiden"><span class="hover-gallery__visual"><img class="hover-gallery__img" src="../assets/gallery-5.jpg" alt="Hände mit Kamm und Schere beim Locken schneiden" width="920" height="920" loading="lazy"></span></button>
+          <button class="hover-gallery__card" type="button" aria-pressed="false" aria-label="Friseur schneidet einem Jungen die Haare"><span class="hover-gallery__visual"><img class="hover-gallery__img" src="../assets/gallery-6.jpg" alt="Friseur schneidet einem Jungen die Haare" width="920" height="920" loading="lazy"></span></button>
+        </div>
+      </div>
+    </div>
+    <div class="news-head">
+      <h2 class="headline" id="news-h"><span class="headline__light">News &amp;</span> <span class="headline__bold">Ankündigungen.</span></h2>
+      <p>Hier findest du alles was du vielleicht kurzfristig erfahren musst, bevor du einen Termin bei uns buchst.</p>
+    </div>
+    <div class="news-cards">
+      <article class="news-card"><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare, eros dolor interdum nulla, ut commodo diam libero vitae erat. Aenean faucibus nibh et justo cursus id rutrum lorem imperdiet. Nunc ut sem vitae risus tristique posuere.</p></article><!-- TODO(content): announcement -->
+      <article class="news-card"><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare, eros dolor interdum nulla, ut commodo diam libero vitae erat. Aenean faucibus nibh et justo cursus id rutrum lorem imperdiet. Nunc ut sem vitae risus tristique posuere.</p></article><!-- TODO(content): announcement -->
+    </div>
+  </section>
+
+  <section class="faq" id="faq" aria-labelledby="faq-h"><!-- Figma Desktop_new 324:3985 "section fam" and the FAQ rows 339:4251..4320 -->
+    <h2 class="headline faq__title" id="faq-h"><span class="headline__light">häufig</span><br><span class="headline__bold">gefragt.</span></h2>
+    <div class="faq__team"><!-- 324:3092: three cut-out portraits on a warm glow, fading to white at the bottom -->
+      <img class="faq__person faq__person--left" src="../assets/v2/faq-dsc00512.webp" alt="" width="723" height="1084" loading="lazy">
+      <img class="faq__person faq__person--right" src="../assets/v2/faq-dsc00540.webp" alt="" width="843" height="1264" loading="lazy">
+      <img class="faq__person faq__person--mid" src="../assets/v2/faq-dsc00483.webp" alt="Das Team von MTM Coiffure" width="775" height="1162" loading="lazy">
+    </div>
+    <p class="faq__about">Wir haben unsere Leidenschaft für das Friseurhandwerk auf unsere Reise aus Syrien nach Deutschland mitgenommen und dürfen sie jetzt mit dir in einem unserer Familienmeisterbetrieben mit dir teilen.</p><!-- 324:3021 -->
+    <div class="faq__list"><!-- TODO(content): the questions and answers are Figma placeholders -->
+      <details class="faq__item" open><summary><span class="faq__q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a">faq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer text</p></details>
+      <details class="faq__item"><summary><span class="faq__q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a">faq answer text</p></details>
+      <details class="faq__item"><summary><span class="faq__q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a">faq answer text</p></details>
+      <details class="faq__item"><summary><span class="faq__q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a">faq answer text</p></details>
+      <details class="faq__item"><summary><span class="faq__q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a">faq answer text</p></details>
+      <details class="faq__item"><summary><span class="faq__q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a">faq answer text</p></details>
+    </div>
+    <div class="faq__links"><!-- 324:3973 / 324:3987: book at Mo's salon (Nümbrecht) or Abdul's (Waldbröl) on Planity -->
+      <a class="pill-btn pill-btn--mo" href="https://www.planity.com/de-DE/mtm-coiffure-by-mo-51588-numbrecht" target="_blank" rel="noopener" aria-label="MTM by Mo: Termin in Nümbrecht buchen"><img src="../assets/v2/icon-pole-mo.svg" alt="" width="10" height="23">MTM by Mo</a>
+      <a class="pill-btn pill-btn--abdul" href="https://www.planity.com/de-DE/mtm-coiffure-by-abdul-51545-waldbrol" target="_blank" rel="noopener" aria-label="MTM by Abdul: Termin in Waldbröl buchen"><img src="../assets/v2/icon-pole-abdul.svg" alt="" width="8" height="18">MTM by Abdul</a>
+    </div>
+  </section>
+
+  <section class="finale-photo" aria-label="Das Team"><!-- Figma Desktop_new 339:4342 "DSC00651 5": 1398x932 at x=58, rounded 20 -->
+    <img src="../assets/team-2400.jpg" srcset="../assets/team-1200.jpg 1200w, ../assets/team-2400.jpg 2400w" sizes="(min-width: 768px) 93vw, 100vw" alt="Das Team von MTM Coiffure im Salon" width="2400" height="1600" loading="lazy">
   </section>
 </main>
 <footer class="site-footer" id="kontakt">
@@ -81,25 +130,25 @@
     <a class="footer-logo" href="../index.html" aria-label="MTM Coiffure, Startseite"><img src="../assets/logo-nav.png" alt="" width="375" height="224"></a>
   </div>
   <div class="footer-body">
-    <a class="btn footer-cta" href="../index.html#standorte" aria-label="Termin buchen"><img src="../assets/btn-nav.svg" alt="" width="184" height="39"></a>
+    <a class="btn footer-cta" href="https://www.planity.com/de-DE/mtm-coiffure-by-mo-51588-numbrecht" target="_blank" rel="noopener" aria-label="Termin in Nümbrecht buchen"><img src="../assets/v2/btn-black.svg" alt="" width="184" height="39"></a>
     <div class="footer-cols">
       <div class="footer-col">
         <h3><a href="../locations/nuembrecht.html">Nümbrecht</a></h3>
-        <p>Hauptstraße 34, 51588 Nümbrecht<br><a href="tel:02293000000">02293 000000</a></p><!-- TODO(content): address + phone are placeholders -->
-        <ul><li>Di – Fr: 9 – 18 Uhr</li><li>Sa: 9 – 14 Uhr</li><li>So – Mo: geschlossen</li></ul><!-- TODO(content): opening hours are placeholders -->
+        <p>Lindchenweg 3, 51588 Nümbrecht</p><!-- from the salon's Planity page, 2026-11-16 (Planity lists no phone number) -->
+        <ul><li>Mo – Fr: 9 – 18 Uhr</li><li>Sa: 8:30 – 14 Uhr</li><li>So: geschlossen</li></ul>
       </div>
       <div class="footer-col">
         <h3><a href="../locations/waldbroel.html">Waldbröl</a></h3>
-        <p>Hauptstraße 12, 51545 Waldbröl<br><a href="tel:02291000000">02291 000000</a></p><!-- TODO(content): address + phone are placeholders -->
-        <ul><li>Di – Fr: 9 – 18 Uhr</li><li>Sa: 9 – 14 Uhr</li><li>So – Mo: geschlossen</li></ul><!-- TODO(content): opening hours are placeholders -->
+        <p>Kaiserstraße 61, 51545 Waldbröl</p><!-- from the salon's Planity page, 2026-11-16 (Planity lists no phone number) -->
+        <ul><li>Mo – Fr: 9 – 19 Uhr</li><li>Sa: 9 – 17 Uhr</li><li>So: geschlossen</li></ul>
       </div>
       <div class="footer-col">
         <h3>Folge uns</h3>
         <ul>
-          <li><a href="https://www.instagram.com/" rel="noopener">Instagram</a></li><!-- TODO(content): MTM Instagram URL -->
-          <li><a href="https://www.tiktok.com/" rel="noopener">TikTok</a></li><!-- TODO(content): MTM TikTok URL -->
+          <li><a href="https://www.instagram.com/mtm_coiffure/" target="_blank" rel="noopener">Instagram</a></li>
+          <li><a href="https://www.tiktok.com/@mtmbyabdul" target="_blank" rel="noopener">TikTok</a></li>
         </ul>
-        <img class="footer-fred" src="../assets/fred-approved.png" alt="FRED approved" width="47" height="53">
+        <a class="footer-fred-link" href="https://www.freigeist.agency/de/" target="_blank" rel="noopener" aria-label="FRED approved: Freigeist, die Agentur hinter dieser Seite"><img class="footer-fred" src="../assets/fred-approved.png" alt="FRED approved" width="47" height="53"></a>
       </div>
     </div>
     <div class="footer-bottom">
@@ -115,7 +164,21 @@
   }
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.3.11/dist/lenis.min.js"></script>
+<script src="../js/smooth-scroll.js"></script>
 <script src="../js/loader.js"></script>
-<script src="../js/nav-hide.js"></script>
+<script src="../js/hover-gallery.js"></script>
+<script src="../js/hero-shrink.js"></script>
+<script src="../js/checker.js"></script>
+<script src="../js/photo-grow.js"></script>
+
+<script src="../js/arc-scroll.js"></script>
+<script src="../js/intro-motion.js"></script>
+<script src="../js/word-reveal.js"></script>
+<script src="../js/faq-reveal.js"></script>
+<script src="../js/radial-slider.js"></script>
+<script src="../js/reviews.js"></script>
+<script src="../js/review-grow.js"></script>
 </body>
 </html>

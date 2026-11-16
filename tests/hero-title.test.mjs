@@ -1,124 +1,133 @@
-// Hero title (index.html .hero-intro, css/site.css hero rules).
-// "MTM Coiffure" must sit on the viewport's centre line at every width; Wilkommen (left) and the Arabic
-// (right) must not touch it; the phone layout follows Figma frame 76:223 (450 wide).
+// Hero (index.html .hero, css/site.css hero rules), rebuilt 2026-11-13 from Figma 66:8 "Hero video" + 265:63 "MTM Coiffure."
+// (file HFuZZUOKyUWmXb8yER287l). Reference values were measured on Figma's render of frame 64:2 at 1440 on 2026-11-13:
+//   text row:  "Wilkommen." at x=11, y=329; the subtitle centred at x=712, y=333; the Arabic greeting 80x24 at x=1349..1429, y=329
+//   title:     Badeen Display 200px, white; its letters' top at y=865 and the right edge of the "." at x=1400; the "M" starts
+//              off the left edge (ink at x=0); the hero (1005 tall) clips the bottom of the letters
+//   hero:      the client's video under a 32% black layer, bottom corners 5px, a straight bottom edge (no curve since 2026-11-13)
+// Phones (no phone frame for this design yet): the text stacked and centred above the title, which keeps the desktop's vw size
+// and sits on the bottom edge in the same proportion (line box from 1.15em above the edge).
+// Pixels are read in the page from a screenshot (no python / pngjs), with the video hidden so only the title can be white.
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { openPage, assert, report } from './harness.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'tests/out/hero-title');
 fs.mkdirSync(OUT, { recursive: true });
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-// Figma reference, measured on the renders of node 66:8 (1440x1080) and 76:223 (450x667) on 2026-11-03.
-// Dark-pixel bounding boxes in hero-relative coordinates (x0, y0, x1, y1).
-const FIGMA_DESKTOP = {
-  small: [544, 25, 897, 40], hello: [11, 334, 120, 349], title: [648, 335, 791, 350], arabic: [1349, 329, 1429, 352],
-};
-const FIGMA_PHONE = {
-  arabic: [146, 325, 305, 372], small: [49, 403, 402, 418], title: [72, 432, 378, 471], hello: [170, 514, 278, 529],
-};
+const FIGMA = { hello: [11, 329], smallCx: 712, smallTop: 333, arabic: [1349, 329, 1429], heroH: 1005, inkTop: 865, inkRight: 1400 };
 
-// Dark-pixel bbox of the hero screenshot inside each search window (python3 -I; PIL is already on this host).
-const PY = `
-import json, sys
-from PIL import Image
-im = Image.open(sys.argv[1]).convert('RGB'); px = im.load()
-out = {}
-for name, (x0, y0, x1, y1) in json.loads(sys.argv[2]).items():
-    xs, ys = [], []
-    for y in range(y0, y1):
-        for x in range(x0, x1):
-            r, g, b = px[x, y]
-            if (r + g + b) / 3 < 80: xs.append(x); ys.append(y)
-    out[name] = [min(xs), min(ys), max(xs) + 1, max(ys) + 1] if xs else None
-print(json.dumps(out))
-`;
-const inkBoxes = (png, windows) =>
-  JSON.parse(execFileSync('python3', ['-I', '-c', PY, png, JSON.stringify(windows)], { encoding: 'utf8' }));
+// white-pixel scan of a screenshot, done in the page (canvas): per-row first/last white x and the first white row in a band
+const scan = (page, png, rows, band, minGap = 3) => page.evaluate(async ([b64, rows, band, minGap]) => {
+  const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode();
+  const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+  const x = c.getContext('2d'); x.drawImage(img, 0, 0);
+  const W = img.width, white = (d, i) => d[i] > 245 && d[i + 1] > 245 && d[i + 2] > 245;
+  const runs = rows.map(y => { const d = x.getImageData(0, y, W, 1).data; let a = -1, z = -1, n = 0; for (let i = 0; i < W; i++) if (white(d, i * 4)) { if (a < 0) a = i; z = i; n++; } return [y, a, z, n / W]; });
+  // dark gaps (>= 3px) between letters on the first row, and how many of their centre columns are white on the second row
+  const d0 = x.getImageData(0, rows[0], W, 1).data, d1 = x.getImageData(0, rows[1], W, 1).data, gaps = [];
+  for (let i = runs[0][1], g = -1; i <= runs[0][2]; i++) { const w = white(d0, i * 4); if (!w && g < 0) g = i; if (w && g >= 0) { if (i - g >= minGap) gaps.push((g + i) >> 1); g = -1; } }
+  const gapWhite = gaps.filter(c => white(d1, c * 4)).length;
+  let top = -1;
+  for (let y = band[0]; y < band[1] && top < 0; y++) { const d = x.getImageData(0, y, W, 1).data; for (let i = 0; i < W; i++) if (white(d, i * 4)) { top = y; break; } }
+  return { runs, top, gaps: gaps.length, gapWhite };
+}, [png.toString('base64'), rows, band, minGap]);
 
-// Text rectangles (what is actually painted), not the grid boxes that contain them.
-const textRects = page => page.evaluate(() => {
-  const rect = el => { const r = document.createRange(); r.selectNodeContents(el); const b = r.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom, cx: (b.left + b.right) / 2, w: b.width }; };
+const READ = () => {
+  const rect = el => { const r = document.createRange(); r.selectNodeContents(el); const b = r.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top + scrollY, b: b.bottom + scrollY, cx: (b.left + b.right) / 2 }; };
+  const box = el => { const b = el.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top + scrollY, b: b.bottom + scrollY, cx: (b.left + b.right) / 2, w: b.width, h: b.height }; };
+  const hero = document.querySelector('.hero'), span = document.querySelector('.hero-title span'), v = document.querySelector('.hero video');
+  const hs = getComputedStyle(hero), ov = getComputedStyle(hero, '::after'), ts = getComputedStyle(span);
   return {
-    small: rect(document.querySelector('.hero-title small')),
-    title: rect(document.querySelector('.hero-title span')),
-    hello: rect(document.querySelector('.hero-hello')),
-    arabic: (() => { const b = document.querySelector('.hero-arabic').getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom, cx: (b.left + b.right) / 2, w: b.width }; })(),
-    hero: (() => { const b = document.querySelector('.hero').getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; })(),
-    smallBox: (() => { const b = document.querySelector('.hero-title small').getBoundingClientRect(); return { t: b.top, b: b.bottom }; })(),
-    titleBox: (() => { const b = document.querySelector('.hero-title span').getBoundingClientRect(); return { t: b.top, b: b.bottom }; })(),
-    sw: document.documentElement.scrollWidth, iw: innerWidth,
+    iw: innerWidth, sw: document.documentElement.scrollWidth,
+    hero: box(hero), radius: [hs.borderTopLeftRadius, hs.borderBottomLeftRadius, hs.borderBottomRightRadius], overlay: ov.backgroundColor, overlayRadius: ov.borderTopLeftRadius,
+    hello: rect(document.querySelector('.hero-hello')), small: rect(document.querySelector('.hero-title small')), arabic: box(document.querySelector('.hero-arabic')),
+    title: box(span), titleFont: ts.fontFamily, titleSize: parseFloat(ts.fontSize), titleColor: ts.color, textColor: getComputedStyle(document.querySelector('.hero-hello')).color,
+    fontReady: document.fonts.check(`${ts.fontSize} "Badeen Display"`),
+    h1: document.querySelector('h1').textContent.replace(/\s+/g, ' ').trim(), h1Count: document.querySelectorAll('h1').length,
+    video: { src: v.currentSrc.split('/').pop(), paused: v.paused, poster: v.getAttribute('poster') },
+    live: hero.classList.contains('arc-live'),
+    header: (() => { const hd = document.querySelector('.site-header'), logos = [...hd.querySelectorAll('.brand img')].filter(i => getComputedStyle(i).display !== 'none'); return { over: hd.classList.contains('is-over-hero'), bg: getComputedStyle(hd).backgroundColor, color: getComputedStyle(hd).color, logo: logos.map(i => i.getAttribute('src')).join(',') }; })(),
   };
-});
-const meets = (a, b) => !(a.r <= b.l || b.r <= a.l || a.b <= b.t || b.b <= a.t); // overlapping boxes
+};
+const meets = (a, b) => !(a.r <= b.l || b.r <= a.l || a.b <= b.t || b.b <= a.t);
 
-// ---- 1. centre line and no collisions at every width ---------------------------------------
-for (const width of [375, 768, 1440, 2560]) {
-  const tag = `@${width}`;
-  const { page, errors, close } = await openPage({ width, height: width === 375 ? 667 : 900, isMobile: width === 375 });
-  try {
-    await page.evaluate(() => document.fonts.ready);
-    const m = await textRects(page);
-    assert(m.iw === width, `${tag}: viewport is ${width} (probe precondition, got ${m.iw})`);
-    assert(m.title.w > 0 && m.hello.w > 0 && m.arabic.w > 0, `${tag}: title, Wilkommen and Arabic are rendered`);
-    assert(Math.abs(m.title.cx - width / 2) <= 1, `${tag}: "MTM Coiffure" text centre ${m.title.cx.toFixed(2)} is within 1px of ${width / 2}`);
-    assert(!meets(m.title, m.hello), `${tag}: title does not overlap Wilkommen`);
-    assert(!meets(m.title, m.arabic), `${tag}: title does not overlap the Arabic`);
-    assert(m.smallBox.b <= m.titleBox.t + 0.5, `${tag}: subtitle line box ends above the title line box`);
-    assert(m.sw <= width, `${tag}: no horizontal overflow (scrollWidth ${m.sw} <= ${width})`);
-    assert(m.title.l >= m.hero.l && m.title.r <= m.hero.r, `${tag}: title inside the hero`);
-    assert(errors.length === 0, `${tag}: no page errors (${errors.join(' | ') || 'none'})`);
-  } finally { await close(); }
+for (const [w, h, mobile] of [[1440, 1100, false], [768, 1024, false], [375, 812, true], [2560, 2000, false]]) {
+  const tag = `@${w}`;
+  const { page, errors, close } = await openPage({ width: w, height: h, ...(mobile ? { isMobile: true, hasTouch: true } : {}) });
+  await page.evaluate(() => document.fonts.ready);
+  await sleep(1500);
+  const r = await page.evaluate(READ);
+  const top = r.hero.t, k = w / 1440;   // hero-relative coordinates; desktop values scale with the width (the layout is in vw)
+  assert(r.iw === w, `${tag}: the viewport really is ${w} wide (${r.iw})`);
+  assert(r.sw <= r.iw, `${tag}: no horizontal overflow (scrollWidth ${r.sw})`);
+  assert(r.h1Count === 1 && r.h1 === 'Friseurmeister in Nümbrecht & Waldbröl MTM Coiffure.', `${tag}: one h1 carrying the real text for search engines ("${r.h1}")`);
+  assert(/Badeen Display/.test(r.titleFont) && r.fontReady, `${tag}: the title is set in Badeen Display and the font has loaded (${r.titleFont})`);
+  assert(Math.abs(r.titleSize - 200 * k) < 0.5, `${tag}: title size ${r.titleSize.toFixed(1)}px = 200px x ${k.toFixed(3)}`);
+  assert(r.titleColor === 'rgb(255, 255, 255)' && r.textColor === 'rgb(255, 255, 255)', `${tag}: title and text are white (${r.titleColor}, ${r.textColor})`);
+  assert(r.overlay === 'rgba(0, 0, 0, 0.32)' && r.overlayRadius !== '50%', `${tag}: the video lies under Figma's 32% black layer (${r.overlay})`);
+  assert(r.radius[0] === '0px' && r.radius[1] === '5px' && r.radius[2] === '5px', `${tag}: square top, 5px bottom corners (${r.radius.join(' ')})`);
+  assert(!r.live, `${tag}: the hero carries no scroll-driven curve`);
+  assert(Math.abs(top) < 0.5, `${tag}: the hero starts at the top of the page, under the header (top ${top})`);
+  assert(r.header.over && r.header.bg === 'rgba(0, 0, 0, 0)' && r.header.color === 'rgb(255, 255, 255)' && r.header.logo === 'assets/logo-nav-white.png', `${tag}: over the hero the header is transparent, white, with the white logo (${JSON.stringify(r.header)})`);
+  assert(r.video.src === (w < 768 ? 'hero-960.mp4' : 'hero-1600.mp4') && !r.video.paused && r.video.poster === 'assets/hero-poster.jpg', `${tag}: the ${w < 768 ? 'phone' : 'large'} video plays, with its poster (${r.video.src}, paused ${r.video.paused})`);
+
+  if (!mobile) {
+    assert(Math.abs(r.hero.h - FIGMA.heroH * k) <= 1, `${tag}: hero height ${r.hero.h.toFixed(1)} = ${(FIGMA.heroH * k).toFixed(1)}`);
+    assert(Math.abs(r.hello.l - FIGMA.hello[0] * k) <= 2 && Math.abs(r.hello.t - top - FIGMA.hello[1] * k) <= 3, `${tag}: "Wilkommen." at (${r.hello.l.toFixed(0)}, ${(r.hello.t - top).toFixed(0)}) vs Figma (${(FIGMA.hello[0] * k).toFixed(0)}, ${(FIGMA.hello[1] * k).toFixed(0)})`);
+    assert(Math.abs(r.small.cx - FIGMA.smallCx * k) <= 3 && Math.abs(r.small.t - top - FIGMA.smallTop * k) <= 3 * Math.max(1, k), `${tag}: subtitle centred at ${r.small.cx.toFixed(0)}, top ${(r.small.t - top).toFixed(0)} vs Figma ${(FIGMA.smallCx * k).toFixed(0)}, ${(FIGMA.smallTop * k).toFixed(0)}`);
+    assert(Math.abs(r.arabic.l - FIGMA.arabic[0] * k) <= 2 && Math.abs(r.arabic.r - FIGMA.arabic[2] * k) <= 2 && Math.abs(r.arabic.t - top - FIGMA.arabic[1] * k) <= 3, `${tag}: Arabic greeting ${r.arabic.l.toFixed(0)}..${r.arabic.r.toFixed(0)} at ${(r.arabic.t - top).toFixed(0)} vs Figma ${(FIGMA.arabic[0] * k).toFixed(0)}..${(FIGMA.arabic[2] * k).toFixed(0)}`);
+    assert(!meets(r.hello, r.small) && !meets(r.small, r.arabic), `${tag}: the three texts of the row do not touch`);
+  } else {
+    assert(Math.abs(r.small.cx - w / 2) <= 2 && Math.abs(r.hello.cx - w / 2) <= 2 && Math.abs(r.arabic.cx - w / 2) <= 2, `${tag}: the stacked texts are centred (${r.arabic.cx.toFixed(0)}, ${r.small.cx.toFixed(0)}, ${r.hello.cx.toFixed(0)})`);
+    assert(r.arabic.b <= r.small.t && r.small.b <= r.hello.t, `${tag}: order top to bottom: Arabic, subtitle, Wilkommen`);
+    assert(Math.abs(r.title.t - (r.hero.b - 1.15 * r.titleSize)) <= 1, `${tag}: the title's line box starts 1.15em above the hero's bottom edge (${(r.hero.b - r.title.t).toFixed(1)} vs ${(1.15 * r.titleSize).toFixed(1)})`);
+    assert(r.hello.b + 8 <= r.title.t + 0.45 * r.titleSize, `${tag}: "Wilkommen." stays clear of the title's letters`);
+  }
+
+  // pixels: hide the video, header and texts, so the only white inside the hero is the title's letters
+  await page.addStyleTag({ content: '.hero-media video, .site-header, .hero-intro > p, .hero-arabic, .hero-title small { visibility: hidden !important; }' });
+  await page.evaluate(() => window.scrollTo(0, 0)); await sleep(300);
+  const png = await page.screenshot({ fullPage: false, clip: { x: 0, y: 0, width: w, height: Math.min(h, Math.ceil(r.hero.b)) } });
+  fs.writeFileSync(path.join(OUT, `hero-${w}.png`), png);
+  const heroB = Math.floor(r.hero.b), rowMid = Math.round(top + (mobile ? (r.hero.b - top) - 0.325 * r.titleSize : 940 * k));
+  const s = await scan(page, png, [rowMid, heroB - 7], [Math.round(top), heroB - 1], mobile ? 1 : 3);   // the 52px phone title has 1-2px gaps   // 7px up: clear of the 5px rounded corners, where the page shows through
+  const [, aMid, zMid] = s.runs[0];
+  if (!mobile) {
+    assert(Math.abs(s.top - top - FIGMA.inkTop * k) <= 3 * Math.max(1, k), `${tag}: the letters' top at ${(s.top - top).toFixed(0)} vs Figma ${(FIGMA.inkTop * k).toFixed(0)}`);
+    assert(aMid === 0 && Math.abs(zMid - FIGMA.inkRight * k) <= 4 * Math.max(1, k), `${tag}: the title runs from the left edge (ink at ${aMid}) to x=${zMid} vs Figma ${(FIGMA.inkRight * k).toFixed(0)}`);
+  } else {
+    assert(aMid >= 0 && aMid <= 6 && zMid >= w - 30 && zMid < w, `${tag}: the title spans the phone's width (ink ${aMid}..${zMid})`);
+  }
+  // straight edge: the dark gaps between the letters stay dark down to the bottom edge; the old white ellipse would fill them
+  assert(s.gaps >= 6 && s.gapWhite <= Math.floor(s.gaps / 4), `${tag}: no white curve along the hero's bottom (${s.gapWhite} of ${s.gaps} letter gaps white near the edge)`);
+  assert(errors.length === 0, `${tag}: 0 console/page errors (${errors.join(' | ')})`);
+  await close();
 }
 
-// ---- 2. desktop render against Figma node 66:8 (1440) -----------------------------------------
-{
-  const { page, close } = await openPage({ width: 1440, height: 1200 });
-  try {
-    await page.evaluate(() => document.fonts.ready);
-    const h = await page.evaluate(() => { const b = document.querySelector('.hero').getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height }; });
-    assert(h.w === 1440 && h.h === 1080, `@1440 hero is the 1440x1080 Figma frame (got ${h.w}x${h.h})`);
-    const png = path.join(OUT, 'desktop-1440.png');
-    await page.screenshot({ path: png, clip: { x: 0, y: h.y, width: 1440, height: 1080 } });
-    const ours = inkBoxes(png, {
-      small: [0, 0, 1440, 60], hello: [0, 300, 400, 420], title: [400, 300, 1040, 420], arabic: [1040, 300, 1440, 420],
-    });
-    const d = {};
-    for (const k of Object.keys(FIGMA_DESKTOP)) d[k] = ours[k].map((v, i) => v - FIGMA_DESKTOP[k][i]);
-    console.log('  desktop ink boxes (ours, Figma, delta px):');
-    for (const k of Object.keys(FIGMA_DESKTOP)) console.log(`    ${k.padEnd(7)} ours ${JSON.stringify(ours[k])} figma ${JSON.stringify(FIGMA_DESKTOP[k])} delta ${JSON.stringify(d[k])}`);
-    const titleCx = (ours.title[0] + ours.title[2]) / 2, figCx = (FIGMA_DESKTOP.title[0] + FIGMA_DESKTOP.title[2]) / 2;
-    assert(Math.abs(titleCx - 720) <= 1.5, `@1440 Figma-vs-ours: title ink centre ${titleCx} is on the 720 centre line (±1.5px ink tolerance)`);
-    assert(Math.abs(titleCx - figCx) <= 1, `@1440 title ink centre matches Figma (${titleCx} vs ${figCx}, delta ${(titleCx - figCx).toFixed(1)}px)`);
-    assert(Math.abs(ours.title[0] - FIGMA_DESKTOP.title[0]) <= 1 && Math.abs(ours.title[2] - FIGMA_DESKTOP.title[2]) <= 1, '@1440 title ink edges match Figma within 1px');
-    assert(Math.abs(ours.hello[0] - FIGMA_DESKTOP.hello[0]) <= 1 && Math.abs(ours.arabic[2] - FIGMA_DESKTOP.arabic[2]) <= 1, '@1440 Wilkommen left edge and Arabic right edge match Figma within 1px');
-    assert(Math.abs(ours.small[0] - FIGMA_DESKTOP.small[0]) <= 1 && Math.abs(ours.small[2] - FIGMA_DESKTOP.small[2]) <= 1, '@1440 subtitle ink edges match Figma within 1px');
-  } finally { await close(); }
+// the header turns back into the white Figma bar as soon as the hero's bottom edge rises past it, and clear again on the way back
+for (const [w, h, mobile] of [[1440, 900, false], [375, 812, true]]) {
+  const tag = `@${w} header`;
+  const { page, close } = await openPage({ width: w, height: h, ...(mobile ? { isMobile: true, hasTouch: true } : {}) });
+  await sleep(800);
+  const st = () => page.evaluate(() => { const hd = document.querySelector('.site-header'); return { over: hd.classList.contains('is-over-hero'), bg: getComputedStyle(hd).backgroundColor, logo: [...hd.querySelectorAll('.brand img')].filter(i => getComputedStyle(i).display !== 'none').map(i => i.getAttribute('src')).join() }; });
+  const H = await page.evaluate(() => document.querySelector('.hero').offsetHeight);
+  const at = async y => { await page.evaluate(y => window.scrollTo(0, y), y); await sleep(450); return st(); };
+  const a = await at(H - 60), b = await at(H - 45), c = await at(H - 60), d = await at(0);
+  assert(a.over && !b.over && c.over && d.over, `${tag}: clear while the hero covers the header (10px left: ${a.over}), white once its edge is 5px past the header (${!b.over}), clear again scrolling back (${c.over}, top ${d.over})`);
+  assert(b.bg === 'rgb(255, 255, 255)' && b.logo === 'assets/logo-nav.png', `${tag}: past the hero the header is the white bar with the normal logo (${b.bg}, ${b.logo})`);
+  await close();
 }
 
-// ---- 3. phone render against Figma frame 76:223 (450 wide) ----------------------------------
+// reduced motion: the still poster, not the moving video
 {
-  const { page, close } = await openPage({ width: 450, height: 800, isMobile: true });
-  try {
-    await page.evaluate(() => document.fonts.ready);
-    const h = await page.evaluate(() => { const b = document.querySelector('.hero').getBoundingClientRect(); return { y: b.top, w: b.width, h: b.height }; });
-    assert(h.w === 450 && h.h === 667, `@450 hero is the 450x667 Figma frame (got ${h.w}x${h.h})`);
-    const png = path.join(OUT, 'phone-450.png');
-    await page.screenshot({ path: png, clip: { x: 0, y: h.y, width: 450, height: 667 } });
-    const ours = inkBoxes(png, {
-      arabic: [0, 300, 450, 384], small: [0, 385, 450, 420], title: [0, 421, 450, 490], hello: [0, 495, 450, 545],
-    });
-    console.log('  phone ink boxes (ours, Figma, delta px):');
-    for (const k of Object.keys(FIGMA_PHONE)) console.log(`    ${k.padEnd(7)} ours ${JSON.stringify(ours[k])} figma ${JSON.stringify(FIGMA_PHONE[k])} delta ${JSON.stringify(ours[k].map((v, i) => v - FIGMA_PHONE[k][i]))}`);
-    const tw = ours.title[2] - ours.title[0], fw = FIGMA_PHONE.title[2] - FIGMA_PHONE.title[0];
-    assert(Math.abs(tw - fw) <= 4, `@450 title ink width ${tw}px vs Figma ${fw}px (±4px)`);
-    const tcx = (ours.title[0] + ours.title[2]) / 2;
-    assert(Math.abs(tcx - 225) <= 1.5, `@450 title ink centre ${tcx} is on the 225 centre line (±1.5px)`);
-    assert(Math.abs(ours.arabic[1] - FIGMA_PHONE.arabic[1]) <= 2 && Math.abs(ours.small[1] - FIGMA_PHONE.small[1]) <= 1, `@450 Arabic top (${ours.arabic[1]} vs 325) and subtitle top (${ours.small[1]} vs 403) on Figma's rows`);
-    assert(Math.abs(ours.title[1] - FIGMA_PHONE.title[1]) <= 3, `@450 title ink top ${ours.title[1]} vs Figma ${FIGMA_PHONE.title[1]} (±3px, residual reported)`);
-  } finally { await close(); }
+  const { page, close } = await openPage({ width: 1440, height: 900, reducedMotion: true });
+  await sleep(1200);
+  const v = await page.evaluate(() => { const v = document.querySelector('.hero video'); return { paused: v.paused, autoplay: v.hasAttribute('autoplay'), t: v.currentTime }; });
+  assert(v.paused && !v.autoplay && v.t === 0, `@1440 reduced-motion: the video stays on its poster (paused ${v.paused}, autoplay ${v.autoplay}, t ${v.t})`);
+  await close();
 }
 
 await report();

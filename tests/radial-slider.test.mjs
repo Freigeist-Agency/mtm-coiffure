@@ -48,21 +48,24 @@ async function desktop() {
     assert(mk.oldCarousel === 0, 'old social carousel markup is gone');
 
     // --- geometry at rest: 7 cards, bent like a bowl, symmetric
+    // --rs-scale (1.75 since 2026-11-13: first 2.5 for cards 100-200% bigger, then 30% smaller) scales the whole bowl: every share of the stage below scales with it
+    const SC = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector('.radial-slider')).getPropertyValue('--rs-scale')) || 1);
     let cs = await cards(page); let vis = visible(cs, W);
-    assert(vis.length === 7, `geometry: 7 cards fully inside the stage at rest (${vis.length})`);
-    const mid = vis[3], left = vis[0], right = vis[6];
-    assert(Math.abs(mid.w / W - 0.105) < 0.004, `geometry: centre card is 10.5% of the stage wide (${(mid.w / W * 100).toFixed(2)}%)`);
+    const n = vis.length, c0 = (n - 1) / 2;
+    assert(n >= 3 && n % 2 === 1 && (SC !== 1 || n === 7), `geometry: an odd number of cards fully inside the stage at rest, 7 at scale 1 (${n} at scale ${SC})`);
+    const mid = vis[c0], left = vis[0], right = vis[n - 1];
+    assert(Math.abs(mid.w / W - 0.105 * SC) < 0.004 * SC, `geometry: centre card is 10.5% x scale of the stage wide (${(mid.w / W * 100).toFixed(2)}%, scale ${SC})`);
     assert(Math.abs(mid.h / mid.w - 16 / 9) < 0.03, `geometry: centre card is 9:16 (${(mid.h / mid.w).toFixed(3)})`);
-    assert(left.h / mid.h > 1.4 && right.h / mid.h > 1.4, `geometry: outer cards are >1.4x the centre card's height, curved (${(left.h / mid.h).toFixed(2)}, ${(right.h / mid.h).toFixed(2)})`);
-    assert(vis[1].h > vis[2].h && vis[2].h > mid.h && vis[5].h > vis[4].h && vis[4].h > mid.h, 'geometry: height rises monotonically from the centre to both edges');
+    assert(left.h / mid.h > (SC === 1 ? 1.4 : 1.04) && right.h / mid.h > (SC === 1 ? 1.4 : 1.04), `geometry: outer cards are taller than the centre card, curved (${(left.h / mid.h).toFixed(2)}, ${(right.h / mid.h).toFixed(2)})`);
+    assert(vis.every((v, i) => i === c0 || (i < c0 ? v.h > vis[i + 1].h : v.h > vis[i - 1].h)), 'geometry: height rises monotonically from the centre to both edges');
     assert(Math.abs((mid.l + mid.r) / 2 - W / 2) < 2, `geometry: centre card is centred (${((mid.l + mid.r) / 2).toFixed(1)})`);
     const gaps = vis.slice(1).map((c, i) => c.l - vis[i].r);
-    assert(gaps.every(g => g > 2 && g < 0.05 * W), `geometry: gaps between cards stay positive and small ${JSON.stringify(gaps.map(g => Math.round(g)))}`);
-    const pitch = (vis[4].l + vis[4].r) / 2 - (mid.l + mid.r) / 2;
-    assert(Math.abs(pitch / W - 0.1384) < 0.008, `geometry: card pitch near the centre is 13.8% of the stage (${(pitch / W * 100).toFixed(2)}%)`);
-    const top = await page.evaluate(() => { const r = document.querySelector('.radial-slider__stage').getBoundingClientRect(); return [...document.querySelectorAll('.radial-slider__card')].map(c => { const b = c.getBoundingClientRect(); return [b.top - r.top, r.bottom - b.bottom]; }); });
+    assert(gaps.every(g => g > 2 && g < 0.05 * W * SC), `geometry: gaps between cards stay positive and small ${JSON.stringify(gaps.map(g => Math.round(g)))}`);
+    const pitch = (vis[c0 + 1].l + vis[c0 + 1].r) / 2 - (mid.l + mid.r) / 2;
+    assert(Math.abs(pitch / W - 0.1384 * SC) < 0.008 * SC, `geometry: card pitch near the centre is 13.8% x scale of the stage (${(pitch / W * 100).toFixed(2)}%)`);
+    const top = await page.evaluate(() => { const r = document.querySelector('.radial-slider__stage').getBoundingClientRect(); return [...document.querySelectorAll('.radial-slider__card')].filter(c => { const b = c.getBoundingClientRect(); return getComputedStyle(c).opacity !== '0' && b.right > r.left && b.left < r.right; }).map(c => { const b = c.getBoundingClientRect(); return [b.top - r.top, r.bottom - b.bottom]; }); });   // cards on screen (at scale 2.5 the third one out lies beyond the stage's sides)
     assert(top.every(([t, b]) => t > -1 && b > -1), 'geometry: no card is clipped at the top or bottom of the stage');
-    const ctl = await page.evaluate(() => { const c = document.querySelector('.radial-slider__controls').getBoundingClientRect(), st = document.querySelector('.radial-slider__stage').getBoundingClientRect(); return { cx: (c.left + c.right) / 2, below: c.top >= st.bottom - 0.01 * st.width, n: document.querySelectorAll('.radial-slider__dot').length, btn: document.querySelectorAll('.radial-slider__btn').length }; });
+    const ctl = await page.evaluate(() => { const c = document.querySelector('.radial-slider .radial-slider__controls').getBoundingClientRect(), st = document.querySelector('.radial-slider__stage').getBoundingClientRect(); return { cx: (c.left + c.right) / 2, below: c.top >= st.bottom - 0.01 * st.width, n: document.querySelectorAll('.radial-slider .radial-slider__dot').length, btn: document.querySelectorAll('.radial-slider .radial-slider__btn').length }; });
     assert(Math.abs(ctl.cx - 720) < 2 && ctl.below && ctl.n === 6 && ctl.btn === 2, `controls: prev/next + 6 dots centred under the row (${JSON.stringify(ctl)})`);
 
     // --- no auto movement
@@ -74,15 +77,15 @@ async function desktop() {
     // --- keyboard
     await page.focus('.radial-slider');
     await page.keyboard.press('ArrowRight'); await settle(page);
-    let st = await api(page, () => { const a = document.querySelector('.radial-slider').__radialSlider; return [a.index(), a.pos(), document.querySelectorAll('.radial-slider__dot.is-active').length, [...document.querySelectorAll('.radial-slider__dot')].findIndex(d => d.classList.contains('is-active')), document.querySelector('.radial-slider__live').textContent]; });
+    let st = await api(page, () => { const a = document.querySelector('.radial-slider').__radialSlider; return [a.index(), a.pos(), document.querySelectorAll('.radial-slider .radial-slider__dot.is-active').length, [...document.querySelectorAll('.radial-slider .radial-slider__dot')].findIndex(d => d.classList.contains('is-active')), document.querySelector('.radial-slider__live').textContent]; });
     assert(st[0] === 1 && st[1] === 1, `keyboard: ArrowRight moves one card (index ${st[0]}, pos ${st[1]})`);
     assert(st[2] === 1 && st[3] === 1, `controls: exactly one active dot, and it follows the index (${st[3]})`);
     assert(st[4] === 'Beitrag 2 von 6', `a11y: live region says "${st[4]}"`);
     await page.keyboard.press('ArrowLeft'); await settle(page);
     assert(await api(page, () => document.querySelector('.radial-slider').__radialSlider.pos()) === 0, 'keyboard: ArrowLeft moves back');
-    await page.click('.radial-slider__btn--next'); await settle(page);
+    await page.click('.radial-slider .radial-slider__btn--next'); await settle(page);
     assert(await api(page, () => document.querySelector('.radial-slider').__radialSlider.pos()) === 1, 'buttons: next moves one card');
-    await page.click('.radial-slider__btn--prev'); await settle(page);
+    await page.click('.radial-slider .radial-slider__btn--prev'); await settle(page);
     assert(await api(page, () => document.querySelector('.radial-slider').__radialSlider.pos()) === 0, 'buttons: prev moves back');
 
     // --- one step's timing: ease-out, about 0.75s (reference: 37/62/82/87/92/100% at 0.1..0.6s)
@@ -96,7 +99,7 @@ async function desktop() {
     assert(prof.length > 20, `step: sampled ${prof.length} frames`);
     assert(at(100) > 0.25 && at(100) < 0.5 && at(200) > 0.5 && at(200) < 0.75 && at(450) > 0.85 && at(700) > 0.97 && prof[prof.length - 1][1] === 1, `step: ease-out profile 100ms ${at(100).toFixed(2)}, 200ms ${at(200).toFixed(2)}, 450ms ${at(450).toFixed(2)}, 700ms ${at(700).toFixed(2)}, ends at ${prof[prof.length - 1][1]}`);
     await settle(page);
-    await page.click('.radial-slider__btn--prev'); await settle(page);
+    await page.click('.radial-slider .radial-slider__btn--prev'); await settle(page);
 
     // --- infinite wrap: more than a full cycle (6 cards) each way, neighbours stay in order, nothing jumps
     const wrapRun = async dir => {
@@ -121,15 +124,15 @@ async function desktop() {
     assert(r.frames > 40 && r.pos === 8 && r.index === 2, `wrap +: 8 cards forward (more than the 6-card cycle): pos ${r.pos}, index ${r.index}, ${r.frames} frames sampled`);
     assert(r.maxJump < 0.10 * W, `wrap +: no card inside the stage jumps more than 10% of the stage between frames (max ${r.maxJump.toFixed(1)}px)`);
     cs = await cards(page); vis = visible(cs, W);
-    assert(vis.length === 7 && vis.every((c, i) => i === 0 || (c.item - vis[i - 1].item + 6) % 6 === 1), `wrap +: the 7 visible cards are still consecutive items ${JSON.stringify(vis.map(c => c.item))}`);
-    assert(vis[3].item === 2, `wrap +: centre card is item 2 after 8 steps (${vis[3].item})`);
+    assert(vis.length >= 3 && vis.length % 2 === 1 && vis.every((c, i) => i === 0 || (c.item - vis[i - 1].item + 6) % 6 === 1), `wrap +: the visible cards are still consecutive items ${JSON.stringify(vis.map(c => c.item))}`);
+    assert(vis[(vis.length - 1) / 2].item === 2, `wrap +: centre card is item 2 after 8 steps (${vis[(vis.length - 1) / 2].item})`);
     r = await wrapRun(-1);
     assert(r.pos === 0 && r.index === 0, `wrap -: 8 cards back to 0: pos ${r.pos}, index ${r.index}`);
     assert(r.maxJump < 0.10 * W, `wrap -: no visible card jumps (max ${r.maxJump.toFixed(1)}px)`);
     r = await wrapRun(-1);
     assert(r.pos === -8 && r.index === 4, `wrap -: past zero (pos ${r.pos}, index ${r.index})`);
     cs = await cards(page); vis = visible(cs, W);
-    assert(vis.length === 7 && vis.every((c, i) => i === 0 || (c.item - vis[i - 1].item + 6) % 6 === 1) && vis[3].item === 4, `wrap -: order still consecutive, centre item 4 ${JSON.stringify(vis.map(c => c.item))}`);
+    assert(vis.length >= 3 && vis.length % 2 === 1 && vis.every((c, i) => i === 0 || (c.item - vis[i - 1].item + 6) % 6 === 1) && vis[(vis.length - 1) / 2].item === 4, `wrap -: order still consecutive, centre item 4 ${JSON.stringify(vis.map(c => c.item))}`);
     await page.focus('.radial-slider'); await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowRight');  // back to a tidy spot for the next checks
     await settle(page);
 
@@ -160,7 +163,7 @@ async function desktop() {
     await page.waitForTimeout(60);
     const held = await api(page, () => ({ pos: document.querySelector('.radial-slider').__radialSlider.pos(), cls: document.querySelector('.radial-slider').classList.contains('is-dragging') }));
     assert(held.cls, 'drag: .is-dragging while the button is down');
-    assert(Math.abs((held.pos - startPos) - 276 / 138 / 1.44) < 0.12, `drag: 276px of pointer moves the cards ${(held.pos - startPos).toFixed(2)} (expect ${(276 / 138 / 1.44).toFixed(2)} cards, 1:1 with the pointer)`);
+    assert(Math.abs((held.pos - startPos) - 276 / 138 / 1.44 / SC) < 0.12 / SC, `drag: 276px of pointer moves the cards ${(held.pos - startPos).toFixed(2)} (expect ${(276 / 138 / 1.44 / SC).toFixed(2)} cards: the pitch is SC x larger, still 1:1 with the pointer)`);
     await page.waitForTimeout(400);   // a still hand: no fling
     await page.mouse.up(); await settle(page);
     const fin = await api(page, () => document.querySelector('.radial-slider').__radialSlider.pos());
@@ -179,14 +182,16 @@ async function desktop() {
     // --- the video slot takes a <video> with no other change
     const slot = await page.evaluate(() => {
       const c = document.querySelector('.radial-slider__card:not([data-clone])'), m = c.querySelector('.radial-slider__media');
-      const v = document.createElement('video'); v.muted = true; v.loop = true; v.playsInline = true; m.appendChild(v);
+      let v = m.querySelector('video');   // the real video since 2026-11-15; an empty slot gets a test one
+      if (!v) { v = document.createElement('video'); v.muted = true; v.loop = true; v.playsInline = true; m.appendChild(v); }
       const cb = c.getBoundingClientRect(), vb = v.getBoundingClientRect();
       return { fit: getComputedStyle(v).objectFit, dw: Math.abs(vb.width - cb.width), dh: Math.abs(vb.height - cb.height), display: getComputedStyle(v).display };
     });
     assert(slot.fit === 'cover' && slot.dw < 1 && slot.dh < 1, `video slot: a <video> fills the card with object-fit: cover (${JSON.stringify(slot)})`);
     // it plays only while the slider is on screen
     await page.evaluate(() => {
-      const v = document.querySelector('.radial-slider video'); window.__v = { play: 0, pause: 0 };
+      const vs = [...document.querySelectorAll('.radial-slider video')], mid = innerWidth / 2;   // the centre card's video (the loop's copies off to the sides do not play)
+      const v = vs.sort((p, q) => { const a = p.getBoundingClientRect(), b = q.getBoundingClientRect(); return Math.abs(a.left + a.width / 2 - mid) - Math.abs(b.left + b.width / 2 - mid); })[0]; window.__v = { play: 0, pause: 0 };
       v.play = () => { window.__v.play++; return Promise.resolve(); }; v.pause = () => { window.__v.pause++; };
     });
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
@@ -208,9 +213,11 @@ async function sizes() {
       await page.locator('.radial-slider').scrollIntoViewIfNeeded(); await page.waitForTimeout(200);
       assert(await page.evaluate(() => innerWidth) === w, `${w}: viewport really is ${w} wide`);
       const m = await page.evaluate(() => { const st = document.querySelector('.radial-slider__stage').getBoundingClientRect(); return { W: st.width, sw: document.documentElement.scrollWidth, iw: innerWidth }; });
-      const cs = await cards(page), vis = visible(cs, m.W);
-      assert(vis.length === 7, `${w}: 7 cards inside the stage (${vis.length})`);
-      assert(Math.abs(vis[3].w / m.W - 0.105) < 0.004 && vis[0].h / vis[3].h > 1.4, `${w}: row scales with the stage: centre ${(vis[3].w / m.W * 100).toFixed(2)}% wide, edge ${(vis[0].h / vis[3].h).toFixed(2)}x tall`);
+      const SC = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector('.radial-slider')).getPropertyValue('--rs-scale')) || 1);
+      const cs = await cards(page), vis = visible(cs, m.W), c0 = (vis.length - 1) / 2;
+      // on phones (scale 4.2 since 2026-11-13, 6 before) only the centre card is whole, its neighbours peek in at the edges: three need ~3.2 card widths
+      assert(vis.length >= (vis[0] && m.W < 3.2 * vis[c0].w ? 1 : 3) && vis.length % 2 === 1, `${w}: an odd number of cards inside the stage (${vis.length}, scale ${SC})`);
+      assert(Math.abs(vis[c0].w / m.W - 0.105 * SC) < 0.004 * SC && (vis.length === 1 || vis[0].h / vis[c0].h > 1.04), `${w}: row scales with the stage: centre ${(vis[c0].w / m.W * 100).toFixed(2)}% wide (scale ${SC}), edge ${(vis[0].h / vis[c0].h).toFixed(2)}x tall`);
       assert(m.sw <= m.iw, `${w}: no horizontal overflow (${m.sw} <= ${m.iw})`);
       assert(errors.length === 0, `${w}: no page errors`);
     } finally { await close(); }
@@ -263,11 +270,11 @@ async function reduced() {
     await page.focus('.radial-slider'); await page.keyboard.press('ArrowRight');
     const c = await page.evaluate(() => { const s = document.querySelector('.radial-slider').__radialSlider; return [s.pos(), s.busy()]; });
     assert(c[0] === 1 && c[1] === false, `reduced: manual control still works, and jumps without a tween (pos ${c[0]}, busy ${c[1]})`);
-    await page.click('.radial-slider__btn--next');
+    await page.click('.radial-slider .radial-slider__btn--next');
     const d = await page.evaluate(() => document.querySelector('.radial-slider').__radialSlider.pos());
     assert(d === 2, `reduced: the next button works (${d})`);
     const cs = await cards(page); const vis = visible(cs, 1440);
-    assert(vis.length === 7 && vis[3].item === 2, `reduced: still the curved row, centre item ${vis[3] && vis[3].item}`);
+    assert(vis.length >= 3 && vis.length % 2 === 1 && vis[(vis.length - 1) / 2].item === 2, `reduced: still the curved row, centre item ${vis[(vis.length - 1) / 2] && vis[(vis.length - 1) / 2].item}`);
   } finally { await close(); }
 }
 
@@ -291,9 +298,10 @@ const measureGaps = page => page.evaluate(() => {
   const btns = [...document.querySelectorAll('.btn--social')], cx = innerWidth / 2;
   const cards = [...document.querySelectorAll('.radial-slider__card')].filter(c => getComputedStyle(c).visibility === 'visible' && getComputedStyle(c).opacity !== '0');
   const mid = cards.reduce((a, c) => { const b = c.getBoundingClientRect(), d = Math.abs((b.left + b.right) / 2 - cx); return !a || d < a.d ? { c, d } : a; }, null).c;
-  const ctlBottom = Math.max(...[...document.querySelectorAll('.radial-slider__btn, .radial-slider__dot')].map(bot)), btnBottom = Math.max(...btns.map(bot));
-  const sb = bot(document.querySelector('.social')), rt = top(document.querySelector('.reviews'));
-  return { gap1: top(mid) - btnBottom, gap2: sb - ctlBottom, sbEqRev: Math.abs(sb - rt) < 0.01, n: cards.length,
+  const ctlBottom = Math.max(...[...document.querySelectorAll('.radial-slider .radial-slider__btn, .radial-slider__dot')].map(bot)), btnBottom = Math.max(...btns.map(bot));
+  const sb = bot(document.querySelector('.social')), rt = top(document.querySelector('.news'));   // since 2026-11-13 the news follow the social section (Figma order)
+  const arrowsTop = Math.min(...[...document.querySelectorAll('.radial-slider .radial-slider__btn')].map(top));
+  return { gap1: top(mid) - btnBottom, gap3: arrowsTop - bot(mid), gap2: sb - ctlBottom, sbEqRev: Math.abs(rt - sb - (innerWidth >= 1024 ? 112 * innerWidth / 1512 : 0)) < 0.5, /* 2026-11-16: from 1024 up the news start 112 (x width/1512) lower */ n: cards.length,
     clear: Math.min(...cards.map(top)) - btnBottom, pad: [getComputedStyle(document.querySelector('.social-head')).paddingBottom, getComputedStyle(document.querySelector('.social')).paddingBottom] };
 });
 
@@ -305,14 +313,16 @@ async function gaps() {
       await page.locator('.radial-slider').scrollIntoViewIfNeeded(); await page.waitForTimeout(400);
       assert(await page.evaluate(() => innerWidth) === w, `gaps ${w}: viewport really is ${w} wide`);
       const m = await measureGaps(page);
-      assert(m.n === 7 && m.sbEqRev, `gaps ${w}: 7 cards placed, .social ends where .reviews starts (${m.n}, ${m.sbEqRev})`);
-      if (w === 375) {
-        assert(Math.abs(m.gap1 - 80.5) < 0.6 && Math.abs(m.gap2 - 63.75) < 0.6, `gaps 375: below 768 unchanged, ${m.gap1.toFixed(2)} / ${m.gap2.toFixed(2)} (a7769df: 80.50 / 63.75)`);
-        assert(m.pad[0] === '136px' && m.pad[1] === '60px', `gaps 375: mobile paddings still 136px / 60px (${m.pad})`);
+      assert(m.n === 7 && m.sbEqRev, `gaps ${w}: 7 cards placed, .social ends where .news starts (${m.n}, ${m.sbEqRev})`);
+      // 2026-11-15, Desktop_new: from 1024 up the middle card starts 146/1512 of the width below the buttons (Figma's tiles start there) and
+      // the dots sit 55/1512 of the width above the section's end; below 1024 (the stacked layout) the slider follows 24px under the buttons.
+      if (w < 1024) {
+        assert(Math.abs(m.gap1 - m.gap3) <= 1.5 && m.gap2 >= 0, `gaps ${w}: stacked layout, the middle card as far below the buttons (${m.gap1.toFixed(1)}px) as the arrows are below it (${m.gap3.toFixed(1)}px), its dots inside the section (${m.gap2.toFixed(1)}px)`);
       } else {
-        const t = GAPS[w];
-        assert(Math.abs(m.gap1 - t.gap1) <= 3, `gaps ${w}: buttons -> middle card ${m.gap1.toFixed(1)}px, target ${t.gap1} +-3`);
-        assert(Math.abs(m.gap2 - t.gap2) <= 3, `gaps ${w}: dots -> section end ${m.gap2.toFixed(1)}px, target ${t.gap2} +-3`);
+        // 2026-11-16 (cofounder): the middle card as far below the buttons as the arrows are below it (was Figma's 146/1512)
+        const t = { gap1: m.gap3, gap2: 55.1 * w / 1512 };
+        assert(Math.abs(m.gap1 - t.gap1) <= 1.5, `gaps ${w}: buttons -> middle card ${m.gap1.toFixed(1)}px, the same as middle card -> arrows ${t.gap1.toFixed(1)} +-1.5`);
+        assert(Math.abs(m.gap2 - t.gap2) <= 3, `gaps ${w}: dots -> section end ${m.gap2.toFixed(1)}px, target ${t.gap2.toFixed(1)} +-3`);
         // clearance between the text block (heading, paragraph, buttons) and every visible card: vertical-only, and true 2D rectangle distance.
         // Outer cards ride higher on the arc than the middle one, so both are read at rest, mid-drag and on every frame of the snap.
         await page.evaluate(() => {
@@ -323,6 +333,7 @@ async function gaps() {
             let vert = 1e9, d2 = 1e9, over = 0;
             document.querySelectorAll('.radial-slider__card').forEach(c => {
               const cs = getComputedStyle(c); if (cs.visibility !== 'visible' || cs.opacity === '0') return;
+              const sr = document.querySelector('.radial-slider__stage').getBoundingClientRect(), cb = c.getBoundingClientRect(); if (cb.right <= sr.left || cb.left >= sr.right) return;   // off the stage's sides: clipped away, not seen (scale 2.5)
               const r = R(c); vert = Math.min(vert, r.t - btnB);
               bl.forEach(B => { const dx = Math.max(0, B.l - r.r, r.l - B.r), dy = Math.max(0, r.t - B.b, B.t - r.b); if (dx === 0 && dy === 0) over++; d2 = Math.min(d2, Math.hypot(dx, dy)); });
             });
@@ -358,8 +369,28 @@ async function gaps() {
 
 await desktop();
 await sizes();
+// 2026-11-13 (cofounder): the cards 30% smaller at every size. The centre card's width is 0.7 of what it was at scale 2.5 / 4 / 6
+// (measured before the change: 236.3 at 375, 252 at 600, 201.6 at 768, 378 at 1440, 672 at 2560), within 1px.
+const BEFORE = { 375: 236.3, 600: 252, 768: 201.6, 1440: 378, 2560: 672 };
+async function size() {
+  for (const [w, h, mobile] of [[375, 812, true], [600, 900, true], [768, 1024, false], [1440, 900, false], [2560, 1440, false]]) {
+    const { page, close } = await openPage({ width: w, height: h, ...(mobile ? { isMobile: true, hasTouch: true } : {}) });
+    await new Promise(r => setTimeout(r, 1200));
+    const mw = await page.evaluate(async () => {
+      const root = document.querySelector('.radial-slider'); root.scrollIntoView({ block: 'center' }); await new Promise(r => setTimeout(r, 600));
+      const st = root.querySelector('.radial-slider__stage').getBoundingClientRect(), cx = (st.left + st.right) / 2;
+      return [...root.querySelectorAll('.radial-slider__card')].map(c => c.getBoundingClientRect()).filter(b => b.right > st.left && b.left < st.right)
+        .reduce((a, b) => Math.abs((b.left + b.right) / 2 - cx) < Math.abs((a.left + a.right) / 2 - cx) ? b : a).width;
+    });
+    const want = BEFORE[w] * 0.7;
+    assert(Math.abs(mw - want) <= 1, `size @${w}: the centre card is 30% smaller (${mw.toFixed(1)}px, want ${want.toFixed(1)}: 0.7 x ${BEFORE[w]})`);
+    await close();
+  }
+}
+
 await touch();
 await reduced();
 await noJs();
 await gaps();
+await size();
 await report();
