@@ -9,7 +9,11 @@
     "css/carousel.css",
     "css/hover-gallery.css",
     "css/arc-scroll.css",
-    "tests/**"
+    "tests/**",
+    ".forge-edit.json",
+    ".forge-edit.lock.json",
+    "assets/cms/**",
+    "edit/**"
   ],
   "ready": "html.is-loaded",
   "sections": [

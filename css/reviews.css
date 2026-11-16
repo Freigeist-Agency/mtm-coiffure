@@ -1,7 +1,7 @@
 /* Review rotator (js/reviews.js). The size and stacking of the box live in site.css (.reviews__list); this file is the rest. */
 
 /* Without JS only the first review shows. visibility keeps the hidden ones in the grid cell, so the box is as tall as the tallest review either way. js/reviews.js takes over with inline autoAlpha. */
-.reviews__quote:not(:first-child) { visibility: hidden; }
+.reviews__quote:not(:first-of-type) { visibility: hidden; }   /* first-of-type: a <template> (Forge editing) sits before the first figure */
 
 .reviews__list:focus-visible { outline: 2px solid var(--paper); outline-offset: 6px; }
 

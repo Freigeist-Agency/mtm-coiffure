@@ -1,0 +1,15 @@
+name: forge-edit
+# The parts the salon owner edits in Forge must stay marked (README, "Editing in Forge"). A design sync or a hand
+# edit that drops a data-edit attribute fails here before it is merged.
+on:
+  pull_request:
+  push: { branches: [main] }
+permissions: { contents: read }
+jobs:
+  markers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node tools/check-forge-edit.mjs
