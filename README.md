@@ -18,3 +18,5 @@ The salon owner changes some parts of the site himself in the Forge portal (Webs
 - The reviews and the FAQ start with an empty `<template data-edit-item>`: Forge builds each item from it. Change an item's markup there too.
 - `tools/build-locations.mjs` reads the addresses, hours and booking links from `index.html`, so a rebuild keeps what the owner changed.
 - New photos arrive as `assets/cms/<hash>.webp`.
+- `node tools/check-forge-edit.mjs` checks that every part is still marked where it was (it runs on each pull request). After adding or moving a marker on purpose, run it with `--write` and commit `.forge-edit.lock.json`.
+- The Figma sync rewrites these pages to match the design. Read its pull request before merging: it must keep the `data-edit` attributes (the check above fails if one is gone), and it must not put the design's placeholder text back over what the owner wrote.
