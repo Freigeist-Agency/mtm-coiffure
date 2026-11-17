@@ -4,13 +4,16 @@
   "pages": {
     "index.html": { "de": "Startseite", "en": "Home page" },
     "locations/nuembrecht.html": { "de": "Nümbrecht", "en": "Nümbrecht" },
-    "locations/waldbroel.html": { "de": "Waldbröl", "en": "Waldbröl" }
+    "locations/waldbroel.html": { "de": "Waldbröl", "en": "Waldbröl" },
+    "impressum.html": { "de": "Impressum", "en": "Legal notice" },
+    "datenschutz.html": { "de": "Datenschutz", "en": "Privacy policy" }
   },
   "groups": {
     "nb": { "de": "Nümbrecht", "en": "Nümbrecht" },
     "wb": { "de": "Waldbröl", "en": "Waldbröl" },
     "home": { "de": "Startseite", "en": "Home page" },
-    "all": { "de": "Alle Seiten", "en": "All pages" }
+    "all": { "de": "Alle Seiten", "en": "All pages" },
+    "legal": { "de": "Rechtliches", "en": "Legal pages" }
   },
   "fields": [
     { "key": "nb.address", "type": "text", "group": "nb", "label": { "de": "Adresse, Nümbrecht", "en": "Address, Nümbrecht" }, "max": 80 },
@@ -29,8 +32,12 @@
     { "key": "home.rating", "type": "text", "group": "home", "label": { "de": "Anzahl Google-Bewertungen", "en": "Number of Google reviews" }, "max": 30 },
     { "key": "home.reviews", "type": "reviews", "group": "home", "label": { "de": "Bewertungen", "en": "Reviews" }, "max": 400, "maxItems": 15 },
     { "key": "about", "type": "paragraph", "group": "all", "label": { "de": "Text über uns", "en": "About text" }, "max": 300 },
+    { "key": "news.1", "type": "paragraph", "group": "all", "label": { "de": "Ankündigung 1", "en": "Announcement 1" }, "max": 400 },
+    { "key": "news.2", "type": "paragraph", "group": "all", "label": { "de": "Ankündigung 2", "en": "Announcement 2" }, "max": 400 },
     { "key": "faq", "type": "faq", "group": "all", "label": { "de": "Häufige Fragen", "en": "Questions and answers" }, "max": 600, "maxItems": 8 },
     { "key": "social.instagram", "type": "link", "group": "all", "label": { "de": "Instagram-Link", "en": "Instagram link" }, "hosts": ["www.instagram.com"] },
-    { "key": "social.tiktok", "type": "link", "group": "all", "label": { "de": "TikTok-Link", "en": "TikTok link" }, "hosts": ["www.tiktok.com"] }
+    { "key": "social.tiktok", "type": "link", "group": "all", "label": { "de": "TikTok-Link", "en": "TikTok link" }, "hosts": ["www.tiktok.com"] },
+    { "key": "legal.impressum", "type": "lines", "group": "legal", "label": { "de": "Impressum", "en": "Legal notice" }, "max": 200, "maxItems": 30 },
+    { "key": "legal.datenschutz", "type": "lines", "group": "legal", "label": { "de": "Datenschutzerklärung", "en": "Privacy policy" }, "max": 2000, "maxItems": 50 }
   ]
 }
