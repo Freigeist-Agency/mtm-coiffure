@@ -8,6 +8,7 @@
     "wb.hours": 1
   },
   "datenschutz.html": {
+    "legal.datenschutz": 1,
     "nb.address": 1,
     "nb.hours": 1,
     "social.instagram": 1,
@@ -16,6 +17,7 @@
     "wb.hours": 1
   },
   "impressum.html": {
+    "legal.impressum": 1,
     "nb.address": 1,
     "nb.hours": 1,
     "social.instagram": 1,
@@ -38,6 +40,8 @@
     "nb.address": 1,
     "nb.booking": 1,
     "nb.hours": 2,
+    "news.1": 1,
+    "news.2": 1,
     "social.instagram": 2,
     "social.tiktok": 2,
     "wb.address": 1,
@@ -50,6 +54,8 @@
     "nb.address": 1,
     "nb.booking": 4,
     "nb.hours": 2,
+    "news.1": 1,
+    "news.2": 1,
     "social.instagram": 1,
     "social.tiktok": 1,
     "wb.address": 1,
@@ -62,6 +68,8 @@
     "nb.address": 1,
     "nb.booking": 1,
     "nb.hours": 1,
+    "news.1": 1,
+    "news.2": 1,
     "social.instagram": 1,
     "social.tiktok": 1,
     "wb.address": 1,
