@@ -31,6 +31,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: 2b2f3ad6dbb47fc399af7e97e266a117
+          wranglerVersion: "4.156.0"
           command: >-
             pages deploy ${{ runner.temp }}/site
             --project-name=${{ github.event.repository.name }}
