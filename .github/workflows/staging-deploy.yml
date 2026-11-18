@@ -25,6 +25,23 @@ jobs:
           rsync -a --exclude='.git*' --exclude='.github' --exclude='.figma-sync' \
             --exclude='tests' --exclude='docs' --exclude='tools' --exclude='README.md' \
             ./ "$RUNNER_TEMP/site/"
+      - name: Serve files over 25 MiB from prod
+        # Cloudflare Pages refuses files over 25 MiB. Staging redirects them to the
+        # same path on the prod domain (from CNAME), so the page still plays them.
+        run: |
+          cd "$RUNNER_TEMP/site"
+          PROD=""
+          [ -f "$GITHUB_WORKSPACE/CNAME" ] && PROD=$(tr -d '[:space:]' < "$GITHUB_WORKSPACE/CNAME")
+          find . -type f -size +25M -print0 | while IFS= read -r -d '' f; do
+            p="${f#.}"
+            rm "$f"
+            if [ -n "$PROD" ]; then
+              printf '%s https://%s%s 302\n' "$p" "$PROD" "$p" >> _redirects
+              echo "::warning::$p is over 25 MiB, so staging serves it from https://$PROD$p"
+            else
+              echo "::warning::$p is over 25 MiB and was left out of staging"
+            fi
+          done
       - name: Project name
         id: project
         env:
