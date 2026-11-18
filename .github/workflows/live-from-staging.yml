@@ -1,0 +1,30 @@
+# The live branch (main) only takes changes from staging: everything is checked on the staging site first, and
+# staging never falls behind live. A pull request into main from any other branch is closed with a note.
+# pull_request_target runs this file as it is on main, so it also covers branches made before it existed.
+# It never checks out or runs the pull request's code.
+name: Live only from staging
+
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, reopened, edited, synchronize]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  from-staging:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close pull requests into main that don't come from staging
+        if: github.event.pull_request.head.ref != 'staging' || github.event.pull_request.head.repo.full_name != github.repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh pr close "$PR" --repo "$REPO" --comment "Changes go live through staging. Open this pull request into the \`staging\` branch instead. Once it's checked on the staging site, put staging live (from Forge's Website tab, or a pull request from \`staging\` into \`main\`)."
+          exit 1
+      - name: From staging
+        if: github.event.pull_request.head.ref == 'staging' && github.event.pull_request.head.repo.full_name == github.repository
+        run: echo "From staging, OK"
