@@ -1,0 +1,49 @@
+# Uploads every branch except main to Cloudflare Pages.
+# staging -> https://staging.<repo>.pages.dev, other branches -> https://<branch>.<repo>.pages.dev
+# Prod stays on GitHub Pages (main). Cloudflare adds `X-Robots-Tag: noindex` to these links.
+# Needs the org secret CLOUDFLARE_API_TOKEN (Cloudflare Pages: Edit) and a Pages project named after the repo, in lower case.
+name: staging-deploy
+on:
+  push:
+    branches-ignore: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  deployments: write
+concurrency:
+  group: staging-deploy-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Collect the site files
+        run: |
+          mkdir -p "$RUNNER_TEMP/site"
+          rsync -a --exclude='.git*' --exclude='.github' --exclude='.figma-sync' \
+            --exclude='tests' --exclude='docs' --exclude='tools' --exclude='README.md' \
+            ./ "$RUNNER_TEMP/site/"
+      - name: Project name
+        id: project
+        env:
+          REPO: ${{ github.event.repository.name }}
+        run: echo "name=$(echo "$REPO" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+      - name: Upload to Cloudflare Pages
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: 2b2f3ad6dbb47fc399af7e97e266a117
+          wranglerVersion: "4.156.0"
+          command: >-
+            pages deploy ${{ runner.temp }}/site
+            --project-name=${{ steps.project.outputs.name }}
+            --branch=${{ github.ref_name }}
+            --commit-hash=${{ github.sha }}
+      - name: Link
+        env:
+          URL: ${{ steps.deploy.outputs.deployment-alias-url || steps.deploy.outputs.deployment-url }}
+        run: |
+          echo "Preview: $URL" >> "$GITHUB_STEP_SUMMARY"
