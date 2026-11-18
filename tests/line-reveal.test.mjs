@@ -23,7 +23,7 @@ for (const [w, h, mobile] of [[1440, 900, false], [768, 1024, false], [375, 812,
       const text = document.querySelector(sel), fs = parseFloat(getComputedStyle(text).fontSize);
       const docTop = el => { let y = 0; for (let n = el; n; n = n.offsetParent) y += n.offsetTop; return y; };
       const words = [...text.querySelectorAll('.wr-word')], all = [...text.querySelectorAll('.wr-word, img')];
-      const trig = el => { const i = all.indexOf(el), t = ScrollTrigger.getById(prefix + i); return t ? [t.start, t.end] : null; };
+      const trig = el => el.__wrWin ? [el.__wrWin[0], el.__wrWin[1]] : null;   // js/word-reveal.js keeps each word's window on the element
       const lines = [];
       for (const el of words) { const mid = docTop(el) + el.offsetHeight / 2, last = lines[lines.length - 1];
         if (!last || Math.abs(mid - last.mid) > 0.4 * fs) lines.push({ mid, top: docTop(el), bot: docTop(el) + el.offsetHeight, wins: [] });
