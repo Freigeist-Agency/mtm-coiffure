@@ -30,7 +30,7 @@ const WINDOWS = () => {
   const sEnd = docTop(text) + text.offsetHeight / 2 - H * 0.5;
   const els = [...text.querySelectorAll('.wr-word, img.intro-pic')];
   const items = els.map((e, i) => {
-    const st = ScrollTrigger.getById('word-reveal-' + i);
+    const st = e.__wrWin ? { start: e.__wrWin[0], end: e.__wrWin[1] } : null;   // js/word-reveal.js: one trigger per paragraph, each item's window on the element
     const y = docTop(e), h = e.offsetHeight;
     return { i, pic: e.tagName === 'IMG', t: e.tagName === 'IMG' ? '<img>' : e.textContent, s: st ? st.start : NaN, e: st ? st.end : NaN,
       left: e.getBoundingClientRect().left + scrollX, enter: y + 0.6 * fs - H + 0.03 * H, latest: Math.max(sEnd, y + h - H), mid: y + h / 2 };
@@ -53,7 +53,7 @@ for (const w of WIDTHS) {
   const H = HEIGHT(w), tag = `@${w}`;
   const { page, errors, close } = await openPage({ width: w, height: H, ...phone(w) });
   try {
-    await page.waitForFunction(() => window.ScrollTrigger && ScrollTrigger.getById('word-reveal-28'));
+    await page.waitForFunction(() => window.ScrollTrigger && ScrollTrigger.getById('word-reveal') && document.querySelector('.intro-text .wr-word') && document.querySelector('.intro-text .wr-word').__wrWin);
     const d = await page.evaluate(WINDOWS);
     assert(d.iw === w && d.H === H, `${tag}: viewport really is ${d.iw}x${d.H} (set ${w}x${H})`);
     const pics = d.items.filter(i => i.pic), words = d.items.filter(i => !i.pic);

@@ -9,8 +9,8 @@
 /* the counter's font, here too: Impressum, Datenschutz and the error page do not load css/v2.css (the same file, so it is fetched once) */
 @font-face {
   font-family: 'Google Sans Flex';
-  src: url('../assets/fonts/GoogleSansFlex.ttf') format('truetype');
-  font-weight: 1 1000; font-stretch: 25% 151%; font-style: normal; font-display: swap;
+  src: url('../assets/fonts/GoogleSansFlex.woff2') format('woff2');
+  font-weight: 1 1000; font-style: normal; font-display: swap;
 }
 .loader { display: none; }
 html.js.is-loading .loader {

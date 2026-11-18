@@ -111,19 +111,41 @@
         ln.list.forEach(function (it) { it.win = [ln.base, ln.base + len]; });
       });
     }
-    var dirty = true;
-    function win(i) { if (dirty) { measure(); dirty = false; } return items[i].win; }
+    var dirty = true, from = 0, to = 1;
+    /* Measure once per refresh. The paragraph's window runs from its earliest item start to its latest item end; every item
+       keeps its own window inside it (exposed as el.__wrWin for the tests). */
+    function bounds() {
+      if (!dirty) return;
+      measure(); dirty = false;
+      from = Infinity; to = -Infinity;
+      items.forEach(function (it) { from = Math.min(from, it.win[0]); to = Math.max(to, it.win[1]); it.el.__wrWin = it.win; });
+    }
     ScrollTrigger.addEventListener('refreshInit', function () { dirty = true; });
 
-    items.forEach(function (it, i) {
-      var from = it.pic
-        ? { scale: PORTRAIT_FROM_SCALE }                 // portraits: no fade, only the grow (2026-11-13, cofounder)
-        : { y: LINE_FROM_Y, opacity: LINE_FROM_OPACITY };
-      var to = it.pic ? { scale: 1 } : { y: 0, opacity: 1 };
-      to.ease = it.pic ? PORTRAIT_EASE : EASE; to.duration = 1;
-      gsap.fromTo(it.el, from, Object.assign(to, {
-        scrollTrigger: { start: function () { return win(i)[0]; }, end: function () { return win(i)[1]; }, id: idPrefix + i, scrub: true, invalidateOnRefresh: true }
-      }));
+    /* One ScrollTrigger per paragraph (was one per word: 223 on the home page, each re-measured on every refresh).
+       The timeline puts each item's tween at its own window, in scroll pixels, so with scrub: true the timeline's time IS the
+       scroll position minus `from`: every word moves exactly as it did with its own trigger. Rebuilt on each refresh because the
+       windows depend on the layout. */
+    var tl = gsap.timeline({ paused: true });
+    function build(self) {
+      tl.clear();
+      items.forEach(function (it) {
+        var f = it.pic ? { scale: PORTRAIT_FROM_SCALE }   // portraits: no fade, only the grow (2026-11-13, cofounder)
+          : { y: LINE_FROM_Y, opacity: LINE_FROM_OPACITY };
+        var t = it.pic ? { scale: 1 } : { y: 0, opacity: 1 };
+        t.ease = it.pic ? PORTRAIT_EASE : EASE; t.duration = it.win[1] - it.win[0];
+        tl.fromTo(it.el, f, t, it.win[0] - from);
+      });
+      tl.set({}, {}, to - from);   // the timeline is exactly as long as the paragraph's scroll window
+      tl.progress(self.progress);
+    }
+    /* Hidden from the start, as the per-word fromTo tweens did, so nothing flashes before the first refresh builds the timeline. */
+    items.forEach(function (it) { gsap.set(it.el, it.pic ? { scale: PORTRAIT_FROM_SCALE } : { y: LINE_FROM_Y, opacity: LINE_FROM_OPACITY }); });
+    ScrollTrigger.create({
+      id: idPrefix.replace(/-$/, ''), trigger: text,
+      start: function () { bounds(); return from; }, end: function () { bounds(); return to; },
+      onRefresh: build,
+      onUpdate: function (self) { tl.progress(self.progress); }
     });
   }
 

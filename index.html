@@ -37,9 +37,6 @@
   })(document.documentElement, window);
 </script>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geom:wght@300;400&display=swap">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/site.css">
 <link rel="stylesheet" href="css/loader.css">
@@ -78,19 +75,19 @@
   <section class="services" id="leistungen" aria-labelledby="services-h"><!-- Figma Desktop_new 324:3998 "Services Section" -->
     <h2 class="headline services-title" id="services-h"><span class="headline__light">Die besten Haarschnitte</span><br><span class="headline__bold">im Oberbergischen.</span></h2>
     <ul class="cuts" aria-label="Eindrücke aus dem Salon"><!-- 324:4040: six photos stepping down to the right -->
-      <li><img src="assets/dsc00365.jpg" alt="Frisch geschnittener Fade von hinten" width="1200" height="1800" loading="lazy"></li>
-      <li><img src="assets/dsc09804.jpg" alt="Friseur trimmt die Haare hinter dem Ohr" width="1200" height="1800" loading="lazy"></li>
-      <li><img src="assets/dsc09962.jpg" alt="Friseur im Salon bei der Arbeit" width="1200" height="1800" loading="lazy"></li>
-      <li><img src="assets/dsc09310.jpg" alt="Friseur schneidet Haare im hellen Salon" width="1200" height="1800" loading="lazy"></li>
-      <li><img src="assets/dsc00425.jpg" alt="Friseur lächelt beim Haareschneiden" width="1200" height="1800" loading="lazy"></li>
-      <li><img src="assets/dsc09341.jpg" alt="Zwei Friseure und ein Kunde im Salon" width="1200" height="1800" loading="lazy"></li>
+      <li><img data-edit="home.cut1" data-edit-as="img" src="assets/dsc00365.jpg" alt="Frisch geschnittener Fade von hinten" width="1200" height="1800" loading="lazy"></li>
+      <li><img data-edit="home.cut2" data-edit-as="img" src="assets/dsc09804.jpg" alt="Friseur trimmt die Haare hinter dem Ohr" width="1200" height="1800" loading="lazy"></li>
+      <li><img data-edit="home.cut3" data-edit-as="img" src="assets/dsc09962.jpg" alt="Friseur im Salon bei der Arbeit" width="1200" height="1800" loading="lazy"></li>
+      <li><img data-edit="home.cut4" data-edit-as="img" src="assets/dsc09310.jpg" alt="Friseur schneidet Haare im hellen Salon" width="1200" height="1800" loading="lazy"></li>
+      <li><img data-edit="home.cut5" data-edit-as="img" src="assets/dsc00425.jpg" alt="Friseur lächelt beim Haareschneiden" width="1200" height="1800" loading="lazy"></li>
+      <li><img data-edit="home.cut6" data-edit-as="img" src="assets/dsc09341.jpg" alt="Zwei Friseure und ein Kunde im Salon" width="1200" height="1800" loading="lazy"></li>
     </ul>
-    <p class="services-text">Ob Herren- oder Damenschnitt: Bei uns bist du in besten Händen. Als Meisterbetrieb mit Standorten in Waldbröl und Nümbrecht bringen wir deinen Style aufs nächste Level.</p>
+    <p class="services-text" data-edit="home.services">Ob Herren- oder Damenschnitt: Bei uns bist du in besten Händen. Als Meisterbetrieb mit Standorten in Waldbröl und Nümbrecht bringen wir deinen Style aufs nächste Level.</p>
     <a class="btn btn--md services-cta" href="#standorte" aria-label="Termin buchen"><img src="assets/v2/btn-black.svg" alt="" width="151" height="32"></a>
     <aside class="svc-rating" aria-label="Google-Bewertungen"><!-- 324:3129 -->
       <img class="svc-rating__google" src="assets/v2/google-wordmark.svg" alt="Google" width="90" height="28">
       <img class="svc-rating__stars" src="assets/v2/rating-stars.svg" alt="4,7 von 5 Sternen" width="114" height="45">
-      <p class="svc-rating__count">171 Bewertungen</p>
+      <p class="svc-rating__count" data-edit="home.rating">171 Bewertungen</p>
     </aside>
   </section>
 
@@ -108,16 +105,16 @@
   <section class="locations" id="standorte" aria-labelledby="loc-h"><!-- Figma Desktop_new 324:4131 "Locations Section": two cards side by side, the title across both -->
     <div class="locations__cards">
       <article class="loc-card"><!-- 324:4132 -->
-        <video class="loc-card__media" autoplay muted loop playsinline preload="none" poster="assets/hero-poster.jpg" aria-hidden="true"><source src="assets/hero-960.mp4" type="video/mp4" media="(max-width: 767px)"><source src="assets/hero-1600.mp4" type="video/mp4"></video>
+        <video class="loc-card__media" data-play-near muted loop playsinline preload="none" poster="assets/hero-poster.jpg" aria-hidden="true"><source src="assets/hero-960.mp4" type="video/mp4" media="(max-width: 767px)"><source src="assets/hero-1600.mp4" type="video/mp4"></video>
         <h3 class="loc-card__name"><a href="locations/nuembrecht.html">Nümbrecht.</a></h3>
-        <p class="loc-card__info"><strong>Lindchenweg 3, 51588 Nümbrecht</strong><br>Mo – Fr: 9 – 18 Uhr<br>Sa: 8:30 – 14 Uhr<br>So: geschlossen</p><!-- from the salon's Planity page, 2026-11-16 (Planity lists no phone number) -->
+        <p class="loc-card__info" data-edit="nb.hours" data-edit-as="lines-br" data-edit-lead="nb.address"><strong>Lindchenweg 3, 51588 Nümbrecht</strong><br>Mo – Fr: 9 – 18 Uhr<br>Sa: 8:30 – 14 Uhr<br>So: geschlossen</p><!-- from the salon's Planity page, 2026-11-16 (Planity lists no phone number) -->
       </article>
       <article class="loc-card"><!-- 324:4135 -->
         <!-- the Waldbröl salon (cofounder, 2026-11-16, "Sequenz 01_11"): the middle of the 1920x1080 film, square 1080 for desktop (the card is
              tall, and nearly square when hovered wide), 432x720 for phones; no sound -->
-        <video class="loc-card__media" autoplay muted loop playsinline preload="none" poster="assets/waldbroel-poster.jpg" aria-hidden="true"><source src="assets/waldbroel-720.mp4" type="video/mp4" media="(max-width: 767px)"><source src="assets/waldbroel-1080.mp4" type="video/mp4"></video>
+        <video class="loc-card__media" data-play-near muted loop playsinline preload="none" poster="assets/waldbroel-poster.jpg" aria-hidden="true"><source src="assets/waldbroel-720.mp4" type="video/mp4" media="(max-width: 767px)"><source src="assets/waldbroel-1080.mp4" type="video/mp4"></video>
         <h3 class="loc-card__name"><a href="locations/waldbroel.html">Waldbröl.</a></h3>
-        <p class="loc-card__info"><strong>Kaiserstraße 61, 51545 Waldbröl</strong><br>Mo – Fr: 9 – 19 Uhr<br>Sa: 9 – 17 Uhr<br>So: geschlossen</p><!-- from the salon's Planity page, 2026-11-16 (Planity lists no phone number) -->
+        <p class="loc-card__info" data-edit="wb.hours" data-edit-as="lines-br" data-edit-lead="wb.address"><strong>Kaiserstraße 61, 51545 Waldbröl</strong><br>Mo – Fr: 9 – 19 Uhr<br>Sa: 9 – 17 Uhr<br>So: geschlossen</p><!-- from the salon's Planity page, 2026-11-16 (Planity lists no phone number) -->
       </article>
     </div>
     <h2 class="locations__title" id="loc-h">Standorte.</h2><!-- 324:4139 -->
@@ -129,50 +126,51 @@
       <div class="reviews__frame"><!-- js/review-grow.js grows this frame from the card to Figma 284:240 (1436x859) while the card is pinned -->
       <img class="reviews__bg" src="assets/review-card.jpg" alt="" width="1950" height="1334" loading="lazy">
       <!-- Real 5-star Google reviews, provisional. To remove one, delete its whole <figure>; js/reviews.js rotates whatever is here at random. The first one shows without JS. The Figma note "(google review texts playing at random)" is a designer note, not copy, and is left out. -->
-      <div class="reviews__list">
+      <div class="reviews__list" data-edit="home.reviews" data-edit-as="reviews">
+        <template data-edit-item><figure class="reviews__quote"><blockquote><p data-slot="quote"></p></blockquote><figcaption><span class="reviews__name" data-slot="name"></span><span class="reviews__stars" data-slot="stars"></span></figcaption></figure></template>
         <figure class="reviews__quote">
-          <blockquote><p>Meiner Meinung nach ist der Chef Abdul ein Künstler. Auch wenn ich mit meinem Neffen dorthin gehe wird sich wunderbar um die Kundschaft gekümmert und ich bin eigentlich nie unzufrieden wieder heraus gegangen.</p></blockquote>
-          <figcaption><span class="reviews__name">Stefan Teichrib</span><span class="reviews__stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
+          <blockquote><p data-slot="quote">Meiner Meinung nach ist der Chef Abdul ein Künstler. Auch wenn ich mit meinem Neffen dorthin gehe wird sich wunderbar um die Kundschaft gekümmert und ich bin eigentlich nie unzufrieden wieder heraus gegangen.</p></blockquote>
+          <figcaption><span class="reviews__name" data-slot="name">Stefan Teichrib</span><span class="reviews__stars" data-slot="stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
         </figure>
         <figure class="reviews__quote">
-          <blockquote><p>Es gibt immer einen tadellosen Service, eine freundliche Atmosphäre und vor allem vorhersehbar hervorragende Ergebnisse. Sie verlassen den Friseursalon nicht nur mit einem perfekten Haarschnitt, sondern auch mit bester Laune. Ich wünsche Ihrem Familienunternehmen Wohlstand und noch mehr dankbare Kunden!</p></blockquote>
-          <figcaption><span class="reviews__name">Nikolaj Penner</span><span class="reviews__stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
+          <blockquote><p data-slot="quote">Es gibt immer einen tadellosen Service, eine freundliche Atmosphäre und vor allem vorhersehbar hervorragende Ergebnisse. Sie verlassen den Friseursalon nicht nur mit einem perfekten Haarschnitt, sondern auch mit bester Laune. Ich wünsche Ihrem Familienunternehmen Wohlstand und noch mehr dankbare Kunden!</p></blockquote>
+          <figcaption><span class="reviews__name" data-slot="name">Nikolaj Penner</span><span class="reviews__stars" data-slot="stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
         </figure>
         <figure class="reviews__quote">
-          <blockquote><p>Ich war heute erst zum 2. Mal dort und bin mal wieder vollkommen zufrieden. Auch diesmal wieder ohne Voranmeldung keine Wartezeit. Im Salon herrscht eine entspannte Atmosphäre und das gesamte Team ist ausgesprochen freundlich und arbeitet professionell. Ich kann "mtm" nur empfehlen.</p></blockquote>
-          <figcaption><span class="reviews__name">Günter Heck</span><span class="reviews__stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
+          <blockquote><p data-slot="quote">Ich war heute erst zum 2. Mal dort und bin mal wieder vollkommen zufrieden. Auch diesmal wieder ohne Voranmeldung keine Wartezeit. Im Salon herrscht eine entspannte Atmosphäre und das gesamte Team ist ausgesprochen freundlich und arbeitet professionell. Ich kann "mtm" nur empfehlen.</p></blockquote>
+          <figcaption><span class="reviews__name" data-slot="name">Günter Heck</span><span class="reviews__stars" data-slot="stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
         </figure>
         <figure class="reviews__quote">
-          <blockquote><p>Es herrscht eine super nette Atmosphäre, auf meine speziellen Wünsche wurde geduldig eingegangen und ich bin happy mit meinem Haarschnitt! Herzlichen Dank!</p></blockquote>
-          <figcaption><span class="reviews__name">Freudensprung- Jetzt</span><span class="reviews__stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
+          <blockquote><p data-slot="quote">Es herrscht eine super nette Atmosphäre, auf meine speziellen Wünsche wurde geduldig eingegangen und ich bin happy mit meinem Haarschnitt! Herzlichen Dank!</p></blockquote>
+          <figcaption><span class="reviews__name" data-slot="name">Freudensprung- Jetzt</span><span class="reviews__stars" data-slot="stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
         </figure>
         <figure class="reviews__quote">
-          <blockquote><p>Heute das erstemal spontan mit Junior dort gewesen. Super nettes Team, toller Haarschnitt und sehr Kinderfreundlich .Wir kommen gerne wieder.</p></blockquote>
-          <figcaption><span class="reviews__name">Martina Giesen</span><span class="reviews__stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
+          <blockquote><p data-slot="quote">Heute das erstemal spontan mit Junior dort gewesen. Super nettes Team, toller Haarschnitt und sehr Kinderfreundlich .Wir kommen gerne wieder.</p></blockquote>
+          <figcaption><span class="reviews__name" data-slot="name">Martina Giesen</span><span class="reviews__stars" data-slot="stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
         </figure>
         <figure class="reviews__quote">
-          <blockquote><p>Bester Friseur bei dem ich jemals war, der Chef lässt dich erst gehen wenn dein Kopf perfekt aussieht und du zufrieden bist👌</p></blockquote>
-          <figcaption><span class="reviews__name">Lars Rütjes</span><span class="reviews__stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
+          <blockquote><p data-slot="quote">Bester Friseur bei dem ich jemals war, der Chef lässt dich erst gehen wenn dein Kopf perfekt aussieht und du zufrieden bist👌</p></blockquote>
+          <figcaption><span class="reviews__name" data-slot="name">Lars Rütjes</span><span class="reviews__stars" data-slot="stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
         </figure>
         <figure class="reviews__quote">
-          <blockquote><p>Ich bin sehr zufrieden mit dem Friseur. Ich war heute das erste mal dort und mir wurde direkt etwas zu trinken angeboten und auf meine Wünsche, was die Frisur betrifft, wurde komplett eingegangen. Ich werde definitiv wieder dorthin gehen.</p></blockquote>
-          <figcaption><span class="reviews__name">Stefan Teichrib</span><span class="reviews__stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
+          <blockquote><p data-slot="quote">Ich bin sehr zufrieden mit dem Friseur. Ich war heute das erste mal dort und mir wurde direkt etwas zu trinken angeboten und auf meine Wünsche, was die Frisur betrifft, wurde komplett eingegangen. Ich werde definitiv wieder dorthin gehen.</p></blockquote>
+          <figcaption><span class="reviews__name" data-slot="name">Stefan Teichrib</span><span class="reviews__stars" data-slot="stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
         </figure>
         <figure class="reviews__quote">
-          <blockquote><p>Seit Jahren ein wunderschöner Laden und immer gut gelaunte Mitarbeiter. Ich liebe euren Friseurladen.❤️</p></blockquote>
-          <figcaption><span class="reviews__name">Anonym</span><span class="reviews__stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
+          <blockquote><p data-slot="quote">Seit Jahren ein wunderschöner Laden und immer gut gelaunte Mitarbeiter. Ich liebe euren Friseurladen.❤️</p></blockquote>
+          <figcaption><span class="reviews__name" data-slot="name">Anonym</span><span class="reviews__stars" data-slot="stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
         </figure>
         <figure class="reviews__quote">
-          <blockquote><p>Schneiden sehr gut wenig Wartezeiten und qualität top außerdem sind sie sehr höflich und man fühlt sich willkommen</p></blockquote>
-          <figcaption><span class="reviews__name">Amy Groffner</span><span class="reviews__stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
+          <blockquote><p data-slot="quote">Schneiden sehr gut wenig Wartezeiten und qualität top außerdem sind sie sehr höflich und man fühlt sich willkommen</p></blockquote>
+          <figcaption><span class="reviews__name" data-slot="name">Amy Groffner</span><span class="reviews__stars" data-slot="stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
         </figure>
         <figure class="reviews__quote">
-          <blockquote><p>Ich gehe schon seit 3 Jahren bei Mohamad Haarschneiden und bin sehr zufrieden wirklich top Preise und top Qualität 👍🏻</p></blockquote>
-          <figcaption><span class="reviews__name">viel Mühe</span><span class="reviews__stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
+          <blockquote><p data-slot="quote">Ich gehe schon seit 3 Jahren bei Mohamad Haarschneiden und bin sehr zufrieden wirklich top Preise und top Qualität 👍🏻</p></blockquote>
+          <figcaption><span class="reviews__name" data-slot="name">viel Mühe</span><span class="reviews__stars" data-slot="stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
         </figure>
         <figure class="reviews__quote">
-          <blockquote><p>Echt ein sehr guter Frisör der beste in der ganzen Gegend, er versteht sein Handwerk, war heute Haare schneiden alles sehr gut drauf sehr herzlich bedient worden er ist auf jeden Fall zu empfehlen der Besuch lohnt sich 100%</p></blockquote>
-          <figcaption><span class="reviews__name">Michael Beck</span><span class="reviews__stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
+          <blockquote><p data-slot="quote">Echt ein sehr guter Frisör der beste in der ganzen Gegend, er versteht sein Handwerk, war heute Haare schneiden alles sehr gut drauf sehr herzlich bedient worden er ist auf jeden Fall zu empfehlen der Besuch lohnt sich 100%</p></blockquote>
+          <figcaption><span class="reviews__name" data-slot="name">Michael Beck</span><span class="reviews__stars" data-slot="stars"><span class="sr-only">5 von 5 Sternen</span></span></figcaption>
         </figure>
       </div>
       <a class="btn btn--white reviews__btn" href="#standorte" aria-label="Termin buchen"><img src="assets/v2/btn-white.svg" alt="" width="163" height="35"></a><!-- Figma 284:255: shown only in the grown card -->
@@ -185,8 +183,8 @@
       <h2 class="headline" id="social-h"><span class="headline__light">Folge uns auf</span><br><span class="headline__bold">Social Media.</span></h2>
       <p class="measure">Wir laden täglich Transformationen, Updates und Aktionen auf unseren Kanälen hoch. Da möchtest du auf keinen Fall etwas verpassen.</p>
       <div class="social-links">
-        <a class="btn btn--social" href="https://www.instagram.com/mtm_coiffure/" target="_blank" rel="noopener" aria-label="Instagram"><img src="assets/social-instagram.svg" alt="" width="140" height="39"></a>
-        <a class="btn btn--social" href="https://www.tiktok.com/@mtmbyabdul" target="_blank" rel="noopener" aria-label="TikTok"><img src="assets/social-tiktok.svg" alt="" width="113" height="39"></a>
+        <a class="btn btn--social" data-edit="social.instagram" data-edit-as="attr:href" href="https://www.instagram.com/mtm_coiffure/" target="_blank" rel="noopener" aria-label="Instagram"><img src="assets/social-instagram.svg" alt="" width="140" height="39"></a>
+        <a class="btn btn--social" data-edit="social.tiktok" data-edit-as="attr:href" href="https://www.tiktok.com/@mtmbyabdul" target="_blank" rel="noopener" aria-label="TikTok"><img src="assets/social-tiktok.svg" alt="" width="113" height="39"></a>
       </div>
     </div>
     <!-- TODO(content): one portrait video per card (9:16). Drop <video muted loop playsinline preload="metadata" src="..."></video> into the data-video-slot of each card; the slot already crops it with object-fit: cover and js/radial-slider.js plays and pauses it. -->
@@ -208,8 +206,8 @@
       <p>Hier findest du alles was du vielleicht kurzfristig erfahren musst, bevor du einen Termin bei uns buchst.</p>
     </div>
     <div class="news-cards">
-      <article class="news-card"><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare, eros dolor interdum nulla, ut commodo diam libero vitae erat. Aenean faucibus nibh et justo cursus id rutrum lorem imperdiet. Nunc ut sem vitae risus tristique posuere.</p></article><!-- TODO(content): announcement -->
-      <article class="news-card"><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare, eros dolor interdum nulla, ut commodo diam libero vitae erat. Aenean faucibus nibh et justo cursus id rutrum lorem imperdiet. Nunc ut sem vitae risus tristique posuere.</p></article><!-- TODO(content): announcement -->
+      <article class="news-card"><p data-edit="news.1">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare, eros dolor interdum nulla, ut commodo diam libero vitae erat. Aenean faucibus nibh et justo cursus id rutrum lorem imperdiet. Nunc ut sem vitae risus tristique posuere.</p></article><!-- the salon owner writes the announcements in Forge -->
+      <article class="news-card"><p data-edit="news.2">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare, eros dolor interdum nulla, ut commodo diam libero vitae erat. Aenean faucibus nibh et justo cursus id rutrum lorem imperdiet. Nunc ut sem vitae risus tristique posuere.</p></article><!-- the salon owner writes the announcements in Forge -->
     </div>
     <div class="team-row" aria-label="Das Team"><!-- 324:4138 "Location Gallery" (the hover gallery) -->
       <div class="gallery">
@@ -232,18 +230,19 @@
       <img class="faq__person faq__person--right" src="assets/v2/faq-dsc00540.webp" alt="" width="843" height="1264" loading="lazy">
       <img class="faq__person faq__person--mid" src="assets/v2/faq-dsc00483.webp" alt="Das Team von MTM Coiffure" width="775" height="1162" loading="lazy">
     </div>
-    <p class="faq__about">Wir haben unsere Leidenschaft für das Friseurhandwerk auf unsere Reise aus Syrien nach Deutschland mitgenommen und dürfen sie jetzt mit dir in einem unserer Familienmeisterbetrieben mit dir teilen.</p><!-- 324:3021 -->
-    <div class="faq__list"><!-- TODO(content): the questions and answers are Figma placeholders -->
-      <details class="faq__item" open><summary><span class="faq__q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a">faq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer text</p></details>
-      <details class="faq__item"><summary><span class="faq__q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a">faq answer text</p></details>
-      <details class="faq__item"><summary><span class="faq__q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a">faq answer text</p></details>
-      <details class="faq__item"><summary><span class="faq__q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a">faq answer text</p></details>
-      <details class="faq__item"><summary><span class="faq__q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a">faq answer text</p></details>
-      <details class="faq__item"><summary><span class="faq__q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a">faq answer text</p></details>
+    <p class="faq__about" data-edit="about">Wir haben unsere Leidenschaft für das Friseurhandwerk auf unsere Reise aus Syrien nach Deutschland mitgenommen und dürfen sie jetzt mit dir in einem unserer Familienmeisterbetrieben mit dir teilen.</p><!-- 324:3021 -->
+    <div class="faq__list" data-edit="faq" data-edit-as="faq"><!-- TODO(content): the questions and answers are Figma placeholders -->
+      <template data-edit-item><details class="faq__item"><summary><span class="faq__q" data-slot="q"></span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a" data-slot="a"></p></details></template>
+      <details class="faq__item" open><summary><span class="faq__q" data-slot="q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a" data-slot="a">faq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer text</p></details>
+      <details class="faq__item"><summary><span class="faq__q" data-slot="q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a" data-slot="a">faq answer text</p></details>
+      <details class="faq__item"><summary><span class="faq__q" data-slot="q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a" data-slot="a">faq answer text</p></details>
+      <details class="faq__item"><summary><span class="faq__q" data-slot="q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a" data-slot="a">faq answer text</p></details>
+      <details class="faq__item"><summary><span class="faq__q" data-slot="q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a" data-slot="a">faq answer text</p></details>
+      <details class="faq__item"><summary><span class="faq__q" data-slot="q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a" data-slot="a">faq answer text</p></details>
     </div>
     <div class="faq__links"><!-- 324:3973 / 324:3987: book at Mo's salon (Nümbrecht) or Abdul's (Waldbröl) on Planity -->
-      <a class="pill-btn pill-btn--mo" href="https://www.planity.com/de-DE/mtm-coiffure-by-mo-51588-numbrecht" target="_blank" rel="noopener" aria-label="MTM by Mo: Termin in Nümbrecht buchen"><img src="assets/v2/icon-pole-mo.svg" alt="" width="10" height="23">MTM by Mo</a>
-      <a class="pill-btn pill-btn--abdul" href="https://www.planity.com/de-DE/mtm-coiffure-by-abdul-51545-waldbrol" target="_blank" rel="noopener" aria-label="MTM by Abdul: Termin in Waldbröl buchen"><img src="assets/v2/icon-pole-abdul.svg" alt="" width="8" height="18">MTM by Abdul</a>
+      <a class="pill-btn pill-btn--mo" data-edit="nb.booking" data-edit-as="attr:href" href="https://www.planity.com/de-DE/mtm-coiffure-by-mo-51588-numbrecht" target="_blank" rel="noopener" aria-label="MTM by Mo: Termin in Nümbrecht buchen"><img src="assets/v2/icon-pole-mo.svg" alt="" width="10" height="23">MTM by Mo</a>
+      <a class="pill-btn pill-btn--abdul" data-edit="wb.booking" data-edit-as="attr:href" href="https://www.planity.com/de-DE/mtm-coiffure-by-abdul-51545-waldbrol" target="_blank" rel="noopener" aria-label="MTM by Abdul: Termin in Waldbröl buchen"><img src="assets/v2/icon-pole-abdul.svg" alt="" width="8" height="18">MTM by Abdul</a>
     </div>
   </section>
 
@@ -260,19 +259,19 @@
     <div class="footer-cols">
       <div class="footer-col">
         <h3><a href="locations/nuembrecht.html">Nümbrecht</a></h3>
-        <p>Lindchenweg 3, 51588 Nümbrecht</p><!-- from the salon's Planity page, 2026-11-16 (Planity lists no phone number) -->
-        <ul><li>Mo – Fr: 9 – 18 Uhr</li><li>Sa: 8:30 – 14 Uhr</li><li>So: geschlossen</li></ul>
+        <p data-edit="nb.address">Lindchenweg 3, 51588 Nümbrecht</p><!-- from the salon's Planity page, 2026-11-16 (Planity lists no phone number) -->
+        <ul data-edit="nb.hours" data-edit-as="lines-li"><li>Mo – Fr: 9 – 18 Uhr</li><li>Sa: 8:30 – 14 Uhr</li><li>So: geschlossen</li></ul>
       </div>
       <div class="footer-col">
         <h3><a href="locations/waldbroel.html">Waldbröl</a></h3>
-        <p>Kaiserstraße 61, 51545 Waldbröl</p><!-- from the salon's Planity page, 2026-11-16 (Planity lists no phone number) -->
-        <ul><li>Mo – Fr: 9 – 19 Uhr</li><li>Sa: 9 – 17 Uhr</li><li>So: geschlossen</li></ul>
+        <p data-edit="wb.address">Kaiserstraße 61, 51545 Waldbröl</p><!-- from the salon's Planity page, 2026-11-16 (Planity lists no phone number) -->
+        <ul data-edit="wb.hours" data-edit-as="lines-li"><li>Mo – Fr: 9 – 19 Uhr</li><li>Sa: 9 – 17 Uhr</li><li>So: geschlossen</li></ul>
       </div>
       <div class="footer-col">
         <h3>Folge uns</h3>
         <ul>
-          <li><a href="https://www.instagram.com/mtm_coiffure/" target="_blank" rel="noopener">Instagram</a></li>
-          <li><a href="https://www.tiktok.com/@mtmbyabdul" target="_blank" rel="noopener">TikTok</a></li>
+          <li><a data-edit="social.instagram" data-edit-as="attr:href" href="https://www.instagram.com/mtm_coiffure/" target="_blank" rel="noopener">Instagram</a></li>
+          <li><a data-edit="social.tiktok" data-edit-as="attr:href" href="https://www.tiktok.com/@mtmbyabdul" target="_blank" rel="noopener">TikTok</a></li>
         </ul>
         <a class="footer-fred-link" href="https://www.freigeist.agency/de/" target="_blank" rel="noopener" aria-label="FRED approved: Freigeist, die Agentur hinter dieser Seite"><img class="footer-fred" src="assets/fred-approved.png" alt="FRED approved" width="47" height="53"></a>
       </div>
@@ -307,5 +306,6 @@
 <script src="js/radial-slider.js"></script>
 <script src="js/reviews.js"></script>
 <script src="js/review-grow.js"></script>
+<script src="js/near-video.js"></script>
 </body>
 </html>

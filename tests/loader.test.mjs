@@ -229,11 +229,7 @@ if (want('finish')) {
   const { page, close } = await begin({
     width: 1440,
     before: async p => {
-      await p.route('**/fonts.googleapis.com/**', r => r.fulfill({
-        status: 200, contentType: 'text/css',
-        body: "@font-face{font-family:'Geom';font-weight:300;font-display:swap;src:url(https://fonts.gstatic.com/hung.woff2) format('woff2')}",
-      }));
-      await p.route('**/fonts.gstatic.com/**', () => { /* never answered */ });
+      await p.route('**/assets/fonts/geom-*.woff2', () => { /* never answered */ });
     },
   });
   const reveal = await page.evaluate(() => new Promise(res => {

@@ -3,12 +3,14 @@
    Units: --u is one Figma pixel at 1512 wide, so every value below is written as Figma's own number (calc(N * var(--u))) and the
    layout scales with the window. Below 768px the page falls back to a simple stacked layout (Figma has no phone frame for this design).
    Typography: Google Sans Flex (SIL OFL, assets/fonts) for nearly everything; Figma keeps Geom for the rating count, the review card,
-   the two "MTM by" buttons and the footer. Light 300, Medium 500, Bold 700, Black 900. */
+   the two "MTM by" buttons and the footer. Light 300, Medium 500, Bold 700, Black 900.
+   The font file is the OFL original converted to woff2 with its unused width, roundness and slant axes fixed at their defaults
+   (100, 0, 0), which is what every page rendered anyway: 3.9 MB down to 0.2 MB, every glyph and the weight and optical-size axes kept. */
 
 @font-face {
   font-family: 'Google Sans Flex';
-  src: url('../assets/fonts/GoogleSansFlex.ttf') format('truetype');
-  font-weight: 1 1000; font-stretch: 25% 151%; font-style: normal; font-display: swap;
+  src: url('../assets/fonts/GoogleSansFlex.woff2') format('woff2');
+  font-weight: 1 1000; font-style: normal; font-display: swap;
 }
 :root {
   --u: calc(100vw / 1512);

@@ -2,6 +2,24 @@
    desktop frame 64:2 (1440) and mobile frame 76:222 (450). Values were read from the
    node specs; --sand-light comes from the Webflow spec
    (docs/superpowers/specs/2026-08-18-mtm-logo-menu-design.md) and is not used by any rule now that the logo menu is gone. */
+/* Geom (SIL OFL, assets/fonts/Geom-OFL.txt), served from this site so no visitor data goes to Google (GDPR).
+   One variable file per subset covers weights 300 and 400, as on Google Fonts. */
+@font-face {
+  font-family: 'Geom';
+  font-style: normal;
+  font-weight: 300 400;
+  font-display: swap;
+  src: url('../assets/fonts/geom-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Geom';
+  font-style: normal;
+  font-weight: 300 400;
+  font-display: swap;
+  src: url('../assets/fonts/geom-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 :root {
   /* colour */
   --sand: #a5732d;            /* gradient origin (about/footer radial), button border end, card shadow tint */
@@ -11,7 +29,7 @@
   --placeholder: #d9d9d9;     /* social media cards, video block */
   --fade-black: linear-gradient(to bottom, #000 23%, rgba(0, 0, 0, 0) 100%); /* location photo scrim */
 
-  /* type: Geom (Google Fonts), weights 300 / 400. Figma desktop uses 20 / 32 / 52 / 85 / 138; the vw factors are size / 1440, so 1440 gives the Figma value exactly. */
+  /* type: Geom (self-hosted, see @font-face above), weights 300 / 400. Figma desktop uses 20 / 32 / 52 / 85 / 138; the vw factors are size / 1440, so 1440 gives the Figma value exactly. */
   --font: 'Geom', system-ui, sans-serif;
   --font-display: 'Badeen Display', 'Geom', system-ui, sans-serif;   /* Figma's big headings (Google Fonts, SIL OFL) */
   --fs-hero: 13.8889vw;                       /* 200px at 1440: "MTM Coiffure." spans the width at every size */

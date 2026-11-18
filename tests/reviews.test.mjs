@@ -100,9 +100,11 @@ const isPerm = (seq, n) => seq.length === n && new Set(seq).size === n;
 if (want('text')) {
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // Forge editing (.forge-edit.json): the list starts with an empty <template> item, which is neither shown nor rotated
+  assert((html.match(/<figure class="reviews__quote">/g) || []).length === EXPECTED.length + 1 && html.includes('<template data-edit-item><figure class="reviews__quote">'), `source: ${EXPECTED.length} reviews plus the empty editing template`);
   EXPECTED.forEach((r, k) => {
-    assert(html.includes(`<blockquote><p>${esc(r.text)}</p></blockquote>`), `source: review ${k + 1} text is in index.html byte-identical (${r.name})`);
-    assert(html.includes(`<span class="reviews__name">${esc(r.name)}</span>`), `source: review ${k + 1} name is in index.html byte-identical`);
+    assert(html.includes(`<blockquote><p data-slot="quote">${esc(r.text)}</p></blockquote>`), `source: review ${k + 1} text is in index.html byte-identical (${r.name})`);
+    assert(html.includes(`<span class="reviews__name" data-slot="name">${esc(r.name)}</span>`), `source: review ${k + 1} name is in index.html byte-identical`);
   });
   const { page, errors, close } = await openPage({ width: 600 });
   try {
