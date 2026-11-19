@@ -19,7 +19,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const near = (a, b, t = 1) => Math.abs(a - b) <= t;
 const N = { slug: 'nuembrecht', name: 'Nümbrecht', adr: 'Lindchenweg 3, 51588 Nümbrecht', hours: ['Mo – Fr: 9 – 18 Uhr', 'Sa: 8:30 – 14 Uhr', 'So: geschlossen'], planity: 'https://www.planity.com/de-DE/mtm-coiffure-by-mo-51588-numbrecht', film: 'hero-' };
 const W = { slug: 'waldbroel', name: 'Waldbröl', adr: 'Kaiserstraße 61, 51545 Waldbröl', hours: ['Mo – Fr: 9 – 19 Uhr', 'Sa: 9 – 17 Uhr', 'So: geschlossen'], planity: 'https://www.planity.com/de-DE/mtm-coiffure-by-abdul-51545-waldbrol', film: 'waldbroel-hero-' };
-const OLD = /Hauptstraße|0229[13]|02293 000000|02291 000000|Di – Fr/;
+const OLD = /Hauptstraße|0229[13] 0{6}|Di – Fr/;   // the old dummy numbers; the real 02291 9159374 from the legal pages is fine
 
 for (const s of [N, W]) {
   for (const [w, h, mobile] of [[1512, 900], [1024, 768], [768, 1024], [375, 812, true], [2560, 1440]]) {

@@ -6,9 +6,7 @@
 <title>Impressum – MTM Coiffure</title>
 <meta name="description" content="Impressum">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geom:wght@300;400&display=swap">
+<link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/site.css">
 <link rel="stylesheet" href="css/loader.css">
@@ -45,6 +43,7 @@
   })(document.documentElement, window);
 </script>
 <link rel="stylesheet" href="css/footer.css">
+<link rel="stylesheet" href="css/legal.css">
 </head>
 <body>
 <div class="loader" aria-hidden="true"><div class="loader__panel"></div><div class="loader__dome"><img class="loader__logo" src="assets/logo-nav.png" alt="" width="708" height="422"></div><div class="loader__count"><span class="loader__num">0</span></div></div>
@@ -55,9 +54,29 @@
     <a class="btn" href="index.html#standorte" aria-label="Termin buchen"><img src="assets/v2/btn-black.svg" alt="" width="184" height="39"></a>
   </nav>
 </header>
-<main class="legal">
+<main class="legal"><!-- the client's text (Word file, November 2026) -->
   <h1 class="display">Impressum</h1>
-  <p>Angaben gemäß § 5 DDG.</p><!-- TODO(content): Impressum text from the client (Inhaber, Anschrift, Kontakt, Handwerkskammer, USt-IdNr.) -->
+  <h2>Angaben gemäß § 5 DDG</h2>
+  <p><strong>MTM coiffure</strong><br>Inhaber: Mohamad Ali<br>Kaiserstraße 61<br>51545 Waldbröl<br>Deutschland</p>
+  <p><strong>Weiterer Standort:</strong><br>MTM coiffure Nümbrecht<br>Lindchenweg 3<br>51588 Nümbrecht</p>
+  <h2>Kontakt</h2>
+  <p><strong>Telefon:</strong> <a href="tel:+4922919159374">02291 9159374</a><br><strong>E-Mail:</strong> <a href="mailto:info@mtmcoiffure.de">info@mtmcoiffure.de</a></p>
+  <h2>Umsatzsteuer-Identifikationsnummer</h2>
+  <p>Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG:<br>DE465089066</p>
+  <h2>Berufsrechtliche Angaben</h2>
+  <p><strong>Berufsbezeichnung:</strong> Friseurmeister (verliehen in der Bundesrepublik Deutschland)<br><strong>Zuständige Kammer:</strong> Handwerkskammer zu Köln, Heumarkt 12, 50667 Köln<br><strong>Eintragung in die Handwerksrolle</strong> der Handwerkskammer zu Köln, Betriebsnummer: 1246815</p>
+  <p>Es gelten die folgenden berufsrechtlichen Regelungen: Gesetz zur Ordnung des Handwerks (Handwerksordnung – HwO), einsehbar unter <a href="https://www.gesetze-im-internet.de/hwo/" target="_blank" rel="noopener">www.gesetze-im-internet.de/hwo</a>.</p>
+  <h2>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
+  <p>Mohamad Ali<br>Kaiserstraße 61<br>51545 Waldbröl</p>
+  <h2>Haftung für Inhalte</h2>
+  <p>Wir erstellen und pflegen die Inhalte dieser Website mit größtmöglicher Sorgfalt. Dennoch können wir keine Gewähr für die Aktualität, Richtigkeit, Vollständigkeit oder Qualität der bereitgestellten Informationen übernehmen.</p>
+  <p>Soweit gesetzlich zulässig, schließen wir eine Haftung für Schäden aus, die unmittelbar oder mittelbar aus der Nutzung der auf dieser Website bereitgestellten Informationen entstehen. Die Verpflichtung zur Entfernung oder Sperrung rechtswidriger Inhalte nach den gesetzlichen Vorschriften bleibt hiervon unberührt.</p>
+  <p>Ein Anspruch auf jederzeitige Verfügbarkeit oder einen störungsfreien Zugang zu dieser Website besteht nicht.</p>
+  <h2>Social-Media-Auftritte</h2>
+  <p>Dieses Impressum gilt entsprechend für unsere Auftritte und Profile in sozialen Netzwerken und auf sonstigen Online-Plattformen, insbesondere:</p>
+  <p>Instagram: <a href="https://www.instagram.com/mtm_coiffure/" target="_blank" rel="noopener">instagram.com/mtm_coiffure</a><br>TikTok: <a href="https://www.tiktok.com/@mtmbyabdul" target="_blank" rel="noopener">tiktok.com/@mtmbyabdul</a><br>Google Unternehmensprofil Waldbröl und Nümbrecht</p>
+  <h2>Verbraucherstreitbeilegung</h2>
+  <p>Wir sind nicht verpflichtet und nicht bereit, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>
 </main>
 <footer class="site-footer" id="kontakt">
   <div class="footer-top">
@@ -97,7 +116,7 @@
     Array.prototype.forEach.call(document.querySelectorAll('header, main, footer'), function (e) { e.setAttribute('inert', ''); });
   }
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="js/vendor/gsap-3.12.5.min.js"></script>
 <script src="js/loader.js"></script>
 <script src="js/nav-hide.js"></script>
 </body>
