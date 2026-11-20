@@ -1,6 +1,5 @@
 /* The loader, on every page.
-   Home, first visit of the session: the full loader, with the 0 to 100 counter.
-   Any page reached through an internal link (the inline <head> script sets is-transition): the same cover and reveal, no counter.
+   Every page load: the full loader, with the 0 to 100 counter (2026-11-20; the inline <head> script sets is-loading).
    Leaving a page by an internal link: the cover comes down first (a 0.6s sine.inOut cover-in), then the browser navigates.
    Produces window.mtmReady (resolves when the loader is done, or at once when it is skipped), and the
    html classes is-loading -> is-loaded ("js", "is-loading" and "is-transition" come from the inline <head> script,

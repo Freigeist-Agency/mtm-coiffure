@@ -6,8 +6,8 @@
 //      on a phone), sizes one frame pixel x s = the tighter of width/1440 and height/1024: the dome ends 458/1024 down (357), the logo
 //      375 s wide (253 s), centred, its top 111/1024 down (81), the counter 300 s, centred on 1276/1440 across (258/450), its top
 //      804/1024 down (761); the cover spans the whole width; it counts up and the page is shown within 6.5s;
-//   2. following a link to another page: the cover comes down with the logo, without the counter, and lifts on the new page;
-//   3. opening a page by its address later in the visit: no loader.
+//   2. following a link to another page: the cover comes down, and the new page plays the full loader again, counter included;
+//   3. opening a page by its address later in the visit: the full loader again (2026-11-20, Joel: "intro animation should always happen").
 import { openPage, assert, report } from './harness.mjs';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const near = (a, b, t) => Math.abs(a - b) <= t;
@@ -57,13 +57,15 @@ for (const [w, h, mobile] of [[1440, 1024], [1512, 860], [1920, 960], [375, 812,
     await Promise.all([page.waitForURL(u => String(u).split('?')[0].endsWith('/' + target), { timeout: 8000, waitUntil: 'commit' }).catch(() => {}), page.click(`a[href="${link}"]`)]);
     await page.waitForFunction(() => !!window.__cover, null, { timeout: 8000 }).catch(() => {});
     const t = (await page.evaluate(() => window.__cover)) || {};
-    assert(t.loading && t.transition && t.logo && !t.count, `${tag} 2: on the next page the cover shows the logo, no counter (loading ${t.loading}, transition ${t.transition}, logo ${t.logo}, count ${t.count})`);
+    assert(t.loading && !t.transition && t.logo && t.count, `${tag} 2: the next page plays the full loader, counter included (loading ${t.loading}, transition ${t.transition}, logo ${t.logo}, count ${t.count})`);
     await page.waitForFunction(() => !document.documentElement.classList.contains('is-loading'), null, { timeout: 5000 }).catch(() => {});
     assert(!(await read(page)).loading, `${tag} 2: and lifts`);
     // 3. later, by address
-    await page.goto(page.url().replace(/[^/]*$/, '') + 'datenschutz.html');
+    await page.goto(page.url().replace(/[^/]*$/, '') + 'datenschutz.html', { waitUntil: 'commit' });
     await sleep(150);
-    assert(!(await read(page)).loading, `${tag} 3: no loader for a page opened by address later in the visit`);
+    const later = await read(page);
+    assert(later.loading && later.logo && later.count, `${tag} 3: the full loader again for a page opened by address later in the visit`);
+    await page.waitForFunction(() => !document.documentElement.classList.contains('is-loading'), null, { timeout: 6500 }).catch(() => {});
     assert(errors.length === 0, `${tag}: 0 console errors (${errors.join(' | ')})`);
     await close();
   }

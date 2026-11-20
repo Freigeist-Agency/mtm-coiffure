@@ -12,11 +12,10 @@
 <meta name="description" content="MTM Coiffure by Mo in Nümbrecht: Lindchenweg 3, 51588 Nümbrecht. Öffnungszeiten und Termin buchen.">
 <script>
   /* js + is-loading are set before first paint so the loader shows with no flash; without JS neither exists and the page is plain.
-     Two cases get the cover: the full loader (first page of a visit: arrived from outside the site), and a transition
-     (followed a link from another page of this site: cover and reveal, no counter, is-transition hides the counter). Anything else
-     (reload, back/forward, reduced motion, ?skiploader) is a plain page.
+     Every page load plays the full loader, with the counter (2026-11-20, Joel: "intro animation should always happen"):
+     first visit, internal link, reload and back/forward alike. Only reduced motion and ?skiploader give a plain page.
      mtmReady lives here so it exists even while js/loader.js waits behind a slow CDN; loader.js picks up window.mtmResolve.
-     A subpage that is not covered resolves it at once. 6.6s is the safety net in case js/loader.js never runs; once loader.js
+     6.6s is the safety net in case js/loader.js never runs; once loader.js
      starts it clears this timer (window.mtmFallback) and owns the finish through its own 6s hard stop plus 0.3s fade. */
   (function (h, w) {
     h.classList.add('js');
@@ -26,21 +25,8 @@
     pw(); if (w.ResizeObserver) new ResizeObserver(pw).observe(h); else w.addEventListener('resize', pw);
     w.mtmReady = new Promise(function (r) { w.mtmResolve = r; });
     var skip = /[?&]skiploader\b/.test(location.search) || matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var home = true   /* every page: the first page of a visit plays the full loader (2026-11-16; was the home page only) */, tr = false, seen = true;
-    /* Nothing is stored on the visitor's device (2026-11-20, § 25 TDDDG): where the visitor came from decides instead of the
-       sessionStorage flags. A link followed from another page of this site gets the transition; a reload or back/forward is a
-       plain page; anything else (first page of a visit) gets the full loader. */
-    try {
-      var nav = (w.performance && performance.getEntriesByType && performance.getEntriesByType('navigation')[0] || {}).type || 'navigate';
-      var internal = !!document.referrer && new URL(document.referrer).origin === location.origin;
-      tr = internal && nav === 'navigate';
-      seen = internal || nav === 'reload' || nav === 'back_forward';
-    } catch (e) { tr = false; seen = true; }
-    if (!skip && (tr || (home && !seen))) {
-      h.classList.add('is-loading');
-      if (tr) h.classList.add('is-transition');
-    }
-    if (!home && !h.classList.contains('is-loading')) { w.mtmResolve(); return; }
+    /* Nothing is stored on the visitor's device (§ 25 TDDDG): the intro needs no memory of earlier pages, since it always plays. */
+    if (!skip) h.classList.add('is-loading');
     w.mtmFallback = setTimeout(function () {
       if (h.classList.contains('is-loading')) { h.classList.remove('is-loading', 'is-transition'); h.classList.add('is-loaded'); }
       Array.prototype.forEach.call(document.querySelectorAll('header, main, footer'), function (e) { e.removeAttribute('inert'); });
