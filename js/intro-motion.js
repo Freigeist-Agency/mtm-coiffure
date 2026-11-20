@@ -73,7 +73,7 @@
     if (svc && ST) {
       gsap.registerPlugin(ST);
       var heads = [mask(svc.querySelector('.services-title .headline__light')), mask(svc.querySelector('.services-title .headline__bold'))].filter(Boolean);
-      var card = svc.querySelector('.svc-rating'), photos = Array.prototype.slice.call(svc.querySelectorAll('.cuts li'));
+      var card = svc.querySelector('.svc-rating'), photos = Array.prototype.slice.call(svc.querySelectorAll('.cuts li:not(.is-clone)'));
       var rise = function (targets, vars, trigger) {
         return gsap.fromTo(targets, { y: RISE_Y, opacity: 0 }, Object.assign({ y: 0, opacity: 1, duration: RISE_S, ease: RISE_EASE,
           scrollTrigger: { trigger: trigger, start: 'top ' + RISE_AT, toggleActions: 'play none none reverse' } }, vars));

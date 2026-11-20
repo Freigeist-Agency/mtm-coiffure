@@ -22,6 +22,7 @@ const KEEP_HEADERS = ['content-type', 'access-control-allow-origin', 'cache-cont
 let serverP = null;
 let serverProc = null;
 let browserP = null;
+let barsP = null;   // a second browser with real scrollbars, for the tests that ask for one (openPage({ scrollbars: true }))
 
 function freePort() {
   return new Promise((resolve, reject) => {
@@ -89,11 +90,13 @@ export async function openPage({
   width, height = 900, path: pagePath = 'index.html',
   reducedMotion = false, js = true, skipLoader = true,
   live = false, isMobile = false, hasTouch = false,
+  scrollbars = false,   // a real (classic) scrollbar, as on Windows: headless Chromium hides scrollbars unless told otherwise
 } = {}) {
   serverP ??= startServer();
   browserP ??= chromium.launch({ headless: true });
+  if (scrollbars) barsP ??= chromium.launch({ headless: true, ignoreDefaultArgs: ['--hide-scrollbars'] });
   const base = await serverP;
-  const browser = await browserP;
+  const browser = await (scrollbars ? barsP : browserP);
   const context = await browser.newContext({
     viewport: { width, height },
     reducedMotion: reducedMotion ? 'reduce' : 'no-preference',
@@ -114,6 +117,7 @@ export async function openPage({
 // Call once at the very end of a test file so the browser and server do not hold the process open.
 export async function shutdown() {
   if (browserP) { try { await (await browserP).close(); } catch {} browserP = null; }
+  if (barsP) { try { await (await barsP).close(); } catch {} barsP = null; }
   if (serverProc) { try { serverProc.kill(); } catch {} serverProc = null; serverP = null; }
 }
 
