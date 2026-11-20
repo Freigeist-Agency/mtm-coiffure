@@ -27,9 +27,9 @@
 <link rel="stylesheet" href="css/nav-hide.css">
 <script>
   /* js + is-loading are set before first paint so the loader shows with no flash; without JS neither exists and the page is plain.
-     Two cases get the cover: the full loader (home, first visit of the session: mtm-visited unset), and a transition
-     (the page before set mtm-transition: cover and reveal, no counter, is-transition hides the counter). Anything else
-     (bookmark, search result, reload, reduced motion, ?skiploader) is a plain page. If sessionStorage throws it is a plain page too.
+     Two cases get the cover: the full loader (first page of a visit: arrived from outside the site), and a transition
+     (followed a link from another page of this site: cover and reveal, no counter, is-transition hides the counter). Anything else
+     (reload, back/forward, reduced motion, ?skiploader) is a plain page.
      mtmReady lives here so it exists even while js/loader.js waits behind a slow CDN; loader.js picks up window.mtmResolve.
      A subpage that is not covered resolves it at once. 6.6s is the safety net in case js/loader.js never runs; once loader.js
      starts it clears this timer (window.mtmFallback) and owns the finish through its own 6s hard stop plus 0.3s fade. */
@@ -38,15 +38,18 @@
     w.mtmReady = new Promise(function (r) { w.mtmResolve = r; });
     var skip = /[?&]skiploader\b/.test(location.search) || matchMedia('(prefers-reduced-motion: reduce)').matches;
     var home = true   /* every page: the first page of a visit plays the full loader (2026-11-16; was the home page only) */, tr = false, seen = true;
+    /* Nothing is stored on the visitor's device (2026-11-20, § 25 TDDDG): where the visitor came from decides instead of the
+       sessionStorage flags. A link followed from another page of this site gets the transition; a reload or back/forward is a
+       plain page; anything else (first page of a visit) gets the full loader. */
     try {
-      tr = w.sessionStorage.getItem('mtm-transition') === '1';
-      if (tr) w.sessionStorage.removeItem('mtm-transition');
-      if (home) seen = !!w.sessionStorage.getItem('mtm-visited');
+      var nav = (w.performance && performance.getEntriesByType && performance.getEntriesByType('navigation')[0] || {}).type || 'navigate';
+      var internal = !!document.referrer && new URL(document.referrer).origin === location.origin;
+      tr = internal && nav === 'navigate';
+      seen = internal || nav === 'reload' || nav === 'back_forward';
     } catch (e) { tr = false; seen = true; }
     if (!skip && (tr || (home && !seen))) {
       h.classList.add('is-loading');
       if (tr) h.classList.add('is-transition');
-      if (home) { try { w.sessionStorage.setItem('mtm-visited', '1'); } catch (e) {} }
     }
     if (!home && !h.classList.contains('is-loading')) { w.mtmResolve(); return; }
     w.mtmFallback = setTimeout(function () {
@@ -120,7 +123,7 @@
     </div>
     <div class="footer-bottom">
       <span>© 2026 MTM Coiffure</span>
-      <nav aria-label="Rechtliches"><a href="impressum">Impressum</a><a href="datenschutz">Datenschutz</a></nav>
+      <nav aria-label="Rechtliches"><a href="impressum">Impressum</a><a href="datenschutz">Datenschutz</a><a href="#cookies" data-fgc-action="reopen">Cookie-Einstellungen</a></nav>
     </div>
   </div>
 </footer>
@@ -130,6 +133,7 @@
     Array.prototype.forEach.call(document.querySelectorAll('header, main, footer'), function (e) { e.setAttribute('inert', ''); });
   }
 </script>
+<script src="js/freigeist-consent.js" data-site="mtm-coiffure" data-forge-key="gfh5p5oh3vvdd212l5wilaftjyir7cj1" data-privacy-url="/datenschutz" data-imprint-url="/impressum" defer></script>
 <script src="js/vendor/gsap-3.12.5.min.js"></script>
 <script src="js/loader.js"></script>
 <script src="js/nav-hide.js"></script>

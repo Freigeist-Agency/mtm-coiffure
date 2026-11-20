@@ -15,7 +15,7 @@ async function begin(opts = {}) {
   const h = await openPage({ ...opts, path: 'impressum.html', skipLoader: true });
   const base = h.page.url().replace(/impressum(\.html)?([?#].*)?$/, '');
   if (opts.before) await opts.before(h.page);
-  await h.page.goto(base + 'index.html', { waitUntil: 'commit' });
+  await h.page.goto(base + 'index.html', { waitUntil: 'commit', referer: opts.fromSite ? base + 'impressum.html' : undefined });
   await h.page.waitForFunction(() => performance.getEntriesByName('mtm-loader-start').length > 0, null, { polling: 5 });
   return h;
 }
@@ -263,7 +263,7 @@ print(json.dumps({'mean': sum(i*c for i, c in enumerate(h)) / n, 'over40': sum(h
 if (want('tframes')) for (const [w, h] of [[1440, 900], [375, 812]]) {
   const { page, close } = await begin({
     width: w, height: h,
-    before: p => p.addInitScript(() => { try { sessionStorage.setItem('mtm-transition', '1'); sessionStorage.setItem('mtm-visited', '1'); } catch (e) {} }),
+    fromSite: true,   // arrive from another page of the site: the transition (js/loader.js decides by referrer, 2026-11-20)
   });
   await page.evaluate(() => { window.gsap.globalTimeline.pause(); });   // frozen before the 400ms font cap can start it
   const dur = await page.evaluate(() => { const tl = window.gsap.globalTimeline.getChildren(false, false, true).find(t => Math.abs(t.duration() - 0.7) < 0.01); window.__tl = tl; return tl ? tl.duration() : null; });
@@ -310,7 +310,7 @@ print(json.dumps({'dome': dome, 'panel': y}))`;
 if (want('transition')) {
   const { page, close } = await begin({
     width: 1440, height: 900,
-    before: p => p.addInitScript(() => { try { sessionStorage.setItem('mtm-transition', '1'); sessionStorage.setItem('mtm-visited', '1'); } catch (e) {} }),
+    fromSite: true,   // arrive from another page of the site: the transition (js/loader.js decides by referrer, 2026-11-20)
   });
   const r = await page.evaluate(() => {
     const d = e => e ? getComputedStyle(e).display : 'absent';
