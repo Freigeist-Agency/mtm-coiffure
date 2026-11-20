@@ -75,7 +75,7 @@ for (const [width, height] of [[1440, 900], [375, 812]]) {
     }, null, { polling: 5 });
     const n = await page.evaluate(() => { const x = [...document.querySelectorAll('.loader__num')].pop(); return x ? x.textContent : null; });
     assert(/^\d+$/.test(n) && +n >= 1 && +n <= 99, `${tag} fresh home: counter shows an integer in [1,99] at ~1000ms (got ${n})`);
-    assert(await flag(page, 'mtm-visited') === '1', `${tag} fresh home: mtm-visited is set once the loader starts`);
+    assert(!(await page.evaluate(() => { try { return [...Array(sessionStorage.length).keys()].map(i => sessionStorage.key(i)).concat(Object.keys(localStorage)).some(k => /^mtm-/.test(k)); } catch (e) { return false; } })), `${tag} fresh home: nothing of ours is stored on the device (§ 25 TDDDG, 2026-11-20)`);
     await loaded(page, 9000);
 
     // ---- not internal: no cover, no flag --------------------------------------------
@@ -159,7 +159,7 @@ for (const [width, height] of [[1440, 900], [375, 812]]) {
     await sleep(200);
     const top = await page.evaluate(() => ({ top: document.getElementById('standorte').getBoundingClientRect().top, ih: innerHeight }));
     assert(top.top >= -10 && top.top <= top.ih / 2, `${tag} impressum -> home: #standorte lands near the top (top ${top.top.toFixed(1)})`);
-    assert(await flag(page, 'mtm-visited') === '1', `${tag} impressum -> home: the transition arrival counts as the home visit (mtm-visited set)`);
+    assert(!(await page.evaluate(() => { try { return [...Array(sessionStorage.length).keys()].map(i => sessionStorage.key(i)).concat(Object.keys(localStorage)).some(k => /^mtm-/.test(k)); } catch (e) { return false; } })), `${tag} impressum -> home: nothing of ours is stored on the device`);
     assert(errors.length === 0, `${tag} impressum -> home: 0 console errors ${JSON.stringify(errors)}`);
 
     // a reload of home in the same session is a plain page
@@ -320,7 +320,7 @@ for (const p of ['impressum.html', 'datenschutz.html', '404.html', 'locations/nu
   await page.waitForURL(/\/#standorte$/, { timeout: 5000 });
   await loaded(page, 3000);
   const r = await page.evaluate(() => ({ cover: !!document.querySelector('.loader'), cls: document.documentElement.className }));
-  assert(!r.cover && !/is-loading|is-transition/.test(r.cls), `sessionStorage throws: navigation still works, plain page on arrival (${r.cls})`);
+  assert(!r.cover && !/is-loading|is-transition/.test(r.cls), `sessionStorage throws: navigation still works and the page ends uncovered (${r.cls})`);
   assert(errors.length === 0, `sessionStorage throws: 0 console errors ${JSON.stringify(errors)}`);
   await h.close();
 }

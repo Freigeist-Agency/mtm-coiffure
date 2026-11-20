@@ -1,6 +1,5 @@
 /* The loader, on every page.
-   Home, first visit of the session: the full loader, with the 0 to 100 counter.
-   Any page reached through an internal link (the inline <head> script sets is-transition): the same cover and reveal, no counter.
+   Every page load: the full loader, with the 0 to 100 counter (2026-11-20; the inline <head> script sets is-loading).
    Leaving a page by an internal link: the cover comes down first (a 0.6s sine.inOut cover-in), then the browser navigates.
    Produces window.mtmReady (resolves when the loader is done, or at once when it is skipped), and the
    html classes is-loading -> is-loaded ("js", "is-loading" and "is-transition" come from the inline <head> script,
@@ -30,7 +29,6 @@
   var done = false, fading = false, hardTimer = 0, run = null;
   var HARD_MS = 6000;   // measured from navigation start, so a slow CDN can not stretch it
   var FADE_MS = 300;    // hard stop while still running: fade the cover out instead of cutting to the page
-  var KEY = 'mtm-transition';
   var COVER_S = 0.6;    // the cover coming down (sine.inOut); not tied to the reveal's EXIT_S
   var EXIT_S = 0.7;     // the home loader's exit and the page-change reveal, from the first moved frame to the panel gone
   var EXIT_LAG = 0.03;  // the panel trails the dome by this much (Figma FR2's mid-exit pose)
@@ -192,7 +190,6 @@
         html.classList.remove('is-loading', 'is-transition');
         Array.prototype.forEach.call(document.querySelectorAll('header, main, footer'), function (e) { e.removeAttribute('inert'); });
       } catch (e) { /* the page must come back whatever else throws */ }
-      try { sessionStorage.removeItem(KEY); } catch (e) {}
     }
 
     function build() {
@@ -237,8 +234,6 @@
       if (page(a.pathname) === page(location.pathname)) return;   // same page: a hash change is not a transition
       if (reduced() || !window.gsap) return;
       if (covering) { e.preventDefault(); return; }
-      // without sessionStorage the next page could not play its reveal: leave the link alone
-      try { sessionStorage.setItem(KEY, '1'); } catch (err) { return; }
       e.preventDefault();
       try { coverIn(a.href); } catch (err) { uncover(); location.href = a.href; }
     });
