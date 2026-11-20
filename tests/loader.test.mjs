@@ -16,7 +16,7 @@ const readNum = page => page.evaluate(() => {
 // 'mtm-loader-start' mark, which loader.js sets as soon as it runs).
 async function begin(opts = {}) {
   const h = await openPage({ ...opts, path: 'impressum.html', skipLoader: true });
-  const base = h.page.url().replace(/impressum\.html.*$/, '');
+  const base = h.page.url().replace(/impressum(\.html)?([?#].*)?$/, '');
   if (opts.before) await opts.before(h.page);
   await h.page.goto(base + 'index.html' + (opts.hash || ''), { waitUntil: 'commit' });
   if (!opts.noMark) await h.page.waitForFunction(() => performance.getEntriesByName('mtm-loader-start').length > 0, null, { polling: 5 });
@@ -229,11 +229,7 @@ if (want('finish')) {
   const { page, close } = await begin({
     width: 1440,
     before: async p => {
-      await p.route('**/fonts.googleapis.com/**', r => r.fulfill({
-        status: 200, contentType: 'text/css',
-        body: "@font-face{font-family:'Geom';font-weight:300;font-display:swap;src:url(https://fonts.gstatic.com/hung.woff2) format('woff2')}",
-      }));
-      await p.route('**/fonts.gstatic.com/**', () => { /* never answered */ });
+      await p.route('**/assets/fonts/geom-*.woff2', () => { /* never answered */ });
     },
   });
   const reveal = await page.evaluate(() => new Promise(res => {

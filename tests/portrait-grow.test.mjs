@@ -17,8 +17,8 @@ for (const [w, h, mobile] of [[1440, 900, false], [768, 1024, false], [375, 812,
   const { page, errors, close } = await openPage({ width: w, height: h, ...(mobile ? { isMobile: true, hasTouch: true } : {}) });
   await sleep(1200);
   const wins = await page.evaluate(() => [...document.querySelectorAll('.intro-text img.intro-pic')].map(img => {
-    const t = ScrollTrigger.getAll().find(s => s.animation && typeof s.animation.targets === "function" && s.animation.targets().includes(img));
-    return t ? { s: t.start, e: t.end, full: img.offsetWidth } : null;
+    const t = img.__wrWin;   // js/word-reveal.js keeps each portrait's window on the element
+    return t ? { s: t[0], e: t[1], full: img.offsetWidth } : null;
   }));
   assert(wins.length === 3 && wins.every(Boolean), `${tag}: three portraits, each with its own scroll window (${wins.length})`);
   for (let k = 0; k < wins.length; k++) {

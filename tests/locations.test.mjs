@@ -222,7 +222,7 @@ for (const width of [1440, 375]) {
     assert(nue?.href === NUE, `index: Nümbrecht button -> Planity (${nue?.href})`);
     assert(wal?.href === WAL, `index: Waldbröl button -> Planity (${wal?.href})`);
     assert(r.info.every(i => i.target === '_blank' && /\bnoopener\b/.test(i.rel || '')), 'index: location buttons open in a new tab with rel=noopener');
-    assert(r.generic.length >= 3 && r.generic.every(h => /^(index\.html)?#standorte$/.test(h)), `index: generic Termin buchen buttons stay on #standorte (${r.generic.length}: ${[...new Set(r.generic)]})`);
+    assert(r.generic.length >= 3 && r.generic.every(h => /^(\.\/)?#standorte$/.test(h)), `index: generic Termin buchen buttons stay on #standorte (${r.generic.length}: ${[...new Set(r.generic)]})`);
   } finally { await close(); }
 }
 
@@ -236,7 +236,7 @@ for (const [p, url, name] of [['locations/nuembrecht.html', NUE, 'Nümbrecht'], 
     }));
     assert(r.specific.length >= 1 && r.specific.every(b => b.href === url && b.label === `Termin buchen in ${name}`), `${p}: page booking button(s) -> its own Planity page ${JSON.stringify(r.specific.map(b => b.href))}`);
     assert(r.specific.every(b => b.target === '_blank' && /\bnoopener\b/.test(b.rel || '')), `${p}: Planity link is target=_blank rel=noopener`);
-    assert(r.generic.length >= 1 && r.generic.every(h => h === '../index.html#standorte'), `${p}: generic buttons stay on ../index.html#standorte (${r.generic})`);
+    assert(r.generic.length >= 1 && r.generic.every(h => h === '../#standorte'), `${p}: generic buttons stay on ../#standorte (${r.generic})`);
   } finally { await close(); }
 }
 

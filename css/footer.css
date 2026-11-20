@@ -27,3 +27,7 @@
   .footer-bottom { position: relative; left: auto; right: auto; bottom: auto; margin: 37px calc(5.6vw - var(--pad)) 0;
     display: grid; justify-content: start; gap: 18px; padding-top: 22px; font-size: 14px; }
 }
+
+/* Social links: a 25px tall tap area (WCAG 2.5.8 asks for 24px; the text line is 17px). The padding grows the tap area and
+   the equal negative margin gives the space back, so the links sit exactly where they did. */
+.footer-col ul a { display: inline-block; padding-block: 4px; margin-block: -4px; }

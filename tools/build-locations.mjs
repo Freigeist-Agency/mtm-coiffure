@@ -11,14 +11,24 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const home = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 
+// The address, hours and booking link come from the home page, not from this file: the client can change them in Forge
+// (.forge-edit.json; the parts marked data-edit), and a change there is written into every page, these two included.
+// Reading them here keeps a rebuild from putting old values back.
+function marked(re, what) {
+  const m = re.exec(home);
+  if (!m) throw new Error('not found in index.html: ' + what);
+  return m;
+}
+function salonText(key) {
+  const m = marked(new RegExp(`<p class="loc-card__info" data-edit="${key}\\.hours" data-edit-as="lines-br" data-edit-lead="${key}\\.address"><strong>([^<]*)</strong><br>([^]*?)</p>`), key + ' location card');
+  return { adr: m[1], hours: m[2].split(/<br\s*\/?>/) };
+}
+const booking = (key, cls) => marked(new RegExp(`<a class="pill-btn ${cls}" data-edit="${key}\\.booking" data-edit-as="attr:href" href="([^"]*)"`), key + ' booking link')[1];
+
 const SALONS = [
-  { slug: 'nuembrecht', name: 'Nümbrecht', by: 'Mo', adr: 'Lindchenweg 3, 51588 Nümbrecht',
-    hours: ['Mo – Fr: 9 – 18 Uhr', 'Sa: 8:30 – 14 Uhr', 'So: geschlossen'],
-    planity: 'https://www.planity.com/de-DE/mtm-coiffure-by-mo-51588-numbrecht',
+  { key: 'nb', slug: 'nuembrecht', name: 'Nümbrecht', by: 'Mo', ...salonText('nb'), planity: booking('nb', 'pill-btn--mo'),
     film: { poster: 'assets/hero-poster.jpg', phone: 'assets/hero-960.mp4', wide: 'assets/hero-1600.mp4', note: 'the salon pan, as on the home page' } },
-  { slug: 'waldbroel', name: 'Waldbröl', by: 'Abdul', adr: 'Kaiserstraße 61, 51545 Waldbröl',
-    hours: ['Mo – Fr: 9 – 19 Uhr', 'Sa: 9 – 17 Uhr', 'So: geschlossen'],
-    planity: 'https://www.planity.com/de-DE/mtm-coiffure-by-abdul-51545-waldbrol',
+  { key: 'wb', slug: 'waldbroel', name: 'Waldbröl', by: 'Abdul', ...salonText('wb'), planity: booking('wb', 'pill-btn--abdul'),
     film: { poster: 'assets/waldbroel-hero-poster.jpg', phone: 'assets/waldbroel-hero-phone.mp4', wide: 'assets/waldbroel-hero-1600.mp4', note: '"Sequenz 01_11": 1600x900, and its middle 540x900 for phones' } },
 ];
 
@@ -27,8 +37,8 @@ function cut(from, to) {   // the home page between two markers (from included, 
   if (a < 0 || b < 0) throw new Error('marker not found in index.html: ' + (a < 0 ? from : to));
   return home.slice(a, b);
 }
-// relative URLs move one folder up; absolute ones, in-page anchors, tel:, mailto: and data: stay
-const up = u => /^(https?:|\/\/|#|tel:|mailto:|data:|\.\.\/)/.test(u) || u === '' ? u : '../' + u;
+// relative URLs move one folder up ("./", the home page, becomes "../"); absolute ones, in-page anchors, tel:, mailto: and data: stay
+const up = u => /^(https?:|\/\/|#|tel:|mailto:|data:|\.\.\/)/.test(u) || u === '' ? u : '../' + u.replace(/^\.\//, '');
 function rebase(html) {
   return html
     .replace(/\b(src|href|poster)="([^"]*)"/g, (m, a, u) => `${a}="${up(u)}"`)
@@ -36,11 +46,16 @@ function rebase(html) {
 }
 
 for (const s of SALONS) {
-  const book = `href="${s.planity}" target="_blank" rel="noopener"`;
+  const book = `data-edit="${s.key}.booking" data-edit-as="attr:href" href="${s.planity}" target="_blank" rel="noopener"`;
   let head = cut('<!doctype html>', '<body>')
     .replace('<html lang="de" data-root="" data-home>', `<html lang="de" data-root="../" data-home data-location="${s.slug}">`)
     .replace(/<title>[^<]*<\/title>/, `<title>MTM Coiffure ${s.name} – Friseurmeister</title>`)
     .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="MTM Coiffure by ${s.by} in ${s.name}: ${s.adr}. Öffnungszeiten und Termin buchen.">`)
+    // canonical and share preview (the home page's tags, with this salon's address, title, text and still)
+    .replace(/<link rel="canonical" href="[^"]*">/, `<link rel="canonical" href="https://mtmcoiffure.de/locations/${s.slug}">`)
+    .replace(/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="https://mtmcoiffure.de/locations/${s.slug}">`)
+    .replace(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="MTM Coiffure ${s.name} – Friseurmeister">`)
+    .replace(/<meta property="og:description" content="[^"]*">/, `<meta property="og:description" content="MTM Coiffure by ${s.by} in ${s.name}: ${s.adr}. Öffnungszeiten und Termin buchen.">`)
     ;   // the loader as on the home page: the first page of a visit plays it in full, later pages get the cover between pages
 
   let top = cut('<body>', '<main>')
@@ -61,7 +76,7 @@ for (const s of SALONS) {
     </div>
     <h1 class="loc-hero__title"><span class="sr-only">MTM Coiffure by ${s.by} in </span>${s.name}</h1>
     <a class="btn btn--white hero-cta" ${book} aria-label="Termin in ${s.name} buchen"><img src="assets/v2/btn-white.svg" alt="" width="163" height="35"></a>
-    <p class="loc-hero__info"><strong>${s.adr}</strong><br>${s.hours.join('<br>')}</p><!-- from the salon's Planity page, 2026-11-16 -->
+    <p class="loc-hero__info" data-edit="${s.key}.hours" data-edit-as="lines-br" data-edit-lead="${s.key}.address"><strong>${s.adr}</strong><br>${s.hours.join('<br>')}</p><!-- from the salon's Planity page, 2026-11-16 -->
   </section>
 
 `;

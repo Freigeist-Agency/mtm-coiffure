@@ -3,6 +3,10 @@
 <html lang="de" data-root="../" data-home data-location="nuembrecht">
 <head>
 <meta charset="utf-8">
+<script>/* clean address: GitHub Pages serves page.html at /page too, so an old /page.html or /index.html link
+   shows /page or / in the address bar (no reload; the canonical tag already names the clean address) */
+  if (/\.html$/.test(location.pathname)) history.replaceState(history.state, '', location.pathname.replace(/(^|\/)index\.html$/, '$1').replace(/\.html$/, '') + location.search + location.hash);
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MTM Coiffure Nümbrecht – Friseurmeister</title>
 <meta name="description" content="MTM Coiffure by Mo in Nümbrecht: Lindchenweg 3, 51588 Nümbrecht. Öffnungszeiten und Termin buchen.">
@@ -41,8 +45,18 @@
     }, 6600);
   })(document.documentElement, window);
 </script>
+<link rel="canonical" href="https://mtmcoiffure.de/locations/nuembrecht">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MTM Coiffure">
+<meta property="og:locale" content="de_DE">
+<meta property="og:url" content="https://mtmcoiffure.de/locations/nuembrecht">
+<meta property="og:title" content="MTM Coiffure Nümbrecht – Friseurmeister">
+<meta property="og:description" content="MTM Coiffure by Mo in Nümbrecht: Lindchenweg 3, 51588 Nümbrecht. Öffnungszeiten und Termin buchen.">
+<meta property="og:image" content="https://mtmcoiffure.de/assets/hero-poster.jpg">
+<meta property="og:image:width" content="1600">
+<meta property="og:image:height" content="900">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../css/fonts.css">
 <link rel="stylesheet" href="../css/tokens.css">
 <link rel="stylesheet" href="../css/site.css">
 <link rel="stylesheet" href="../css/loader.css">
@@ -58,8 +72,8 @@
 <body>
 <div class="loader" aria-hidden="true"><div class="loader__panel"></div><div class="loader__dome"><img class="loader__logo" src="../assets/logo-nav.png" alt="" width="708" height="422"></div><div class="loader__count"><span class="loader__num">0</span></div></div>
 <header class="site-header pill-nav"><!-- Figma Desktop_new 324:3180 (the white pill, difference mode, with the logo) and 324:3167 (the button) -->
-  <span class="pill-nav__plate"><a class="pill-nav__brand" href="../index.html" aria-label="MTM Coiffure, Startseite"><img src="../assets/v2/logo-pill.svg" alt="" width="57" height="34"></a></span>
-  <a class="btn btn--sm pill-nav__cta" href="https://www.planity.com/de-DE/mtm-coiffure-by-mo-51588-numbrecht" target="_blank" rel="noopener" aria-label="Termin in Nümbrecht buchen"><img src="../assets/v2/btn-black-small.svg" alt="" width="132" height="28"></a>
+  <span class="pill-nav__plate"><a class="pill-nav__brand" href="../" aria-label="MTM Coiffure, Startseite"><img src="../assets/v2/logo-pill.svg" alt="" width="57" height="34"></a></span>
+  <a class="btn btn--sm pill-nav__cta" data-edit="nb.booking" data-edit-as="attr:href" href="https://www.planity.com/de-DE/mtm-coiffure-by-mo-51588-numbrecht" target="_blank" rel="noopener" aria-label="Termin in Nümbrecht buchen"><img src="../assets/v2/btn-black-small.svg" alt="" width="132" height="28"></a>
 </header>
 <main>
   <section class="hero hero--loc" aria-label="Nümbrecht"><!-- Figma 369:4477 "Hero Location" -->
@@ -74,8 +88,8 @@
       </script>
     </div>
     <h1 class="loc-hero__title"><span class="sr-only">MTM Coiffure by Mo in </span>Nümbrecht</h1>
-    <a class="btn btn--white hero-cta" href="https://www.planity.com/de-DE/mtm-coiffure-by-mo-51588-numbrecht" target="_blank" rel="noopener" aria-label="Termin in Nümbrecht buchen"><img src="../assets/v2/btn-white.svg" alt="" width="163" height="35"></a>
-    <p class="loc-hero__info"><strong>Lindchenweg 3, 51588 Nümbrecht</strong><br>Mo – Fr: 9 – 18 Uhr<br>Sa: 8:30 – 14 Uhr<br>So: geschlossen</p><!-- from the salon's Planity page, 2026-11-16 -->
+    <a class="btn btn--white hero-cta" data-edit="nb.booking" data-edit-as="attr:href" href="https://www.planity.com/de-DE/mtm-coiffure-by-mo-51588-numbrecht" target="_blank" rel="noopener" aria-label="Termin in Nümbrecht buchen"><img src="../assets/v2/btn-white.svg" alt="" width="163" height="35"></a>
+    <p class="loc-hero__info" data-edit="nb.hours" data-edit-as="lines-br" data-edit-lead="nb.address"><strong>Lindchenweg 3, 51588 Nümbrecht</strong><br>Mo – Fr: 9 – 18 Uhr<br>Sa: 8:30 – 14 Uhr<br>So: geschlossen</p><!-- from the salon's Planity page, 2026-11-16 -->
   </section>
 
   <section class="news news--swapped" aria-labelledby="news-h"><!-- Figma Desktop_new 324:4242 "Content Section": the heading and cards, then the team photos -->
@@ -96,8 +110,8 @@
       <p>Hier findest du alles was du vielleicht kurzfristig erfahren musst, bevor du einen Termin bei uns buchst.</p>
     </div>
     <div class="news-cards">
-      <article class="news-card"><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare, eros dolor interdum nulla, ut commodo diam libero vitae erat. Aenean faucibus nibh et justo cursus id rutrum lorem imperdiet. Nunc ut sem vitae risus tristique posuere.</p></article><!-- TODO(content): announcement -->
-      <article class="news-card"><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare, eros dolor interdum nulla, ut commodo diam libero vitae erat. Aenean faucibus nibh et justo cursus id rutrum lorem imperdiet. Nunc ut sem vitae risus tristique posuere.</p></article><!-- TODO(content): announcement -->
+      <article class="news-card"><p data-edit="news.1">Jeden Dienstag gibt es bei MTM ein besonderes Angebot für alle Schüler! Ihr bekommt euren Haarschnitt statt für 18 € jetzt für nur 14 €! Und das Beste: Ihr müsst nur euren gültigen Schülerausweis mitbringen. Jeden Dienstag Von 13:00 bis 15:00 Uhr Haarschnitt nur 14 € statt 18 € Also, worauf wartet ihr noch? Kommt vorbei und gönnt euch einen frischen Look!</p></article><!-- the salon owner writes the announcements in Forge -->
+      <article class="news-card"><p data-edit="news.2">🔥 MTM wächst weiter! 💈 Wir freuen uns, euch mitteilen zu dürfen, dass wir jetzt einen zweiten Standort in Nümbrecht haben! Besucht unseren neuen Standort und erlebt den gewohnten MTM-Service, frische Cuts und erstklassigen Style. Zwei Standorte – ein Team, eine Leidenschaft! ❤️ 📍</p></article><!-- the salon owner writes the announcements in Forge -->
     </div>
   </section>
 
@@ -108,18 +122,18 @@
       <img class="faq__person faq__person--right" src="../assets/v2/faq-dsc00540.webp" alt="" width="843" height="1264" loading="lazy">
       <img class="faq__person faq__person--mid" src="../assets/v2/faq-dsc00483.webp" alt="Das Team von MTM Coiffure" width="775" height="1162" loading="lazy">
     </div>
-    <p class="faq__about">Wir haben unsere Leidenschaft für das Friseurhandwerk auf unsere Reise aus Syrien nach Deutschland mitgenommen und dürfen sie jetzt mit dir in einem unserer Familienmeisterbetrieben mit dir teilen.</p><!-- 324:3021 -->
-    <div class="faq__list"><!-- TODO(content): the questions and answers are Figma placeholders -->
-      <details class="faq__item" open><summary><span class="faq__q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a">faq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer textfaq answer text</p></details>
-      <details class="faq__item"><summary><span class="faq__q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a">faq answer text</p></details>
-      <details class="faq__item"><summary><span class="faq__q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a">faq answer text</p></details>
-      <details class="faq__item"><summary><span class="faq__q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a">faq answer text</p></details>
-      <details class="faq__item"><summary><span class="faq__q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a">faq answer text</p></details>
-      <details class="faq__item"><summary><span class="faq__q">faq question</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a">faq answer text</p></details>
+    <p class="faq__about" data-edit="about">Wir haben unsere Leidenschaft für das Friseurhandwerk auf unsere Reise aus Syrien nach Deutschland mitgenommen und dürfen sie jetzt mit dir in einem unserer Familienmeisterbetrieben mit dir teilen.</p><!-- 324:3021 -->
+    <div class="faq__list" data-edit="faq" data-edit-as="faq"><!-- the salon owner edits the questions and answers in Forge -->
+      <template data-edit-item><details class="faq__item"><summary><span class="faq__q" data-slot="q"></span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a" data-slot="a"></p></details></template>
+      <details class="faq__item" open><summary><span class="faq__q" data-slot="q">Brauche ich einen Termin oder kann ich einfach vorbeikommen?</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a" data-slot="a">Nein, du brauchst nicht zwingend einen Termin. Wir arbeiten sowohl mit als auch ohne Termin. Du kannst also gerne spontan vorbeikommen!</p></details>
+      <details class="faq__item"><summary><span class="faq__q" data-slot="q">Schneidet ihr auch Damenhaare?</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a" data-slot="a">Ja, selbstverständlich! Wir bieten auch Haarschnitte für Damen an. Für Damenhaarschnitte bitten wir um eine vorherige Terminvereinbarung.</p></details>
+      <details class="faq__item"><summary><span class="faq__q" data-slot="q">Bietet ihr auch Kinderhaarschnitte an?</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a" data-slot="a">Ja, auch Kinder sind bei uns herzlich willkommen!</p></details>
+      <details class="faq__item"><summary><span class="faq__q" data-slot="q">Kann ich meinen Termin telefonisch vereinbaren?</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a" data-slot="a">Ja, du kannst uns gerne anrufen, um einen Termin zu vereinbaren oder online</p></details>
+      <details class="faq__item"><summary><span class="faq__q" data-slot="q">Muss ich meine Haare vor dem Friseurbesuch waschen?</span><span class="faq__sign" aria-hidden="true"></span></summary><p class="faq__a" data-slot="a">Nein, das ist nicht unbedingt notwendig. Wir kümmern uns vor Ort um alles, was für deinen Haarschnitt erforderlich ist.</p></details>
     </div>
     <div class="faq__links"><!-- 324:3973 / 324:3987: book at Mo's salon (Nümbrecht) or Abdul's (Waldbröl) on Planity -->
-      <a class="pill-btn pill-btn--mo" href="https://www.planity.com/de-DE/mtm-coiffure-by-mo-51588-numbrecht" target="_blank" rel="noopener" aria-label="MTM by Mo: Termin in Nümbrecht buchen"><img src="../assets/v2/icon-pole-mo.svg" alt="" width="10" height="23">MTM by Mo</a>
-      <a class="pill-btn pill-btn--abdul" href="https://www.planity.com/de-DE/mtm-coiffure-by-abdul-51545-waldbrol" target="_blank" rel="noopener" aria-label="MTM by Abdul: Termin in Waldbröl buchen"><img src="../assets/v2/icon-pole-abdul.svg" alt="" width="8" height="18">MTM by Abdul</a>
+      <a class="pill-btn pill-btn--mo" data-edit="nb.booking" data-edit-as="attr:href" href="https://www.planity.com/de-DE/mtm-coiffure-by-mo-51588-numbrecht" target="_blank" rel="noopener" aria-label="MTM by Mo: Termin in Nümbrecht buchen"><img src="../assets/v2/icon-pole-mo.svg" alt="" width="10" height="23">MTM by Mo</a>
+      <a class="pill-btn pill-btn--abdul" data-edit="wb.booking" data-edit-as="attr:href" href="https://www.planity.com/de-DE/mtm-coiffure-by-abdul-51545-waldbrol" target="_blank" rel="noopener" aria-label="MTM by Abdul: Termin in Waldbröl buchen"><img src="../assets/v2/icon-pole-abdul.svg" alt="" width="8" height="18">MTM by Abdul</a>
     </div>
   </section>
 
@@ -129,33 +143,33 @@
 </main>
 <footer class="site-footer" id="kontakt">
   <div class="footer-top">
-    <a class="footer-logo" href="../index.html" aria-label="MTM Coiffure, Startseite"><img src="../assets/logo-nav.png" alt="" width="375" height="224"></a>
+    <a class="footer-logo" href="../" aria-label="MTM Coiffure, Startseite"><img src="../assets/logo-nav.png" alt="" width="375" height="224"></a>
   </div>
   <div class="footer-body">
-    <a class="btn footer-cta" href="https://www.planity.com/de-DE/mtm-coiffure-by-mo-51588-numbrecht" target="_blank" rel="noopener" aria-label="Termin in Nümbrecht buchen"><img src="../assets/v2/btn-black.svg" alt="" width="184" height="39"></a>
+    <a class="btn footer-cta" data-edit="nb.booking" data-edit-as="attr:href" href="https://www.planity.com/de-DE/mtm-coiffure-by-mo-51588-numbrecht" target="_blank" rel="noopener" aria-label="Termin in Nümbrecht buchen"><img src="../assets/v2/btn-black.svg" alt="" width="184" height="39"></a>
     <div class="footer-cols">
       <div class="footer-col">
-        <h3><a href="../locations/nuembrecht.html">Nümbrecht</a></h3>
-        <p>Lindchenweg 3, 51588 Nümbrecht</p><!-- from the salon's Planity page, 2026-11-16 (Planity lists no phone number) -->
-        <ul><li>Mo – Fr: 9 – 18 Uhr</li><li>Sa: 8:30 – 14 Uhr</li><li>So: geschlossen</li></ul>
+        <h3><a href="../locations/nuembrecht">Nümbrecht</a></h3>
+        <p data-edit="nb.address">Lindchenweg 3, 51588 Nümbrecht</p><!-- from the salon's Planity page, 2026-11-16 (Planity lists no phone number) -->
+        <ul data-edit="nb.hours" data-edit-as="lines-li"><li>Mo – Fr: 9 – 18 Uhr</li><li>Sa: 8:30 – 14 Uhr</li><li>So: geschlossen</li></ul>
       </div>
       <div class="footer-col">
-        <h3><a href="../locations/waldbroel.html">Waldbröl</a></h3>
-        <p>Kaiserstraße 61, 51545 Waldbröl</p><!-- from the salon's Planity page, 2026-11-16 (Planity lists no phone number) -->
-        <ul><li>Mo – Fr: 9 – 19 Uhr</li><li>Sa: 9 – 17 Uhr</li><li>So: geschlossen</li></ul>
+        <h3><a href="../locations/waldbroel">Waldbröl</a></h3>
+        <p data-edit="wb.address">Kaiserstraße 61, 51545 Waldbröl</p><!-- from the salon's Planity page, 2026-11-16 (Planity lists no phone number) -->
+        <ul data-edit="wb.hours" data-edit-as="lines-li"><li>Mo – Fr: 9 – 19 Uhr</li><li>Sa: 9 – 17 Uhr</li><li>So: geschlossen</li></ul>
       </div>
       <div class="footer-col">
         <h3>Folge uns</h3>
         <ul>
-          <li><a href="https://www.instagram.com/mtm_coiffure/" target="_blank" rel="noopener">Instagram</a></li>
-          <li><a href="https://www.tiktok.com/@mtmbyabdul" target="_blank" rel="noopener">TikTok</a></li>
+          <li><a data-edit="social.instagram" data-edit-as="attr:href" href="https://www.instagram.com/mtm_coiffure/" target="_blank" rel="noopener">Instagram</a></li>
+          <li><a data-edit="social.tiktok" data-edit-as="attr:href" href="https://www.tiktok.com/@mtmbyabdul" target="_blank" rel="noopener">TikTok</a></li>
         </ul>
         <a class="footer-fred-link" href="https://www.freigeist.agency/de/" target="_blank" rel="noopener" aria-label="FRED approved: Freigeist, die Agentur hinter dieser Seite"><img class="footer-fred" src="../assets/fred-approved.png" alt="FRED approved" width="47" height="53"></a>
       </div>
     </div>
     <div class="footer-bottom">
       <span>© 2026 MTM Coiffure</span>
-      <nav aria-label="Rechtliches"><a href="../impressum.html">Impressum</a><a href="../datenschutz.html">Datenschutz</a></nav>
+      <nav aria-label="Rechtliches"><a href="../impressum">Impressum</a><a href="../datenschutz">Datenschutz</a></nav>
     </div>
   </div>
 </footer>
@@ -183,5 +197,7 @@
 <script src="../js/radial-slider.js"></script>
 <script src="../js/reviews.js"></script>
 <script src="../js/review-grow.js"></script>
+<script src="../js/near-video.js"></script>
+<script src="../js/salon-schema.js"></script>
 </body>
 </html>

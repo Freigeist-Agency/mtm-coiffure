@@ -103,7 +103,7 @@ for (const [width, height] of [[1440, 900], [375, 812]]) {
     await idle('same-page #hash');
     assert(isHome(page), `${tag} not internal (#hash): still on home (${page.url()})`);
 
-    await page.locator('footer a[href="impressum.html"]').click({ modifiers: ['Control'] });
+    await page.locator('footer a[href="impressum"]').click({ modifiers: ['Control'] });
     await idle('ctrl-click');
     assert(isHome(page), `${tag} not internal (ctrl-click): original tab still on home`);
     for (const p of page.context().pages()) if (p !== page) await p.close();
@@ -112,10 +112,10 @@ for (const [width, height] of [[1440, 900], [375, 812]]) {
 
     // ---- home -> impressum --------------------------------------------------------------
     await arm(page, { unload: true });
-    const link = page.locator('footer a[href="impressum.html"]');
+    const link = page.locator('footer a[href="impressum"]');
     await link.scrollIntoViewIfNeeded();
     await link.click();
-    await page.waitForURL(/impressum\.html$/, { timeout: 5000 });
+    await page.waitForURL(/\/impressum$/, { timeout: 5000 });
     const probe = JSON.parse(await flag(page, 'probe-unload') || 'null');
     assert(probe && probe.centreInCover, `${tag} home -> impressum: before navigating, the viewport centre is inside the cover (${JSON.stringify(probe)})`);
     assert(probe && probe.panelCovers, `${tag} home -> impressum: before navigating, the black panel spans the full viewport (${JSON.stringify(probe)})`);
@@ -144,9 +144,9 @@ for (const [width, height] of [[1440, 900], [375, 812]]) {
     const { page, errors } = h;
     await loaded(page, 3000);
     await arm(page, { unload: true });
-    const link = page.locator('header a[href$="index.html#standorte"]:visible').first();
+    const link = page.locator('header a[href$="./#standorte"]:visible').first();
     await link.click();
-    await page.waitForURL(/index\.html#standorte$/, { timeout: 5000 });
+    await page.waitForURL(/\/#standorte$/, { timeout: 5000 });
     const probe = JSON.parse(await flag(page, 'probe-unload') || 'null');
     assert(probe && probe.centreInCover && probe.panelCovers, `${tag} impressum -> home: covered before navigating (${JSON.stringify(probe)})`);
     const t0 = Date.now();
@@ -209,7 +209,7 @@ for (const p of ['impressum.html', 'datenschutz.html', '404.html', 'locations/nu
   const h = await openPage({ width: 1440, path: '404.html', skipLoader: false });
   const { page, errors } = h;
   await loaded(page, 3000);
-  await page.locator('header a[href$="index.html#standorte"]:visible, header a.brand').first().click();
+  await page.locator('header a[href$="./#standorte"]:visible, header a.brand').first().click();
   await page.waitForURL(/\/(index\.html)?(#standorte)?$/, { timeout: 5000 });
   await loaded(page, 3000);
   assert(await page.evaluate(() => !!document.getElementById('standorte')), `404 -> home through the <base> lands on the home page (${page.url()})`);
@@ -223,8 +223,8 @@ for (const p of ['impressum.html', 'datenschutz.html', '404.html', 'locations/nu
   const { page } = h;
   await loaded(page, 2000);
   await arm(page, { unload: true });
-  await page.locator('footer a[href="impressum.html"]').click();
-  await page.waitForURL(/impressum\.html$/, { timeout: 5000 });
+  await page.locator('footer a[href="impressum"]').click();
+  await page.waitForURL(/\/impressum$/, { timeout: 5000 });
   const probe = JSON.parse(await flag(page, 'probe-unload') || 'null');
   assert(probe && !probe.centreInCover && !probe.panelCovers, `reduced motion: no cover when leaving home (${JSON.stringify(probe)})`);
   await loaded(page, 1500);
@@ -239,8 +239,8 @@ for (const p of ['impressum.html', 'datenschutz.html', '404.html', 'locations/nu
   const h = await freshHome(1440);
   const { page } = h;
   await page.evaluate(() => { window.__persisted = []; addEventListener('pageshow', e => window.__persisted.push(e.persisted)); });
-  await page.locator('footer a[href="impressum.html"]').click();
-  await page.waitForURL(/impressum\.html$/, { timeout: 5000 });
+  await page.locator('footer a[href="impressum"]').click();
+  await page.waitForURL(/\/impressum$/, { timeout: 5000 });
   await loaded(page, 3000);
   await page.goBack({ waitUntil: 'load' });
   await sleep(500);
@@ -264,8 +264,8 @@ for (const p of ['impressum.html', 'datenschutz.html', '404.html', 'locations/nu
 {
   const h = await freshHome(1440);
   const { page } = h;
-  await page.locator('footer a[href="impressum.html"]').scrollIntoViewIfNeeded();
-  await page.locator('footer a[href="impressum.html"]').click({ noWaitAfter: true });
+  await page.locator('footer a[href="impressum"]').scrollIntoViewIfNeeded();
+  await page.locator('footer a[href="impressum"]').click({ noWaitAfter: true });
   await sleep(150);
   const mid = await page.evaluate(() => ({ cover: !!document.querySelector('.loader'), cls: document.documentElement.className }));
   assert(mid.cover && /is-loading/.test(mid.cls), `pageshow: precondition, the cover-in is under way (${mid.cls})`);
@@ -291,7 +291,7 @@ for (const p of ['impressum.html', 'datenschutz.html', '404.html', 'locations/nu
   // a navigation that does not go through: a beforeunload handler that cancels it (Playwright dismisses the prompt, which stays on the page)
   page.on('dialog', d => d.dismiss());
   await page.evaluate(() => addEventListener('beforeunload', e => { e.preventDefault(); e.returnValue = ''; }));
-  await page.locator('footer a[href="impressum.html"]').click({ noWaitAfter: true });
+  await page.locator('footer a[href="impressum"]').click({ noWaitAfter: true });
   await sleep(1500);
   const mid = await page.evaluate(() => ({ cover: !!document.querySelector('.loader'), cls: document.documentElement.className }));
   assert(mid.cover && /is-loading/.test(mid.cls), `safety timer: precondition, still covered at 1.5s while the navigation is blocked (${mid.cls})`);
@@ -316,8 +316,8 @@ for (const p of ['impressum.html', 'datenschutz.html', '404.html', 'locations/nu
     const boom = () => { throw new DOMException('denied', 'SecurityError'); };
     Object.defineProperty(window, 'sessionStorage', { get: boom, configurable: true });
   });
-  await page.locator('header a[href$="index.html#standorte"]:visible').first().click();
-  await page.waitForURL(/index\.html#standorte$/, { timeout: 5000 });
+  await page.locator('header a[href$="./#standorte"]:visible').first().click();
+  await page.waitForURL(/\/#standorte$/, { timeout: 5000 });
   await loaded(page, 3000);
   const r = await page.evaluate(() => ({ cover: !!document.querySelector('.loader'), cls: document.documentElement.className }));
   assert(!r.cover && !/is-loading|is-transition/.test(r.cls), `sessionStorage throws: navigation still works, plain page on arrival (${r.cls})`);
@@ -351,7 +351,7 @@ for (const [width, height] of [[1440, 900], [375, 812]]) {
   await page.context().addInitScript(SAMPLE);
   await page.evaluate(CLICKS);   // the current page was loaded before the init scripts existed
   await page.locator('header a.brand').click();
-  await page.waitForURL(/index\.html$/, { timeout: 5000 });
+  await page.waitForURL(/\/$/, { timeout: 5000 });
   await page.waitForFunction(() => window.__rev && window.__rev.gone !== null, null, { timeout: 5000, polling: 20 });
   const R = await page.evaluate(() => ({ rev: window.__rev, cover: +sessionStorage.getItem('cover-ms') }));
   const fr = R.rev.frames, first = fr.find(f => f.dy < -0.5 || f.py < -0.5);

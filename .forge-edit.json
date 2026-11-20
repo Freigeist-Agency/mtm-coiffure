@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "files": ["index.html", "locations/*.html", "impressum.html", "datenschutz.html", "404.html"],
+  "pages": {
+    "index.html": { "de": "Startseite", "en": "Home page" },
+    "locations/nuembrecht.html": { "de": "Nümbrecht", "en": "Nümbrecht" },
+    "locations/waldbroel.html": { "de": "Waldbröl", "en": "Waldbröl" },
+    "impressum.html": { "de": "Impressum", "en": "Legal notice" },
+    "datenschutz.html": { "de": "Datenschutz", "en": "Privacy policy" }
+  },
+  "groups": {
+    "nb": { "de": "Nümbrecht", "en": "Nümbrecht" },
+    "wb": { "de": "Waldbröl", "en": "Waldbröl" },
+    "home": { "de": "Startseite", "en": "Home page" },
+    "all": { "de": "Alle Seiten", "en": "All pages" },
+    "legal": { "de": "Rechtliches", "en": "Legal pages" }
+  },
+  "fields": [
+    { "key": "nb.address", "type": "text", "group": "nb", "label": { "de": "Adresse, Nümbrecht", "en": "Address, Nümbrecht" }, "max": 80 },
+    { "key": "nb.hours", "type": "lines", "group": "nb", "label": { "de": "Öffnungszeiten, Nümbrecht", "en": "Opening hours, Nümbrecht" }, "max": 40, "maxItems": 7 },
+    { "key": "nb.booking", "type": "link", "group": "nb", "label": { "de": "Buchungslink, Nümbrecht", "en": "Booking link, Nümbrecht" }, "hosts": ["www.planity.com"] },
+    { "key": "wb.address", "type": "text", "group": "wb", "label": { "de": "Adresse, Waldbröl", "en": "Address, Waldbröl" }, "max": 80 },
+    { "key": "wb.hours", "type": "lines", "group": "wb", "label": { "de": "Öffnungszeiten, Waldbröl", "en": "Opening hours, Waldbröl" }, "max": 40, "maxItems": 7 },
+    { "key": "wb.booking", "type": "link", "group": "wb", "label": { "de": "Buchungslink, Waldbröl", "en": "Booking link, Waldbröl" }, "hosts": ["www.planity.com"] },
+    { "key": "home.cut1", "type": "image", "group": "home", "label": { "de": "Foto 1", "en": "Photo 1" }, "width": 1200, "height": 1800 },
+    { "key": "home.cut2", "type": "image", "group": "home", "label": { "de": "Foto 2", "en": "Photo 2" }, "width": 1200, "height": 1800 },
+    { "key": "home.cut3", "type": "image", "group": "home", "label": { "de": "Foto 3", "en": "Photo 3" }, "width": 1200, "height": 1800 },
+    { "key": "home.cut4", "type": "image", "group": "home", "label": { "de": "Foto 4", "en": "Photo 4" }, "width": 1200, "height": 1800 },
+    { "key": "home.cut5", "type": "image", "group": "home", "label": { "de": "Foto 5", "en": "Photo 5" }, "width": 1200, "height": 1800 },
+    { "key": "home.cut6", "type": "image", "group": "home", "label": { "de": "Foto 6", "en": "Photo 6" }, "width": 1200, "height": 1800 },
+    { "key": "home.services", "type": "paragraph", "group": "home", "label": { "de": "Text unter den Fotos", "en": "Text under the photos" }, "max": 300 },
+    { "key": "home.rating", "type": "text", "group": "home", "label": { "de": "Anzahl Google-Bewertungen", "en": "Number of Google reviews" }, "max": 30 },
+    { "key": "home.reviews", "type": "reviews", "group": "home", "label": { "de": "Bewertungen", "en": "Reviews" }, "max": 400, "maxItems": 15 },
+    { "key": "about", "type": "paragraph", "group": "all", "label": { "de": "Text über uns", "en": "About text" }, "max": 300 },
+    { "key": "news.1", "type": "paragraph", "group": "all", "label": { "de": "Ankündigung 1", "en": "Announcement 1" }, "max": 400 },
+    { "key": "news.2", "type": "paragraph", "group": "all", "label": { "de": "Ankündigung 2", "en": "Announcement 2" }, "max": 400 },
+    { "key": "faq", "type": "faq", "group": "all", "label": { "de": "Häufige Fragen", "en": "Questions and answers" }, "max": 600, "maxItems": 8 },
+    { "key": "social.instagram", "type": "link", "group": "all", "label": { "de": "Instagram-Link", "en": "Instagram link" }, "hosts": ["www.instagram.com"] },
+    { "key": "social.tiktok", "type": "link", "group": "all", "label": { "de": "TikTok-Link", "en": "TikTok link" }, "hosts": ["www.tiktok.com"] }
+  ]
+}

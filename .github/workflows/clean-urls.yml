@@ -1,0 +1,18 @@
+# Clean addresses: no ".html" in the address bar on the live site. Checks every push and pull request;
+# it only reads the files and never changes them. See tools/check-clean-urls.mjs.
+name: Clean addresses
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node tools/check-clean-urls.mjs

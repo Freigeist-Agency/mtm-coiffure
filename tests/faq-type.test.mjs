@@ -1,5 +1,5 @@
 // FAQ texts (Figma 324:3021, 339:4251..4308; 2026-11-15, cofounder: "the font size and weight is off"). At 1512, relative to the section,
-// within 1px: about text Google Sans Flex 300 20px, 605 wide at 35/799; six questions (Figma has six), 300 24px, the open one's top at 276
+// within 1px: about text Google Sans Flex 300 20px, 605 wide at 35/799; the questions (the salon edits them in Forge, up to 8), 300 24px, the open one's top at 276
 // and the closed ones at 444, 499, 554, 609, 664; signs 100 36px, "+" at x 1403 (tops 434..654), the open row's "-" at 1411/266;
 // the open answer 300 16px, 612 wide at 886/328. Every width: questions and signs inside the viewport, a click opens/closes a row,
 // no sideways scroll.
@@ -21,7 +21,7 @@ for (const [w, h, mobile] of [[1512, 900], [1440, 900], [768, 1024], [375, 812, 
       a: { ...b(document.querySelector('.faq__a')), ...f(document.querySelector('.faq__a')) }, open: [...document.querySelectorAll('.faq__item')].map(d => d.open), sw: document.documentElement.scrollWidth, vw: innerWidth };
   });
   const r = await read();
-  assert(r.q.length === 6, `${tag}: six questions, as in Figma (${r.q.length})`);
+  assert(r.q.length >= 1 && r.q.length <= 8, `${tag}: the questions are there, as many as the salon has entered in Forge, at most 8 (${r.q.length})`);   /* was six placeholders (Figma); staging has the real ones (2026-11-20) */
   assert(r.about.fam === 'Google Sans Flex' && r.about.wt === '300' && r.q.every(q => q.fam === 'Google Sans Flex' && q.wt === '300') && r.s.every(s => s.wt === '100') && r.a.wt === '300', `${tag}: Google Sans Flex, light text and thin signs (${r.about.wt}/${r.q[0].wt}/${r.s[0].wt}/${r.a.wt})`);
   if (w === 1512) {
     assert(near(r.about.fs, 20, .01) && near(r.about.x, 35) && near(r.about.y, 799) && near(r.about.w, 605), `${tag}: about 20px, 605 wide at 35/799 (${r.about.fs} ${r.about.x}/${r.about.y} ${r.about.w})`);

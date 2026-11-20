@@ -44,7 +44,7 @@ for (const [w, h, mobile] of [[1440, 1024], [1512, 860], [1920, 960], [375, 812,
     await page.waitForFunction(() => !document.documentElement.classList.contains('is-loading'), null, { timeout: 6500 }).catch(() => {});
     assert(!(await read(page)).loading, `${tag} 1: the page is shown within 6.5s`);
     // 2. a link to another page
-    const link = await page.evaluate(() => { const here = location.pathname.split('/').pop(), a = [...document.querySelectorAll('a[href]')].find(a => /(impressum|datenschutz)\.html$/.test(a.getAttribute('href')) && a.getAttribute('href').split('/').pop() !== here); /* a different page */ return a ? a.getAttribute('href') : null; });
+    const link = await page.evaluate(() => { const here = location.pathname.split('/').pop(), a = [...document.querySelectorAll('a[href]')].find(a => /(impressum|datenschutz)$/.test(a.getAttribute('href')) && a.getAttribute('href').split('/').pop() !== here); /* a different page */ return a ? a.getAttribute('href') : null; });
     await page.evaluate(href => { const a = [...document.querySelectorAll('a[href]')].find(x => x.getAttribute('href') === href); a.scrollIntoView({ block: 'center' }); }, link);
     await sleep(300);
     /* the new page records its cover the moment its content is parsed: read 80ms after commit, a fast local load (self-hosted

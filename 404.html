@@ -2,10 +2,12 @@
 <html lang="de" data-root="">
 <head>
 <meta charset="utf-8">
+<script>/* /page/ is not a page here, /page is: drop the trailing slash before showing "not found" */
+  if (/.\/$/.test(location.pathname)) location.replace(location.pathname.replace(/\/+$/, '') + location.search + location.hash);
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Seite nicht gefunden – MTM Coiffure</title>
 <meta name="robots" content="noindex">
-<link rel="stylesheet" href="css/fonts.css">
 <!-- GitHub Pages serves this file at whatever path was requested, so relative
      paths can't be trusted here. A <base> computed from the URL (project sites
      live under /<repo>/, custom domains at /) makes every relative link and asset
@@ -58,45 +60,45 @@
 <body>
 <div class="loader" aria-hidden="true"><div class="loader__panel"></div><div class="loader__dome"><img class="loader__logo" src="assets/logo-nav.png" alt="" width="708" height="422"></div><div class="loader__count"><span class="loader__num">0</span></div></div>
 <header class="site-header">
-  <a class="brand" href="index.html" aria-label="MTM Coiffure, Startseite"><img src="assets/logo-nav.png" alt="" width="67" height="40"></a>
+  <a class="brand" href="./" aria-label="MTM Coiffure, Startseite"><img src="assets/logo-nav.png" alt="" width="67" height="40"></a>
   <nav class="site-nav" aria-label="Hauptnavigation">
-    <a class="nav-link" href="index.html#standorte">Standorte.</a>
-    <a class="btn" href="index.html#standorte" aria-label="Termin buchen"><img src="assets/v2/btn-black.svg" alt="" width="184" height="39"></a>
+    <a class="nav-link" href="./#standorte">Standorte.</a>
+    <a class="btn" href="./#standorte" aria-label="Termin buchen"><img src="assets/v2/btn-black.svg" alt="" width="184" height="39"></a>
   </nav>
 </header>
 <main class="legal">
   <h1 class="display">Seite nicht gefunden.</h1>
-  <p><a href="index.html">Zur Startseite</a></p>
+  <p><a href="./">Zur Startseite</a></p>
 </main>
 <footer class="site-footer" id="kontakt">
   <div class="footer-top">
-    <a class="footer-logo" href="index.html" aria-label="MTM Coiffure, Startseite"><img src="assets/logo-nav.png" alt="" width="375" height="224"></a>
+    <a class="footer-logo" href="./" aria-label="MTM Coiffure, Startseite"><img src="assets/logo-nav.png" alt="" width="375" height="224"></a>
   </div>
   <div class="footer-body">
-    <a class="btn footer-cta" href="index.html#standorte" aria-label="Termin buchen"><img src="assets/v2/btn-black.svg" alt="" width="184" height="39"></a>
+    <a class="btn footer-cta" href="./#standorte" aria-label="Termin buchen"><img src="assets/v2/btn-black.svg" alt="" width="184" height="39"></a>
     <div class="footer-cols">
       <div class="footer-col">
-        <h3><a href="locations/nuembrecht.html">Nümbrecht</a></h3>
-        <p>Lindchenweg 3, 51588 Nümbrecht</p><!-- from the salon's Planity page, 2026-11-16 (Planity lists no phone number) -->
-        <ul><li>Mo – Fr: 9 – 18 Uhr</li><li>Sa: 8:30 – 14 Uhr</li><li>So: geschlossen</li></ul>
+        <h3><a href="locations/nuembrecht">Nümbrecht</a></h3>
+        <p data-edit="nb.address">Lindchenweg 3, 51588 Nümbrecht</p><!-- from the salon's Planity page, 2026-11-16 (Planity lists no phone number) -->
+        <ul data-edit="nb.hours" data-edit-as="lines-li"><li>Mo – Fr: 9 – 18 Uhr</li><li>Sa: 8:30 – 14 Uhr</li><li>So: geschlossen</li></ul>
       </div>
       <div class="footer-col">
-        <h3><a href="locations/waldbroel.html">Waldbröl</a></h3>
-        <p>Kaiserstraße 61, 51545 Waldbröl</p><!-- from the salon's Planity page, 2026-11-16 (Planity lists no phone number) -->
-        <ul><li>Mo – Fr: 9 – 19 Uhr</li><li>Sa: 9 – 17 Uhr</li><li>So: geschlossen</li></ul>
+        <h3><a href="locations/waldbroel">Waldbröl</a></h3>
+        <p data-edit="wb.address">Kaiserstraße 61, 51545 Waldbröl</p><!-- from the salon's Planity page, 2026-11-16 (Planity lists no phone number) -->
+        <ul data-edit="wb.hours" data-edit-as="lines-li"><li>Mo – Fr: 9 – 19 Uhr</li><li>Sa: 9 – 17 Uhr</li><li>So: geschlossen</li></ul>
       </div>
       <div class="footer-col">
         <h3>Folge uns</h3>
         <ul>
-          <li><a href="https://www.instagram.com/mtm_coiffure/" target="_blank" rel="noopener">Instagram</a></li>
-          <li><a href="https://www.tiktok.com/@mtmbyabdul" target="_blank" rel="noopener">TikTok</a></li>
+          <li><a data-edit="social.instagram" data-edit-as="attr:href" href="https://www.instagram.com/mtm_coiffure/" target="_blank" rel="noopener">Instagram</a></li>
+          <li><a data-edit="social.tiktok" data-edit-as="attr:href" href="https://www.tiktok.com/@mtmbyabdul" target="_blank" rel="noopener">TikTok</a></li>
         </ul>
         <a class="footer-fred-link" href="https://www.freigeist.agency/de/" target="_blank" rel="noopener" aria-label="FRED approved: Freigeist, die Agentur hinter dieser Seite"><img class="footer-fred" src="assets/fred-approved.png" alt="FRED approved" width="47" height="53"></a>
       </div>
     </div>
     <div class="footer-bottom">
       <span>© 2026 MTM Coiffure</span>
-      <nav aria-label="Rechtliches"><a href="impressum.html">Impressum</a><a href="datenschutz.html">Datenschutz</a></nav>
+      <nav aria-label="Rechtliches"><a href="impressum">Impressum</a><a href="datenschutz">Datenschutz</a></nav>
     </div>
   </div>
 </footer>
