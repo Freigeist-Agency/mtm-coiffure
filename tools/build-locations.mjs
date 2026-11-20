@@ -51,6 +51,11 @@ for (const s of SALONS) {
     .replace('<html lang="de" data-root="" data-home>', `<html lang="de" data-root="../" data-home data-location="${s.slug}">`)
     .replace(/<title>[^<]*<\/title>/, `<title>MTM Coiffure ${s.name} – Friseurmeister</title>`)
     .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="MTM Coiffure by ${s.by} in ${s.name}: ${s.adr}. Öffnungszeiten und Termin buchen.">`)
+    // canonical and share preview (the home page's tags, with this salon's address, title, text and still)
+    .replace(/<link rel="canonical" href="[^"]*">/, `<link rel="canonical" href="https://mtmcoiffure.de/locations/${s.slug}.html">`)
+    .replace(/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="https://mtmcoiffure.de/locations/${s.slug}.html">`)
+    .replace(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="MTM Coiffure ${s.name} – Friseurmeister">`)
+    .replace(/<meta property="og:description" content="[^"]*">/, `<meta property="og:description" content="MTM Coiffure by ${s.by} in ${s.name}: ${s.adr}. Öffnungszeiten und Termin buchen.">`)
     ;   // the loader as on the home page: the first page of a visit plays it in full, later pages get the cover between pages
 
   let top = cut('<body>', '<main>')
