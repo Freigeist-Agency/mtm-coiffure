@@ -36,8 +36,6 @@
     { "key": "news.2", "type": "paragraph", "group": "all", "label": { "de": "Ankündigung 2", "en": "Announcement 2" }, "max": 400 },
     { "key": "faq", "type": "faq", "group": "all", "label": { "de": "Häufige Fragen", "en": "Questions and answers" }, "max": 600, "maxItems": 8 },
     { "key": "social.instagram", "type": "link", "group": "all", "label": { "de": "Instagram-Link", "en": "Instagram link" }, "hosts": ["www.instagram.com"] },
-    { "key": "social.tiktok", "type": "link", "group": "all", "label": { "de": "TikTok-Link", "en": "TikTok link" }, "hosts": ["www.tiktok.com"] },
-    { "key": "legal.impressum", "type": "lines", "group": "legal", "label": { "de": "Impressum", "en": "Legal notice" }, "max": 200, "maxItems": 30 },
-    { "key": "legal.datenschutz", "type": "lines", "group": "legal", "label": { "de": "Datenschutzerklärung", "en": "Privacy policy" }, "max": 2000, "maxItems": 50 }
+    { "key": "social.tiktok", "type": "link", "group": "all", "label": { "de": "TikTok-Link", "en": "TikTok link" }, "hosts": ["www.tiktok.com"] }
   ]
 }

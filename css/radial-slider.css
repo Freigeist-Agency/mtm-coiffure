@@ -52,11 +52,12 @@
 }
 .radial-slider__btn {
   position: relative; display: grid; place-items: center; flex: none;
-  width: max(1.6cqw, 18px); height: max(1.6cqw, 18px); padding: 0;
+  --rs-btn: calc(32 * var(--u, 1px));   /* the black Termin button's height (cofounder, 2026-11-19; was max(1.6cqw, 18px)): 32 units on desktop, 32px below 1024 (v2.css) */
+  width: var(--rs-btn); height: var(--rs-btn); padding: 0;
   border: 0; border-radius: 50%; background: #1a1a1a; color: #fff; cursor: pointer;   /* round (2026-11-15; was a rounded square, 25%) */
   transition: transform .25s cubic-bezier(.37, 0, .63, 1);
 }
-.radial-slider__btn::after { content: ''; position: absolute; inset: -13px; }   /* 44px touch target around the small square */
+.radial-slider__btn::after { content: ''; position: absolute; inset: min(0px, calc((var(--rs-btn) - 44px) / 2)); }   /* at least a 44px touch target */
 .radial-slider__btn svg { width: 62%; height: 62%; }
 @media (hover: hover) { .radial-slider__btn:hover { transform: scale(1.12); } }
 .radial-slider__btn:active { transform: scale(.92); }

@@ -47,10 +47,16 @@ for (const [w, h, mobile] of [[1440, 1024], [1512, 860], [1920, 960], [375, 812,
     const link = await page.evaluate(() => { const here = location.pathname.split('/').pop(), a = [...document.querySelectorAll('a[href]')].find(a => /(impressum|datenschutz)$/.test(a.getAttribute('href')) && a.getAttribute('href').split('/').pop() !== here); /* a different page */ return a ? a.getAttribute('href') : null; });
     await page.evaluate(href => { const a = [...document.querySelectorAll('a[href]')].find(x => x.getAttribute('href') === href); a.scrollIntoView({ block: 'center' }); }, link);
     await sleep(300);
+    /* the new page records its cover the moment its content is parsed: read 80ms after commit, a fast local load (self-hosted
+       files, 2026-11-19) sometimes had the 0.7s reveal over before the reading, about 1 in 150 */
+    await page.addInitScript(() => document.addEventListener('DOMContentLoaded', () => {
+      const h = document.documentElement, vis = e => !!e && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().width > 0;
+      window.__cover = { loading: h.classList.contains('is-loading'), transition: h.classList.contains('is-transition'), logo: vis(document.querySelector('.loader__logo')), count: vis(document.querySelector('.loader__count')) };
+    }));
     const target = link.split('/').pop();   /* wait for the new address itself: a navigation event can be missed between the cover and the load */
     await Promise.all([page.waitForURL(u => String(u).split('?')[0].endsWith('/' + target), { timeout: 8000, waitUntil: 'commit' }).catch(() => {}), page.click(`a[href="${link}"]`)]);
-    await sleep(80);
-    const t = await read(page);
+    await page.waitForFunction(() => !!window.__cover, null, { timeout: 8000 }).catch(() => {});
+    const t = (await page.evaluate(() => window.__cover)) || {};
     assert(t.loading && t.transition && t.logo && !t.count, `${tag} 2: on the next page the cover shows the logo, no counter (loading ${t.loading}, transition ${t.transition}, logo ${t.logo}, count ${t.count})`);
     await page.waitForFunction(() => !document.documentElement.classList.contains('is-loading'), null, { timeout: 5000 }).catch(() => {});
     assert(!(await read(page)).loading, `${tag} 2: and lifts`);

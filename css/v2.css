@@ -13,7 +13,7 @@
   font-weight: 1 1000; font-style: normal; font-display: swap;
 }
 :root {
-  --u: calc(100vw / 1512);
+  --u: calc(var(--page-w, 100vw) / 1512);   /* --page-w: the page's visible width (the inline <head> script), so a classic scrollbar (Windows, 15-17px) no longer hides the right edge; 100vw without JS */
   --font: 'Google Sans Flex', 'Geom', system-ui, sans-serif;
   --font-geom: 'Geom', system-ui, sans-serif;
 }
@@ -251,7 +251,7 @@ html[data-home] main { margin-top: 0; }
 
 /* ---------- Phones and tablets (below 1024px): Figma has no phone or tablet frame for Desktop_new; a plain stacked layout until one exists ---------- */
 @media (max-width: 1023px) {   /* phones and tablets: Figma's 1512 layout scaled to a tablet makes 10-13px body text */
-  :root { --u: calc(100vw / 450); }
+  :root { --u: calc(var(--page-w, 100vw) / 450); }
   .pill-nav__plate { left: 10px; right: 10px; width: auto; height: 50px; top: 10px; border-radius: 20px; }
   .pill-nav__brand { left: 12px; top: 8px; width: 57px; height: 34px; }
   .pill-nav__cta { left: auto; right: 21px; top: 21px; }
@@ -278,8 +278,9 @@ html[data-home] main { margin-top: 0; }
   .services-title { justify-self: start; text-align: left; }
   .services-cta { justify-self: start; }
   .services-cta img { width: 151px; height: 32px; } .services-cta { border-radius: 10px; }
+  .radial-slider__btn { --rs-btn: 32px; }   /* the black Termin button is 32px here (the line above), so the slider buttons are too */
   /* the rating card first, at Figma size up to 1px a unit (fits a 375 phone at 320 wide) */
-  .svc-rating { --u: min(100vw / 450, 1px); order: -1; position: relative; left: auto; top: auto; justify-self: start; }
+  .svc-rating { --u: min(var(--page-w, 100vw) / 450, 1px); order: -1; position: relative; left: auto; top: auto; justify-self: start; }
 
   .blocks--into-intro { height: 40vw; }
   .blocks--into-intro svg { top: -31vw; width: 100vw; height: 71vw; }   /* its bottom on the box's bottom: it may not reach over the intro's first line */
@@ -399,5 +400,5 @@ html[data-home] main { margin-top: 0; }
 .cuts-nav { display: none; }
 @media (max-width: 1023px) {
   .cuts-nav { display: block; container-type: inline-size; width: 100vw; margin: 0 0 0 -16px; }   /* an explicit width: a size container does not stretch in the grid (it measured 0); the screen's width, as the social slider's */
-  .cuts-nav .radial-slider__controls { margin-top: 0; padding-bottom: 0; }
+  .cuts-nav .radial-slider__controls { margin-top: 0; padding-bottom: 0; justify-content: flex-start; padding-left: 16px; }   /* left-aligned with the first photo (cofounder, 2026-11-19; was centred) */
 }

@@ -14,7 +14,7 @@ const go = (page, y) => page.evaluate(y => window.lenis ? window.lenis.scrollTo(
 const near = (a, b, t) => Math.abs(a - b) <= t;
 
 const HERO = { 'index.html': ['.hero-claim__light', '.hero-claim__bold', '.hero-hello__word', '.hero-arabic'], 'locations/nuembrecht.html': ['.loc-hero__title', '.loc-hero__info'] };
-const SVC = ['.services-title', '.svc-rating', '.cuts li:nth-child(1)', '.cuts li:nth-child(6)'];
+const SVC = ['.services-title', '.svc-rating', '.cuts li:nth-child(1 of :not(.is-clone))', '.cuts li:nth-child(6 of :not(.is-clone))'];
 // positions relative to the element's section: the hero's pin adds scroll room above the services only when motion is on
 const boxes = (page, sels) => page.evaluate(sels => sels.map(s => { const e = document.querySelector(s); if (!e) return null; const host = e.closest('.hl-mask--img') || e; const r = host.getBoundingClientRect(), sec = host.closest('section').getBoundingClientRect(); return [r.left - sec.left, r.top - sec.top, r.width, r.height]; }), sels);
 
@@ -45,7 +45,7 @@ for (const path of Object.keys(HERO)) {
     assert(t2.every(x => Math.abs(x.off) < 0.005), `${tag} 2: all in place after 1.6s (${t2.map(x => x.off.toFixed(3))})`);
     if (path === 'index.html') {
       const sv = () => page.evaluate(() => { const g = e => { const cs = getComputedStyle(e); return { o: +cs.opacity, y: new DOMMatrix(cs.transform).f }; };
-        return { card: g(document.querySelector('.svc-rating')), photos: [...document.querySelectorAll('.cuts li')].map(g), heads: [...document.querySelectorAll('.services-title .hl-in')].map(e => { const m = e.parentElement.getBoundingClientRect(); return (e.getBoundingClientRect().top - m.top) / m.height; }) }; });
+        return { card: g(document.querySelector('.svc-rating')), photos: [...document.querySelectorAll('.cuts li:not(.is-clone)')].map(g), heads: [...document.querySelectorAll('.services-title .hl-in')].map(e => { const m = e.parentElement.getBoundingClientRect(); return (e.getBoundingClientRect().top - m.top) / m.height; }) }; });
       const before = await sv();
       assert(before.card.o === 0 && near(before.card.y, 80, 0.5) && before.photos.every(p => p.o === 0 && near(p.y, 80, 0.5)) && before.heads.every(x => x > 0.9), `${tag} 3: below the screen the card and photos are hidden 80px low, the heading under its masks`);
       const top = await page.evaluate(() => document.querySelector('.services').getBoundingClientRect().top + scrollY);
