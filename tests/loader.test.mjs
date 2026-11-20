@@ -16,7 +16,7 @@ const readNum = page => page.evaluate(() => {
 // 'mtm-loader-start' mark, which loader.js sets as soon as it runs).
 async function begin(opts = {}) {
   const h = await openPage({ ...opts, path: 'impressum.html', skipLoader: true });
-  const base = h.page.url().replace(/impressum\.html.*$/, '');
+  const base = h.page.url().replace(/impressum(\.html)?([?#].*)?$/, '');
   if (opts.before) await opts.before(h.page);
   await h.page.goto(base + 'index.html' + (opts.hash || ''), { waitUntil: 'commit' });
   if (!opts.noMark) await h.page.waitForFunction(() => performance.getEntriesByName('mtm-loader-start').length > 0, null, { polling: 5 });

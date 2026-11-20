@@ -37,8 +37,8 @@ function cut(from, to) {   // the home page between two markers (from included, 
   if (a < 0 || b < 0) throw new Error('marker not found in index.html: ' + (a < 0 ? from : to));
   return home.slice(a, b);
 }
-// relative URLs move one folder up; absolute ones, in-page anchors, tel:, mailto: and data: stay
-const up = u => /^(https?:|\/\/|#|tel:|mailto:|data:|\.\.\/)/.test(u) || u === '' ? u : '../' + u;
+// relative URLs move one folder up ("./", the home page, becomes "../"); absolute ones, in-page anchors, tel:, mailto: and data: stay
+const up = u => /^(https?:|\/\/|#|tel:|mailto:|data:|\.\.\/)/.test(u) || u === '' ? u : '../' + u.replace(/^\.\//, '');
 function rebase(html) {
   return html
     .replace(/\b(src|href|poster)="([^"]*)"/g, (m, a, u) => `${a}="${up(u)}"`)
@@ -52,8 +52,8 @@ for (const s of SALONS) {
     .replace(/<title>[^<]*<\/title>/, `<title>MTM Coiffure ${s.name} – Friseurmeister</title>`)
     .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="MTM Coiffure by ${s.by} in ${s.name}: ${s.adr}. Öffnungszeiten und Termin buchen.">`)
     // canonical and share preview (the home page's tags, with this salon's address, title, text and still)
-    .replace(/<link rel="canonical" href="[^"]*">/, `<link rel="canonical" href="https://mtmcoiffure.de/locations/${s.slug}.html">`)
-    .replace(/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="https://mtmcoiffure.de/locations/${s.slug}.html">`)
+    .replace(/<link rel="canonical" href="[^"]*">/, `<link rel="canonical" href="https://mtmcoiffure.de/locations/${s.slug}">`)
+    .replace(/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="https://mtmcoiffure.de/locations/${s.slug}">`)
     .replace(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="MTM Coiffure ${s.name} – Friseurmeister">`)
     .replace(/<meta property="og:description" content="[^"]*">/, `<meta property="og:description" content="MTM Coiffure by ${s.by} in ${s.name}: ${s.adr}. Öffnungszeiten und Termin buchen.">`)
     ;   // the loader as on the home page: the first page of a visit plays it in full, later pages get the cover between pages

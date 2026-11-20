@@ -75,7 +75,7 @@ for (const f of ['index.html', 'impressum.html', 'datenschutz.html', '404.html']
   const r = await page.evaluate(() => ({ cards: [...document.querySelectorAll('.loc-card__info')].map(p => p.innerText), mo: document.querySelector('.pill-btn--mo').getAttribute('href'), abdul: document.querySelector('.pill-btn--abdul').getAttribute('href'), cardLinks: [...document.querySelectorAll('.loc-card__name a')].map(a => a.getAttribute('href')) }));
   assert(r.cards[0].includes(N.adr) && r.cards[1].includes(W.adr), 'home: the Standorte cards show the new addresses');
   assert(r.mo === N.planity && r.abdul === W.planity, 'home: "MTM by Mo" / "MTM by Abdul" book at their salons on Planity');
-  assert(r.cardLinks[0] === 'locations/nuembrecht.html' && r.cardLinks[1] === 'locations/waldbroel.html', 'home: the Standorte cards still open the location pages');
+  assert(r.cardLinks[0] === 'locations/nuembrecht' && r.cardLinks[1] === 'locations/waldbroel', 'home: the Standorte cards still open the location pages');
   assert(errors.length === 0, `home: 0 console errors (${errors.join(' | ')})`);
   await close();
 }
