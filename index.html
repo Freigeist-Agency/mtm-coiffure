@@ -2,6 +2,10 @@
 <html lang="de" data-root="" data-home>
 <head>
 <meta charset="utf-8">
+<script>/* clean address: GitHub Pages serves page.html at /page too, so an old /page.html or /index.html link
+   shows /page or / in the address bar (no reload; the canonical tag already names the clean address) */
+  if (/\.html$/.test(location.pathname)) history.replaceState(history.state, '', location.pathname.replace(/(^|\/)index\.html$/, '$1').replace(/\.html$/, '') + location.search + location.hash);
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MTM Coiffure – Friseurmeister in Nümbrecht & Waldbröl</title>
 <meta name="description" content="Familienfriseurbetrieb in vierter Generation. Herren- und Damenschnitte in Nümbrecht und Waldbröl.">
@@ -63,7 +67,7 @@
 <body>
 <div class="loader" aria-hidden="true"><div class="loader__panel"></div><div class="loader__dome"><img class="loader__logo" src="assets/logo-nav.png" alt="" width="708" height="422"></div><div class="loader__count"><span class="loader__num">0</span></div></div>
 <header class="site-header pill-nav"><!-- Figma Desktop_new 324:3180 (the white pill, difference mode, with the logo) and 324:3167 (the button) -->
-  <span class="pill-nav__plate"><a class="pill-nav__brand" href="index.html" aria-label="MTM Coiffure, Startseite"><img src="assets/v2/logo-pill.svg" alt="" width="57" height="34"></a></span>
+  <span class="pill-nav__plate"><a class="pill-nav__brand" href="./" aria-label="MTM Coiffure, Startseite"><img src="assets/v2/logo-pill.svg" alt="" width="57" height="34"></a></span>
   <a class="btn btn--sm pill-nav__cta" href="#standorte" aria-label="Termin buchen"><img src="assets/v2/btn-black-small.svg" alt="" width="132" height="28"></a>
 </header>
 <main>
@@ -117,14 +121,14 @@
     <div class="locations__cards">
       <article class="loc-card"><!-- 324:4132 -->
         <video class="loc-card__media" data-play-near muted loop playsinline preload="none" poster="assets/hero-poster.jpg" aria-hidden="true"><source src="assets/hero-960.mp4" type="video/mp4" media="(max-width: 767px)"><source src="assets/hero-1600.mp4" type="video/mp4"></video>
-        <h3 class="loc-card__name"><a href="locations/nuembrecht.html">Nümbrecht.</a></h3>
+        <h3 class="loc-card__name"><a href="locations/nuembrecht">Nümbrecht.</a></h3>
         <p class="loc-card__info" data-edit="nb.hours" data-edit-as="lines-br" data-edit-lead="nb.address"><strong>Lindchenweg 3, 51588 Nümbrecht</strong><br>Mo – Fr: 9 – 18 Uhr<br>Sa: 8:30 – 14 Uhr<br>So: geschlossen</p><!-- from the salon's Planity page, 2026-11-16 (Planity lists no phone number) -->
       </article>
       <article class="loc-card"><!-- 324:4135 -->
         <!-- the Waldbröl salon (cofounder, 2026-11-16, "Sequenz 01_11"): the middle of the 1920x1080 film, square 1080 for desktop (the card is
              tall, and nearly square when hovered wide), 432x720 for phones; no sound -->
         <video class="loc-card__media" data-play-near muted loop playsinline preload="none" poster="assets/waldbroel-poster.jpg" aria-hidden="true"><source src="assets/waldbroel-720.mp4" type="video/mp4" media="(max-width: 767px)"><source src="assets/waldbroel-1080.mp4" type="video/mp4"></video>
-        <h3 class="loc-card__name"><a href="locations/waldbroel.html">Waldbröl.</a></h3>
+        <h3 class="loc-card__name"><a href="locations/waldbroel">Waldbröl.</a></h3>
         <p class="loc-card__info" data-edit="wb.hours" data-edit-as="lines-br" data-edit-lead="wb.address"><strong>Kaiserstraße 61, 51545 Waldbröl</strong><br>Mo – Fr: 9 – 19 Uhr<br>Sa: 9 – 17 Uhr<br>So: geschlossen</p><!-- from the salon's Planity page, 2026-11-16 (Planity lists no phone number) -->
       </article>
     </div>
@@ -262,18 +266,18 @@
 </main>
 <footer class="site-footer" id="kontakt">
   <div class="footer-top">
-    <a class="footer-logo" href="index.html" aria-label="MTM Coiffure, Startseite"><img src="assets/logo-nav.png" alt="" width="375" height="224"></a>
+    <a class="footer-logo" href="./" aria-label="MTM Coiffure, Startseite"><img src="assets/logo-nav.png" alt="" width="375" height="224"></a>
   </div>
   <div class="footer-body">
     <a class="btn footer-cta" href="#standorte" aria-label="Termin buchen"><img src="assets/v2/btn-black.svg" alt="" width="184" height="39"></a>
     <div class="footer-cols">
       <div class="footer-col">
-        <h3><a href="locations/nuembrecht.html">Nümbrecht</a></h3>
+        <h3><a href="locations/nuembrecht">Nümbrecht</a></h3>
         <p data-edit="nb.address">Lindchenweg 3, 51588 Nümbrecht</p><!-- from the salon's Planity page, 2026-11-16 (Planity lists no phone number) -->
         <ul data-edit="nb.hours" data-edit-as="lines-li"><li>Mo – Fr: 9 – 18 Uhr</li><li>Sa: 8:30 – 14 Uhr</li><li>So: geschlossen</li></ul>
       </div>
       <div class="footer-col">
-        <h3><a href="locations/waldbroel.html">Waldbröl</a></h3>
+        <h3><a href="locations/waldbroel">Waldbröl</a></h3>
         <p data-edit="wb.address">Kaiserstraße 61, 51545 Waldbröl</p><!-- from the salon's Planity page, 2026-11-16 (Planity lists no phone number) -->
         <ul data-edit="wb.hours" data-edit-as="lines-li"><li>Mo – Fr: 9 – 19 Uhr</li><li>Sa: 9 – 17 Uhr</li><li>So: geschlossen</li></ul>
       </div>
@@ -288,7 +292,7 @@
     </div>
     <div class="footer-bottom">
       <span>© 2026 MTM Coiffure</span>
-      <nav aria-label="Rechtliches"><a href="impressum.html">Impressum</a><a href="datenschutz.html">Datenschutz</a></nav>
+      <nav aria-label="Rechtliches"><a href="impressum">Impressum</a><a href="datenschutz">Datenschutz</a></nav>
     </div>
   </div>
 </footer>

@@ -13,7 +13,7 @@ const near = (a, b, tol) => Math.abs(a - b) <= tol;
 
 async function begin(opts = {}) {
   const h = await openPage({ ...opts, path: 'impressum.html', skipLoader: true });
-  const base = h.page.url().replace(/impressum\.html.*$/, '');
+  const base = h.page.url().replace(/impressum(\.html)?([?#].*)?$/, '');
   if (opts.before) await opts.before(h.page);
   await h.page.goto(base + 'index.html', { waitUntil: 'commit' });
   await h.page.waitForFunction(() => performance.getEntriesByName('mtm-loader-start').length > 0, null, { polling: 5 });

@@ -10,7 +10,7 @@
 import { openPage, assert, report } from './harness.mjs';
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const WANT = [['Nümbrecht.', 'locations/nuembrecht.html'], ['Waldbröl.', 'locations/waldbroel.html']];
+const WANT = [['Nümbrecht.', 'locations/nuembrecht'], ['Waldbröl.', 'locations/waldbroel']];
 
 for (const [w, h, mobile] of [[1440, 900, false], [768, 1024, false], [375, 812, true], [2560, 1440, false]]) {
   const tag = `@${w}x${h}`;

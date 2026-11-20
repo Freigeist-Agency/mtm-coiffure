@@ -1,14 +1,17 @@
-// Minimal static server for the test harness where python3 is missing (Windows laptop): node tests/serve.mjs <root> <port>. Supports Range requests (video).
+// Minimal static server for the test harness: node tests/serve.mjs <root> <port>. Supports Range requests (video).
+// Like GitHub Pages (prod), /page serves page.html, so the site's clean links (no .html) work here too.
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
-const [root, port = '5173'] = process.argv.slice(2);
+const [rootArg = '.', port = '5173'] = process.argv.slice(2);
+const root = path.resolve(rootArg);
 const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.mp4': 'video/mp4', '.json': 'application/json', '.woff2': 'font/woff2', '.ico': 'image/x-icon' };
 http.createServer((req, res) => {
   let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   if (p.endsWith('/')) p += 'index.html';
-  const file = path.join(root, p);
+  let file = path.join(root, p);
   if (!file.startsWith(path.resolve(root))) { res.writeHead(403).end(); return; }
+  if (!path.extname(file) && !fs.existsSync(file) && fs.existsSync(file + '.html')) file += '.html';
   fs.stat(file, (err, st) => {
     if (err || !st.isFile()) { res.writeHead(404).end('not found'); return; }
     const type = types[path.extname(file).toLowerCase()] || 'application/octet-stream';

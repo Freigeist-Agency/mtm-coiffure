@@ -60,8 +60,8 @@ for (const [w, h, mobile, reduced] of [[1512, 900], [1024, 768], [2560, 1440], [
     const c = back.cards[0];
     await page.mouse.move(c.x + c.w * 0.3, Math.max(c.y + 60, 60)); await sleep(900);
     const pos = await read(page); const cc = pos.cards[0];
-    await Promise.all([page.waitForURL(u => u.pathname.endsWith('/locations/nuembrecht.html'), { timeout: 5000 }).catch(() => {}), page.mouse.click(cc.x + cc.w * 0.6, Math.max(cc.y + 80, 80))]);
-    assert(page.url().endsWith('/locations/nuembrecht.html'), `${tag} 4: the wide card opens its salon page (${page.url()})`);
+    await Promise.all([page.waitForURL(u => u.pathname.endsWith('/locations/nuembrecht'), { timeout: 5000 }).catch(() => {}), page.mouse.click(cc.x + cc.w * 0.6, Math.max(cc.y + 80, 80))]);
+    assert(page.url().endsWith('/locations/nuembrecht'), `${tag} 4: the wide card opens its salon page (${page.url()})`);
   }
   assert(errors.length === 0, `${tag}: 0 console errors (${errors.join(' | ')})`);
   await close();

@@ -1,6 +1,6 @@
 // Shared test harness: static server + headless chromium + tiny assert/report.
 import { createRequire } from 'node:module';
-import { spawn, spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -36,11 +36,8 @@ function freePort() {
 
 async function startServer() {
   const port = await freePort();
-  // python3's http.server where there is one (Linux); else the small Node server in tests/serve.mjs (Windows laptop)
-  const hasPython = (() => { try { return spawnSync('python3', ['--version']).status === 0; } catch { return false; } })();
-  serverProc = hasPython
-    ? spawn('python3', ['-m', 'http.server', String(port), '--bind', '127.0.0.1'], { cwd: ROOT, stdio: 'ignore' })
-    : spawn(process.execPath, [path.join(ROOT, 'tests/serve.mjs'), ROOT, String(port)], { cwd: ROOT, stdio: 'ignore' });
+  // the small Node server in tests/serve.mjs: it serves /page as page.html the way GitHub Pages does (python's http.server doesn't)
+  serverProc = spawn(process.execPath, [path.join(ROOT, 'tests/serve.mjs'), ROOT, String(port)], { cwd: ROOT, stdio: 'ignore' });
   process.on('exit', () => { try { serverProc.kill(); } catch {} });
   const base = `http://127.0.0.1:${port}/`;
   for (let i = 0; i < 100; i++) {

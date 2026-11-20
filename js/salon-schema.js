@@ -34,7 +34,7 @@
     var a = /^(.+),\s*(\d{5})\s+(.+)$/.exec(adr);
     if (!a) return;   // no readable address: leave this salon out rather than publish a wrong one
     var salon = {
-      '@type': 'HairSalon', name: s.name, url: SITE + 'locations/' + s.slug + '.html', image: SITE + s.image,
+      '@type': 'HairSalon', name: s.name, url: SITE + 'locations/' + s.slug, image: SITE + s.image,
       address: { '@type': 'PostalAddress', streetAddress: a[1], postalCode: a[2], addressLocality: a[3], addressCountry: 'DE' },
       parentOrganization: { '@type': 'Organization', name: 'MTM Coiffure', url: SITE }
     };
